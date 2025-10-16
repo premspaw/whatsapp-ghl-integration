@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock WhatsApp Testing</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .scenario-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .scenario-card:hover {
+            transform: translateY(-2px);
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="test-container">
+            <div class="text-center mb-4">
+                <h1><i class="fab fa-whatsapp text-success"></i> Mock WhatsApp Testing</h1>
+                <p class="text-muted">Test your WhatsApp to GHL integration with mock data</p>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> System Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator status-online"></span>
+                                <span>Mock WhatsApp: <strong>Connected</strong></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator" id="ghl-status"></span>
+                                <span id="ghl-status-text">Checking...</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator" id="ai-status"></span>
+                                <span id="ai-status-text">Checking...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Scenarios -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-play-circle"></i> Quick Test Scenarios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card scenario-card h-100" onclick="triggerScenario('customer_support')">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-headset fa-2x text-primary mb-2"></i>
+                                    <h6>Customer Support</h6>
+                                    <small class="text-muted">Simulate a customer with an order issue</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card scenario-card h-100" onclick="triggerScenario('sales_inquiry')">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-shopping-cart fa-2x text-success mb-2"></i>
+                                    <h6>Sales Inquiry</h6>
+                                    <small class="text-muted">Simulate a potential customer inquiry</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card scenario-card h-100" onclick="triggerScenario('complaint')">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                                    <h6>Customer Complaint</h6>
+                                    <small class="text-muted">Simulate an unsatisfied customer</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card scenario-card h-100" onclick="triggerScenario('general_question')">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-question-circle fa-2x text-info mb-2"></i>
+                                    <h6>General Question</h6>
+                                    <small class="text-muted">Simulate a general business question</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Message -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-edit"></i> Send Custom Message</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Select Contact</label>
+                            <select class="form-select" id="contact-select">
+                                <option value="mock_contact_1">John Doe (+1234567890)</option>
+                                <option value="mock_contact_2">Sarah Wilson (+1987654321)</option>
+                                <option value="mock_contact_3">Mike Johnson (+1122334455)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Message</label>
+                            <input type="text" class="form-control" id="custom-message" placeholder="Enter your message...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-primary w-100" onclick="sendCustomMessage()">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mock Contacts -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-users"></i> Mock Contacts</h5>
+                </div>
+                <div class="card-body">
+                    <div id="mock-contacts">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Loading contacts...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5>Ready to test the real interface?</h5>
+                    <p class="text-muted">Go to the main application to see conversations in action</p>
+                    <a href="/" class="btn btn-success btn-lg">
+                        <i class="fab fa-whatsapp"></i> Open Main Interface
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load mock contacts
+        async function loadMockContacts() {
+            try {
+                const response = await fetch('/api/mock/contacts');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const contacts = await response.json();
+                
+                // Check if contacts is an array
+                if (!Array.isArray(contacts)) {
+                    console.error('Contacts is not an array:', contacts);
+                    document.getElementById('mock-contacts').innerHTML = '<div class="text-danger">Invalid contacts data</div>';
+                    return;
+                }
+                
+                const container = document.getElementById('mock-contacts');
+                container.innerHTML = '';
+                
+                if (contacts.length === 0) {
+                    container.innerHTML = '<div class="text-muted text-center p-3">No mock contacts available</div>';
+                    return;
+                }
+                
+                contacts.forEach(contact => {
+                    const contactDiv = document.createElement('div');
+                    contactDiv.className = 'd-flex justify-content-between align-items-center p-2 border-bottom';
+                    
+                    // Handle nested structure
+                    const contactId = contact.id && contact.id._serialized ? contact.id._serialized : contact.id;
+                    const contactName = contact.name || 'Unknown Contact';
+                    const lastMessage = contact.lastMessage && contact.lastMessage.body ? contact.lastMessage.body : 'No messages';
+                    const unreadCount = contact.unreadCount || 0;
+                    
+                    contactDiv.innerHTML = `
+                        <div>
+                            <strong>${contactName}</strong>
+                            <br>
+                            <small class="text-muted">${contactId}</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">${lastMessage}</small>
+                            <br>
+                            <span class="badge bg-secondary">${unreadCount} unread</span>
+                        </div>
+                    `;
+                    container.appendChild(contactDiv);
+                });
+            } catch (error) {
+                console.error('Error loading mock contacts:', error);
+                document.getElementById('mock-contacts').innerHTML = `<div class="text-danger">Error loading contacts: ${error.message}</div>`;
+            }
+        }
+
+        // Trigger a scenario
+        async function triggerScenario(scenario) {
+            try {
+                const response = await fetch('/api/mock/simulate-scenario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ scenario })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('success', `Scenario '${scenario}' triggered successfully!`);
+                } else {
+                    showAlert('danger', result.error);
+                }
+            } catch (error) {
+                console.error('Error triggering scenario:', error);
+                showAlert('danger', 'Error triggering scenario');
+            }
+        }
+
+        // Send custom message
+        async function sendCustomMessage() {
+            const contactId = document.getElementById('contact-select').value;
+            const message = document.getElementById('custom-message').value;
+            
+            if (!message.trim()) {
+                showAlert('warning', 'Please enter a message');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/mock/trigger-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ contactId, message })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('success', 'Message sent successfully!');
+                    document.getElementById('custom-message').value = '';
+                } else {
+                    showAlert('danger', result.error);
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showAlert('danger', 'Error sending message');
+            }
+        }
+
+        // Show alert
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.test-container').insertBefore(alertDiv, document.querySelector('.test-container').firstChild);
+            
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // Check system status
+        async function checkStatus() {
+            // Check GHL status
+            try {
+                const response = await fetch('/api/ghl/test');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.status.isConfigured) {
+                        document.getElementById('ghl-status').className = 'status-indicator status-online';
+                        document.getElementById('ghl-status-text').textContent = 'Connected';
+                    } else {
+                        throw new Error('GHL not configured');
+                    }
+                } else {
+                    throw new Error(`GHL API error: ${response.status}`);
+                }
+            } catch (error) {
+                console.log('GHL not connected:', error.message);
+                document.getElementById('ghl-status').className = 'status-indicator status-offline';
+                document.getElementById('ghl-status-text').textContent = 'Not Connected';
+            }
+            
+            // AI is always ready in mock mode
+            document.getElementById('ai-status').className = 'status-indicator status-online';
+            document.getElementById('ai-status-text').textContent = 'Ready';
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMockContacts();
+            checkStatus();
+        });
+    </script>
+</body>
+</html>

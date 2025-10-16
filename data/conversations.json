@@ -1,0 +1,4521 @@
+{
+  "mock_contact_1": {
+    "id": "mock_contact_1",
+    "phone": "mock_contact_1",
+    "name": "Unknown Contact",
+    "type": "text",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "mock_msg_1760555388588",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760555388588,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760555526238",
+        "from": "user",
+        "body": "dcdcdc",
+        "timestamp": 1760555526238,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760555534172",
+        "from": "user",
+        "body": "ededede",
+        "timestamp": 1760555534172,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555702475",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760555702475,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760555706934",
+        "from": "user",
+        "body": "hello",
+        "timestamp": 1760555706934,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555774279",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760555774279,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760555783244",
+        "from": "user",
+        "body": "helo ",
+        "timestamp": 1760555783244,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555996512",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760555996513,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556031710",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760556031710,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760556066424",
+        "from": "user",
+        "body": "hello tejal",
+        "timestamp": 1760556066424,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760556085724",
+        "from": "user",
+        "body": "hello tejal",
+        "timestamp": 1760556085724,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556190754",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760556190754,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556257607",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760556257607,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556325987",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760556325987,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556612238",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760556612238,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760556623337",
+        "from": "user",
+        "body": "hello ",
+        "timestamp": 1760556623337,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760556642076",
+        "from": "user",
+        "body": "hi how are oyu ",
+        "timestamp": 1760556642076,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556808294",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760556808294,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556841220",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760556841220,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556914873",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760556914873,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556948108",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760556948108,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557046520",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760557046520,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557079561",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760557079561,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557114781",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760557114781,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760557153499",
+        "from": "user",
+        "body": "hgjhgg",
+        "timestamp": 1760557153499,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557257367",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760557257367,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557291361",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760557291361,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557358284",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760557358284,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557391789",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760557391789,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557461243",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760557461243,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557557032",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760557557032,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557660261",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760557660261,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557727920",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760557727920,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557761329",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760557761329,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557900041",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760557900041,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558031840",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760558031840,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760558045465",
+        "from": "user",
+        "body": "Hello! This is a test message for GHL sync.",
+        "timestamp": 1760558045465,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760558126630",
+        "from": "user",
+        "body": "hello",
+        "timestamp": 1760558126630,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558160588",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760558160588,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558297139",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760558297139,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558467505",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760558467505,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760589835002",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760589835002,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590045268",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760590045268,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590117836",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760590117836,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590150335",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760590150335,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760590196236",
+        "from": "user",
+        "body": "hreloooo",
+        "timestamp": 1760590196236,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760590228198",
+        "from": "user",
+        "body": "hello",
+        "timestamp": 1760590228198,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590228485",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760590228485,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760590257764",
+        "from": "user",
+        "body": "getjj",
+        "timestamp": 1760590257764,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590389745",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760590389745,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590453519",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760590453519,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590517893",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760590517893,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590549679",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760590549679,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590677359",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760590677359,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590742485",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760590742485,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590774432",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760590774432,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590837958",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760590837958,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590869793",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760590869793,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590935466",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760590935466,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590968275",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760590968275,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591666141",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760591666141,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591876196",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760591876196,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591906216",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760591906216,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591996238",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760591996238,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592026243",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760592026243,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592206309",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760592206309,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592236313",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760592236313,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592356343",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760592356343,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592416355",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760592416355,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592506384",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760592506384,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592596399",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760592596399,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592656412",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760592656412,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592686416",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760592686416,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592866466",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760592866466,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592956496",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760592956496,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593106544",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760593106544,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593136543",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760593136543,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593166558",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760593166558,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593376636",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760593376636,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593616690",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760593616690,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593676693",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760593676693,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593766716",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760593766716,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593796728",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760593796728,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593856740",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760593856740,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593946746",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760593946746,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594006754",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760594006754,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594036767",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760594036767,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594216826",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760594216826,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594366886",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760594366886,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594486929",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760594486929,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594585573",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760594585573,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594615582",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760594615582,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594818678",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760594818679,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594848684",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760594848684,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594878713",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760594878713,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595088789",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760595088789,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595238833",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760595238833,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595328854",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760595328854,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595418881",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760595418881,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595598945",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760595598945,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595628948",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760595628948,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595658956",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760595658956,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595688959",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760595688959,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595748972",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760595748972,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595821000",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760595821000,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595851007",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760595851007,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595941028",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760595941028,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595971040",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760595971040,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596001044",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760596001044,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596031059",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760596031059,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596061063",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760596061063,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596091073",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760596091073,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596211107",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760596211107,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596241108",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760596241108,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596271118",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760596271118,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596331145",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760596331145,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596601237",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760596601237,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596721280",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760596721280,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596751283",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760596751283,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596811303",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760596811303,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596871325",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760596871325,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596931334",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760596931334,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596961345",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760596961345,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597164977",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760597164977,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597225003",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760597225003,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597375034",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760597375034,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597465058",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760597465058,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597495065",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760597495065,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597555078",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760597555078,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597675113",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760597675113,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597735131",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760597735131,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597795150",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760597795150,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598005224",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760598005224,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598275280",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760598275280,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598305285",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760598305285,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598485355",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760598485355,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598605387",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760598605387,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598665411",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760598665411,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598845453",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760598845453,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598875453",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760598875453,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598965471",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760598965471,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598995480",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760598995480,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599025517",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760599025517,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599055520",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760599055520,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599085526",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760599085526,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599115550",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760599115550,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599175567",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760599175567,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599235603",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760599235603,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599516578",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760599516578,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599636615",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760599636615,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599816644",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760599816644,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602313028",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760602313028,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602403054",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760602403055,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602433070",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760602433070,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602523102",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760602523102,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602553102",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760602553102,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602583113",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760602583113,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602643125",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760602643126,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602733149",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760602733150,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602763162",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760602763162,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602823178",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760602823178,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603093339",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760603093339,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603213375",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760603213375,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": true,
+    "syncToGHL": true,
+    "createdAt": 1760555388597,
+    "updatedAt": 1760603213377,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "mock_msg_1760599055520",
+          "from": "user",
+          "body": "When will this be available?",
+          "timestamp": 1760599055520,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599085526",
+          "from": "user",
+          "body": "Thank you for your response",
+          "timestamp": 1760599085526,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599115550",
+          "from": "user",
+          "body": "Do you have any discounts?",
+          "timestamp": 1760599115550,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599175567",
+          "from": "user",
+          "body": "When will this be available?",
+          "timestamp": 1760599175567,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599235603",
+          "from": "user",
+          "body": "When will this be available?",
+          "timestamp": 1760599235603,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599516578",
+          "from": "user",
+          "body": "What are your business hours?",
+          "timestamp": 1760599516578,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599636615",
+          "from": "user",
+          "body": "Do you have any discounts?",
+          "timestamp": 1760599636615,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599816644",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760599816644,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602313028",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760602313028,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602403054",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760602403055,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602433070",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760602433070,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602523102",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760602523102,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602553102",
+          "from": "user",
+          "body": "I have a question about your services",
+          "timestamp": 1760602553102,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602583113",
+          "from": "user",
+          "body": "Can you send me a quote?",
+          "timestamp": 1760602583113,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602643125",
+          "from": "user",
+          "body": "I'm interested in your product",
+          "timestamp": 1760602643126,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602733149",
+          "from": "user",
+          "body": "Do you have any discounts?",
+          "timestamp": 1760602733150,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602763162",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760602763162,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602823178",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760602823178,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603093339",
+          "from": "user",
+          "body": "Thank you for your response",
+          "timestamp": 1760603093339,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603213375",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760603213375,
+          "type": "text"
+        }
+      ]
+    }
+  },
+  "mock_contact_3": {
+    "id": "mock_contact_3",
+    "phone": "mock_contact_3",
+    "name": "Unknown Contact",
+    "type": "text",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "mock_msg_1760555421108",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760555421108,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555456684",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760555456684,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555566811",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760555566811,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555739733",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760555739733,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555921513",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760555921513,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556156256",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760556156256,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556291252",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760556291252,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556447063",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760556447063,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556576848",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760556576848,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556709748",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760556709748,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556879017",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760556879017,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556980890",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760556980890,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557013719",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760557013719,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557426846",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760557426846,
+        "type": "text"
+      },
+      {
+        "id": "mock_trigger_1760557520528",
+        "from": "user",
+        "body": "dxdxdxd",
+        "timestamp": 1760557520528,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557796664",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760557796664,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557864488",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760557864488,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557932769",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760557932769,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557965287",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760557965287,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557999057",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760557999057,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558112086",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760558112086,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558193863",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760558193863,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558227931",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760558227931,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558263455",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760558263455,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558365322",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760558365322,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558399901",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760558399901,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558534943",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760558534943,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760569359339",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760569359339,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760589881688",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760589881688,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590085975",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760590085975,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590182493",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760590182493,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590289984",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760590289984,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590324422",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760590324423,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590421565",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760590421565,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590613606",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760590613606,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590901298",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760590901298,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591000596",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760591000596,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591032503",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760591032503,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591756164",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760591756164,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591846190",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760591846190,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591936222",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760591936222,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591966225",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760591966225,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592086265",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760592086265,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592116280",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760592116280,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592176304",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760592176304,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592266316",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760592266316,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592296331",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760592296331,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592386344",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760592386344,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592446360",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760592446360,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592536385",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760592536385,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592566387",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760592566387,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592626406",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760592626406,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592746423",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760592746423,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592776434",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760592776434,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592836453",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760592836453,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592926490",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760592926490,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592986505",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760592986505,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593046512",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760593046512,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593196567",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760593196567,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593256587",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760593256587,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593286597",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760593286597,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593406638",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760593406638,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593436648",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760593436648,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593496666",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760593496666,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593526669",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760593526669,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593556680",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760593556680,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593706693",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760593706693,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593736703",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760593736703,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593826733",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760593826733,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593886743",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760593886743,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593976746",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760593976746,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594066772",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760594066772,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594126789",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760594126789,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594156802",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760594156802,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594186811",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760594186811,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594276850",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760594276850,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594306859",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760594306859,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594396896",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760594396896,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594426912",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760594426912,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594555557",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760594555557,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594645587",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760594645587,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594675595",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760594675595,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594705598",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760594705598,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594938740",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760594938740,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594968754",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760594968754,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595118803",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760595118803,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595178808",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760595178808,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595208822",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760595208822,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595478888",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760595478888,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595538915",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760595538915,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595568931",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760595568931,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595790994",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760595790994,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596121074",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760596121074,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596421168",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760596421168,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596451178",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760596451178,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596541219",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760596541219,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596571227",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760596571227,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596691274",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760596691274,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596991356",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760596991356,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597134963",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760597134963,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597285014",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760597285014,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597405041",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760597405041,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597435043",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760597435043,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597525071",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760597525071,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597645102",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760597645102,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597765134",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760597765134,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597885178",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760597885178,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597945201",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760597945201,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597975213",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760597975213,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598125263",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760598125263,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598215272",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760598215272,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598245278",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760598245278,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598365305",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760598365305,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598395321",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760598395321,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598515362",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760598515362,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598545367",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760598545367,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598575372",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760598575372,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598635403",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760598635403,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598695413",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760598695413,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598725418",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760598725418,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598785432",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760598785432,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598935467",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760598935467,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599145555",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760599145555,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599205586",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760599205586,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599265620",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760599265620,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599295631",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760599295631,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599666617",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760599666617,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599756632",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760599756632,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599786637",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760599786638,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602192995",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760602192995,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602283020",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760602283020,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602343038",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760602343038,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602793172",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760602793172,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602913220",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760602913220,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602943263",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760602943263,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602973292",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760602973292,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603003308",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760603003308,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603153362",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760603153362,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603273406",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760603273406,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603303408",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760603303408,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603423456",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760603423456,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603483470",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760603483470,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": false,
+    "syncToGHL": false,
+    "createdAt": 1760555421113,
+    "updatedAt": 1760603483472,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "mock_msg_1760599145555",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760599145555,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599205586",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760599205586,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599265620",
+          "from": "user",
+          "body": "When will this be available?",
+          "timestamp": 1760599265620,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599295631",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760599295631,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599666617",
+          "from": "user",
+          "body": "What are your business hours?",
+          "timestamp": 1760599666617,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599756632",
+          "from": "user",
+          "body": "I'm interested in your product",
+          "timestamp": 1760599756632,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760599786637",
+          "from": "user",
+          "body": "What are your business hours?",
+          "timestamp": 1760599786638,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602192995",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760602192995,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602283020",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760602283020,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602343038",
+          "from": "user",
+          "body": "I have a question about your services",
+          "timestamp": 1760602343038,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602793172",
+          "from": "user",
+          "body": "I have a question about your services",
+          "timestamp": 1760602793172,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602913220",
+          "from": "user",
+          "body": "Can you send me a quote?",
+          "timestamp": 1760602913220,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602943263",
+          "from": "user",
+          "body": "I have a question about your services",
+          "timestamp": 1760602943263,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602973292",
+          "from": "user",
+          "body": "Do you have any discounts?",
+          "timestamp": 1760602973292,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603003308",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760603003308,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603153362",
+          "from": "user",
+          "body": "I'm interested in your product",
+          "timestamp": 1760603153362,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603273406",
+          "from": "user",
+          "body": "Can you send me a quote?",
+          "timestamp": 1760603273406,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603303408",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760603303408,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603423456",
+          "from": "user",
+          "body": "I have a question about your services",
+          "timestamp": 1760603423456,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603483470",
+          "from": "user",
+          "body": "When will this be available?",
+          "timestamp": 1760603483470,
+          "type": "text"
+        }
+      ]
+    }
+  },
+  "mock_contact_2": {
+    "id": "mock_contact_2",
+    "phone": "mock_contact_2",
+    "name": "Unknown Contact",
+    "type": "text",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "mock_msg_1760555600671",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760555600671,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555815694",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760555815694,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555850718",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760555850718,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760555884733",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760555884733,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556119279",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760556119279,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556224665",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760556224665,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556367565",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760556367565,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556675519",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760556675519,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556742843",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760556742843,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760556775034",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760556775034,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557149212",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760557149212,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557188610",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760557188610,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557222974",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760557222974,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557324603",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760557324603,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557495948",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760557495948,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557592419",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760557592419,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557626600",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760557626600,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557693970",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760557693971,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760557830491",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760557830491,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558078367",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760558078367,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558331130",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760558331131,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558433776",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760558433776,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760558501298",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760558501298,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590357298",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760590357298,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590486104",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760590486104,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590581669",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760590581669,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590645413",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760590645413,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590710516",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760590710516,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760590806223",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760590806223,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591636135",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760591636135,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591696155",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760591696155,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591726163",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760591726163,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591786171",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760591786171,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760591816180",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760591816180,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592056255",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760592056255,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592146292",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760592146292,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592326335",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760592326335,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592476371",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760592476371,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592716419",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760592716419,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592806447",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760592806447,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760592896480",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760592896480,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593016508",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760593016508,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593076532",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760593076532,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593226573",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760593226573,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593316607",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760593316607,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593346624",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760593346624,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593466660",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760593466660,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593586683",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760593586683,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593646692",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760593646692,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760593916745",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760593916745,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594096786",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760594096786,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594246828",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760594246828,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594336873",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760594336873,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594456925",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760594456925,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594788672",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760594788672,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594908724",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760594908724,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760594998768",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760594998768,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595028770",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760595028770,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595058785",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760595058785,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595148807",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760595148807,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595268834",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760595268834,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595298844",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760595298844,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595358864",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760595358864,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595388875",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760595388875,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595448887",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760595448887,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595508905",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760595508905,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595718972",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760595718972,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595881021",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760595881021,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760595911022",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760595911022,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596151084",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760596151084,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596181098",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760596181098,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596301133",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760596301133,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596361146",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760596361146,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596391153",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760596391153,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596481191",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760596481191,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596511192",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760596511192,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596631239",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760596631239,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596661242",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760596661242,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596781295",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760596781295,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596841309",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760596841309,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760596901326",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760596901326,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597021371",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760597021371,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597051394",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760597051394,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597081399",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760597081399,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597194990",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760597194990,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597255003",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760597255003,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597315026",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760597315026,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597345028",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760597345028,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597585085",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760597585085,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597615090",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760597615090,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597705124",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760597705124,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597825155",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760597825155,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597855165",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760597855165,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760597915183",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760597915183,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598035238",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760598035238,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598065241",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760598065241,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598095248",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760598095248,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598155267",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760598155267,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598185267",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760598185267,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598335296",
+        "from": "user",
+        "body": "I have a question about your services",
+        "timestamp": 1760598335296,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598425322",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760598425322,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598455335",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760598455335,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598755428",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760598755428,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598815440",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760598815440,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760598905455",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760598905455,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599546577",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760599546578,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599576579",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760599576579,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599606603",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760599606603,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599696620",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760599696620,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599726624",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760599726624,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760599846646",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760599846646,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602223003",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760602223003,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602253009",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760602253009,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602373052",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760602373052,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602463082",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760602463083,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602493095",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760602493095,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602613124",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760602613124,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602673139",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760602673139,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602703140",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760602703140,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602853181",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760602853181,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760602883205",
+        "from": "user",
+        "body": "Thank you for your response",
+        "timestamp": 1760602883205,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603033324",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760603033324,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603063336",
+        "from": "user",
+        "body": "Can you help me with something?",
+        "timestamp": 1760603063337,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603123349",
+        "from": "user",
+        "body": "When will this be available?",
+        "timestamp": 1760603123349,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603183375",
+        "from": "user",
+        "body": "I'm interested in your product",
+        "timestamp": 1760603183375,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603243390",
+        "from": "user",
+        "body": "Can you send me a quote?",
+        "timestamp": 1760603243390,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603333423",
+        "from": "user",
+        "body": "I need more information",
+        "timestamp": 1760603333423,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603363434",
+        "from": "user",
+        "body": "What are your business hours?",
+        "timestamp": 1760603363434,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603393453",
+        "from": "user",
+        "body": "Hello, how are you?",
+        "timestamp": 1760603393453,
+        "type": "text"
+      },
+      {
+        "id": "mock_msg_1760603453457",
+        "from": "user",
+        "body": "Do you have any discounts?",
+        "timestamp": 1760603453457,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": false,
+    "syncToGHL": false,
+    "createdAt": 1760555600697,
+    "updatedAt": 1760603453459,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "mock_msg_1760599846646",
+          "from": "user",
+          "body": "Thank you for your response",
+          "timestamp": 1760599846646,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602223003",
+          "from": "user",
+          "body": "I'm interested in your product",
+          "timestamp": 1760602223003,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602253009",
+          "from": "user",
+          "body": "Hello, how are you?",
+          "timestamp": 1760602253009,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602373052",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760602373052,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602463082",
+          "from": "user",
+          "body": "Thank you for your response",
+          "timestamp": 1760602463083,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602493095",
+          "from": "user",
+          "body": "When will this be available?",
+          "timestamp": 1760602493095,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602613124",
+          "from": "user",
+          "body": "I'm interested in your product",
+          "timestamp": 1760602613124,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602673139",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760602673139,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602703140",
+          "from": "user",
+          "body": "Do you have any discounts?",
+          "timestamp": 1760602703140,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602853181",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760602853181,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760602883205",
+          "from": "user",
+          "body": "Thank you for your response",
+          "timestamp": 1760602883205,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603033324",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760603033324,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603063336",
+          "from": "user",
+          "body": "Can you help me with something?",
+          "timestamp": 1760603063337,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603123349",
+          "from": "user",
+          "body": "When will this be available?",
+          "timestamp": 1760603123349,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603183375",
+          "from": "user",
+          "body": "I'm interested in your product",
+          "timestamp": 1760603183375,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603243390",
+          "from": "user",
+          "body": "Can you send me a quote?",
+          "timestamp": 1760603243390,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603333423",
+          "from": "user",
+          "body": "I need more information",
+          "timestamp": 1760603333423,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603363434",
+          "from": "user",
+          "body": "What are your business hours?",
+          "timestamp": 1760603363434,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603393453",
+          "from": "user",
+          "body": "Hello, how are you?",
+          "timestamp": 1760603393453,
+          "type": "text"
+        },
+        {
+          "id": "mock_msg_1760603453457",
+          "from": "user",
+          "body": "Do you have any discounts?",
+          "timestamp": 1760603453457,
+          "type": "text"
+        }
+      ]
+    }
+  },
+  "120363421761109403@g.us": {
+    "id": "120363421761109403@g.us",
+    "phone": "120363421761109403@g.us",
+    "name": "Unknown Contact",
+    "type": "chat",
+    "channel": "whatsapp_group",
+    "messages": [
+      {
+        "id": "false_120363421761109403@g.us_ACDA090F99A88D4888D873A65E622A55_249189875376199@lid",
+        "from": "user",
+        "body": "Do you guys need someone to write post for you ? Pls dm me",
+        "timestamp": 1760605554,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3ADB14F933EF321C429E_36528814350550@lid",
+        "from": "user",
+        "body": "Guys how do we access comet for free",
+        "timestamp": 1760605717,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_ACBB7AD4F54FDEFB7AE16E94C9DFFCBD_27560889073851@lid",
+        "from": "user",
+        "body": "I've mentioned above",
+        "timestamp": 1760605734,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC895342D0736F15B5DECBC0AC8892ED_27560889073851@lid",
+        "from": "user",
+        "body": "U just need a windows/macOs device",
+        "timestamp": 1760605743,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3AEB183E0252133D8A87_36528814350550@lid",
+        "from": "user",
+        "body": "Having that",
+        "timestamp": 1760605759,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC8D2E3F10BBA2A60B11675D61813B39_27560889073851@lid",
+        "from": "user",
+        "body": "If u still have any doubts u can dm me",
+        "timestamp": 1760605759,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3A2836E9515AC395A815_36528814350550@lid",
+        "from": "user",
+        "body": "Can u tag where you’ve mentioned",
+        "timestamp": 1760605774,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_ACD2977A3A050DB3DA7BEB06DB31D4FE_27560889073851@lid",
+        "from": "user",
+        "body": "@36528814350550",
+        "timestamp": 1760605788,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB01B085DC559296F7408_227581811028058@lid",
+        "from": "user",
+        "body": "Students x Perplexity AI | FREE Hoodie\n\nPerplexity AI is offering students FREE Comet Pro access - The new AI-Powered Browser built for smarter studying.\n\n*First 100 students to sign-up will also receive an official Perplexity Hoodie.*\n\nWhy Try Comet\n-Summarize YouTube video lectures\n-Extract key notes from PDFs and research papers\n-Ask questions directly while browsing\n-100% free, no subscription required\n\nHow to Get Started\n1-Go to pplx.ai/Comet/PRO [On Laptop/Desktop]\n2-Click Download Comet and sign up using your college (.edu or .ac.in or any student mail ) email ID.\n3-Install Comet and log in with the same email. \nEnter your college/university details under the College section to verify and unlock your Pro access.\nBrowse for few minutes in Comet to activate your account.\n\nAfter installation, submit this quick form to claim your Hoodie - https://forms.gle/86zQ9QTa56xbJjMm7\n\nOffer Valid Until 15th October",
+        "timestamp": 1760605794,
+        "type": "image"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB036BAFEE39A1E3F3DF1_227581811028058@lid",
+        "from": "user",
+        "body": "you can try this Abhiraj. we get it as part of their startup program...",
+        "timestamp": 1760605827,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC5F8B7F85861304A5F30D3B32EAAAC0_27560889073851@lid",
+        "from": "user",
+        "body": "Offer valid until 15th October so why are u sending now",
+        "timestamp": 1760605827,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC63B4BFE06E1D61C1FFCD0D05EA1E26_27560889073851@lid",
+        "from": "user",
+        "body": "Bro can't update message even",
+        "timestamp": 1760605834,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB08016FECA24004E6254_227581811028058@lid",
+        "from": "user",
+        "body": "it is still valid.....",
+        "timestamp": 1760605856,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3A46D9EB51E84EF1FF78_258136141205588@lid",
+        "from": "user",
+        "body": "Hey everyone, I am interested to talk with some of you who are already generating some Ai video and image content via some services or via N8n i have built SaaS product to automate content production and would like to get feedback and info how your workflow looks.",
+        "timestamp": 1760605859,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC856CC5FF30455F91431BB84592E099_27560889073851@lid",
+        "from": "user",
+        "body": "So don't make false claims",
+        "timestamp": 1760605868,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB09B12403C8B3E910FF1_227581811028058@lid",
+        "from": "user",
+        "body": "Did I have to send you the startup programm papers to prov it out......😂",
+        "timestamp": 1760605931,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC34C57B657148CB27E78FD6191AA038_27560889073851@lid",
+        "from": "user",
+        "body": "Bro trying to build some FOMO",
+        "timestamp": 1760605943,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_ACDA7F972924B32596C12067A16356EC_27560889073851@lid",
+        "from": "user",
+        "body": "I'm just saying",
+        "timestamp": 1760605969,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC8769BBE72B296B280DA44F6F678FD0_27560889073851@lid",
+        "from": "user",
+        "body": "Why can't u update the text",
+        "timestamp": 1760605974,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3AE984B3ABC748B45336_36528814350550@lid",
+        "from": "user",
+        "body": "Thankyou",
+        "timestamp": 1760606203,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3AEA276DF7DB96E543DA_202142686167130@lid",
+        "from": "user",
+        "body": "People\nAre you excited for the hackathon?👀🔥",
+        "timestamp": 1760606264,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3BE295561DA950D7E5E2_227878214094856@lid",
+        "from": "user",
+        "body": "Yesssss🙌🏻",
+        "timestamp": 1760606301,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_ACA6610C66657FFBF47BDFF8C3AA4FF9_170007724077130@lid",
+        "from": "user",
+        "body": "Definetely",
+        "timestamp": 1760606309,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB078BD2D6C447EB4B979_39922341834943@lid",
+        "from": "user",
+        "body": "spare us more details about it",
+        "timestamp": 1760606314,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3A44E3B1B40F9DBE917B_202142686167130@lid",
+        "from": "user",
+        "body": "🤐🤐🤐🤐",
+        "timestamp": 1760606355,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3A2B205843EC89B5FAC9_71176298709134@lid",
+        "from": "user",
+        "body": "@202142686167130 check your dm once 😑",
+        "timestamp": 1760606393,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB0027B59888836A2653F_39922341834943@lid",
+        "from": "user",
+        "body": "building in stealth i see",
+        "timestamp": 1760606427,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3F213DAFDBEB7B7E6E18_128196217442474@lid",
+        "from": "user",
+        "body": "Yess",
+        "timestamp": 1760606440,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3AE4218C2166D8A67327_202142686167130@lid",
+        "from": "user",
+        "body": "I will\nanswering to all queries slowly. that's y i prefer the community",
+        "timestamp": 1760606457,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3BC99FF9BF9FA65358E9_190718089924731@lid",
+        "from": "user",
+        "body": "Hello everyone! I recently joined the community. Can anyone tell me about the hackathon?",
+        "timestamp": 1760606562,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3B251DD40AC745B1F238_71176298709134@lid",
+        "from": "user",
+        "body": "Makes sense",
+        "timestamp": 1760606622,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3AF465ED9291925D0FC5_202142686167130@lid",
+        "from": "user",
+        "body": "I just announced it minutes ago\n\nThat is it😂",
+        "timestamp": 1760606643,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3BD3F70D2CC52B069F5E_190718089924731@lid",
+        "from": "user",
+        "body": "OH Okay!!😅",
+        "timestamp": 1760606675,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3A9FA150DF906E6E3131_68607958593648@lid",
+        "from": "user",
+        "body": "We’re helping businesses set up their Contra, Upwork, and Behance profiles to attract more international clients. Let me know if anyone’s interested!",
+        "timestamp": 1760607713,
+        "type": "video"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB020EA23310D4BC1A477_170007724077130@lid",
+        "from": "user",
+        "body": "do we have any copywriters here i need some help for my linked in  content to optimize it even further ?\nwould really appreciate for help",
+        "timestamp": 1760612154,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB06B2B26D0E58B3D20F7_278558710702139@lid",
+        "from": "user",
+        "body": "Hi @202142686167130, can you suggest a good master inbox tool? I noticed that some replies from contacts not in my Instantly list aren’t appearing in the inbox. I’ve turned on email forwarding, but some replies still aren’t getting forwarded. Any recommendations?",
+        "timestamp": 1760616979,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC10FD344F7133DCDC5D2C8322BA6471_160507222827137@lid",
+        "from": "user",
+        "body": "What do you need help with?",
+        "timestamp": 1760617652,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_ACA9742240377C469C31A828021DDE0C_179976393457902@lid",
+        "from": "user",
+        "body": "Edrive",
+        "timestamp": 1760617834,
+        "type": "image"
+      },
+      {
+        "id": "false_120363421761109403@g.us_A5762381368E6BA1F693B65EA27E15EF_56023637319691@lid",
+        "from": "user",
+        "body": "I wish to be added to this group with my other no. How to go about. Will exit from this one",
+        "timestamp": 1760619404,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3A0DCC1F7D5A669D3B80_36528814350550@lid",
+        "from": "user",
+        "body": "what do you guys think is the gap  and missing the Ai & automation Industry that is heavily required ?",
+        "timestamp": 1760624895,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3AD2F57518384462D8E7_263934414172190@lid",
+        "from": "user",
+        "body": "Hi all\n\nCan an integrated dashboard be created for heyreach + Smartlead on airtable.\n\nHas anyone done this before?\n\nI was thinking of creating something that reports close to outreach magic?\n\nhttps://outreachmagic.io",
+        "timestamp": 1760625688,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3F5E0E39BD960001EB4E_189829484675235@lid",
+        "from": "user",
+        "body": "Hello on Fiverr people are offering llc registration service in 50$ are these guys legit or scam?",
+        "timestamp": 1760628718,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB0AE8163308BFC931224_94309042921610@lid",
+        "from": "user",
+        "body": "i can help u review it",
+        "timestamp": 1760630270,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3EB02A6CA1BC1B3B4B8F25_227581811028058@lid",
+        "from": "user",
+        "body": "You can go with higgsfiled Niket.....",
+        "timestamp": 1760636201,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_3A418F8E7B441E603110_190946243256371@lid",
+        "from": "user",
+        "body": "I’ve done copywriting for over 20 years, let me know what you want",
+        "timestamp": 1760637381,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363421761109403@g.us_AC65013C863A80251C25CDD3C1AAE544_90675416699087@lid",
+        "from": "user",
+        "body": "That's crazy 😧",
+        "timestamp": 1760637511,
+        "type": "chat"
+      }
+    ],
+    "aiEnabled": false,
+    "syncToGHL": false,
+    "lastSyncedMessageId": 120363421761109400,
+    "createdAt": 1760605554573,
+    "updatedAt": 1760638212672,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "false_120363421761109403@g.us_3EB0027B59888836A2653F_39922341834943@lid",
+          "from": "user",
+          "body": "building in stealth i see",
+          "timestamp": 1760606427,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3F213DAFDBEB7B7E6E18_128196217442474@lid",
+          "from": "user",
+          "body": "Yess",
+          "timestamp": 1760606440,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3AE4218C2166D8A67327_202142686167130@lid",
+          "from": "user",
+          "body": "I will\nanswering to all queries slowly. that's y i prefer the community",
+          "timestamp": 1760606457,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3BC99FF9BF9FA65358E9_190718089924731@lid",
+          "from": "user",
+          "body": "Hello everyone! I recently joined the community. Can anyone tell me about the hackathon?",
+          "timestamp": 1760606562,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3B251DD40AC745B1F238_71176298709134@lid",
+          "from": "user",
+          "body": "Makes sense",
+          "timestamp": 1760606622,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3AF465ED9291925D0FC5_202142686167130@lid",
+          "from": "user",
+          "body": "I just announced it minutes ago\n\nThat is it😂",
+          "timestamp": 1760606643,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3BD3F70D2CC52B069F5E_190718089924731@lid",
+          "from": "user",
+          "body": "OH Okay!!😅",
+          "timestamp": 1760606675,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3A9FA150DF906E6E3131_68607958593648@lid",
+          "from": "user",
+          "body": "We’re helping businesses set up their Contra, Upwork, and Behance profiles to attract more international clients. Let me know if anyone’s interested!",
+          "timestamp": 1760607713,
+          "type": "video"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3EB020EA23310D4BC1A477_170007724077130@lid",
+          "from": "user",
+          "body": "do we have any copywriters here i need some help for my linked in  content to optimize it even further ?\nwould really appreciate for help",
+          "timestamp": 1760612154,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3EB06B2B26D0E58B3D20F7_278558710702139@lid",
+          "from": "user",
+          "body": "Hi @202142686167130, can you suggest a good master inbox tool? I noticed that some replies from contacts not in my Instantly list aren’t appearing in the inbox. I’ve turned on email forwarding, but some replies still aren’t getting forwarded. Any recommendations?",
+          "timestamp": 1760616979,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_AC10FD344F7133DCDC5D2C8322BA6471_160507222827137@lid",
+          "from": "user",
+          "body": "What do you need help with?",
+          "timestamp": 1760617652,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_ACA9742240377C469C31A828021DDE0C_179976393457902@lid",
+          "from": "user",
+          "body": "Edrive",
+          "timestamp": 1760617834,
+          "type": "image"
+        },
+        {
+          "id": "false_120363421761109403@g.us_A5762381368E6BA1F693B65EA27E15EF_56023637319691@lid",
+          "from": "user",
+          "body": "I wish to be added to this group with my other no. How to go about. Will exit from this one",
+          "timestamp": 1760619404,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3A0DCC1F7D5A669D3B80_36528814350550@lid",
+          "from": "user",
+          "body": "what do you guys think is the gap  and missing the Ai & automation Industry that is heavily required ?",
+          "timestamp": 1760624895,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3AD2F57518384462D8E7_263934414172190@lid",
+          "from": "user",
+          "body": "Hi all\n\nCan an integrated dashboard be created for heyreach + Smartlead on airtable.\n\nHas anyone done this before?\n\nI was thinking of creating something that reports close to outreach magic?\n\nhttps://outreachmagic.io",
+          "timestamp": 1760625688,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3F5E0E39BD960001EB4E_189829484675235@lid",
+          "from": "user",
+          "body": "Hello on Fiverr people are offering llc registration service in 50$ are these guys legit or scam?",
+          "timestamp": 1760628718,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3EB0AE8163308BFC931224_94309042921610@lid",
+          "from": "user",
+          "body": "i can help u review it",
+          "timestamp": 1760630270,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3EB02A6CA1BC1B3B4B8F25_227581811028058@lid",
+          "from": "user",
+          "body": "You can go with higgsfiled Niket.....",
+          "timestamp": 1760636201,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_3A418F8E7B441E603110_190946243256371@lid",
+          "from": "user",
+          "body": "I’ve done copywriting for over 20 years, let me know what you want",
+          "timestamp": 1760637381,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363421761109403@g.us_AC65013C863A80251C25CDD3C1AAE544_90675416699087@lid",
+          "from": "user",
+          "body": "That's crazy 😧",
+          "timestamp": 1760637511,
+          "type": "chat"
+        }
+      ]
+    }
+  },
+  "120363422860393133@g.us": {
+    "id": "120363422860393133@g.us",
+    "phone": "120363422860393133@g.us",
+    "name": "Unknown Contact",
+    "type": "chat",
+    "channel": "whatsapp_group",
+    "messages": [
+      {
+        "id": "false_120363422860393133@g.us_3A71E93517048D1FA82E_202142686167130@lid",
+        "from": "user",
+        "body": "Hey everyone,\n\nWe are planning a hackathon - one of its kind where you build some revenue for brand. Please answer the question below and we will brainstorm ahead🔥",
+        "timestamp": 1760605682,
+        "type": "chat"
+      },
+      {
+        "id": "false_120363422860393133@g.us_3A8902E44D25A92ADDC4_202142686167130@lid",
+        "from": "user",
+        "body": "Which category do you fit in?",
+        "timestamp": 1760605818,
+        "type": "poll_creation"
+      },
+      {
+        "id": "false_120363422860393133@g.us_3AB17FE8EBD62C205E88_202142686167130@lid",
+        "from": "user",
+        "body": "We will be launching this post Diwali. \n\nBut I need at least 150-200 responses for all of us to build the maximum ROI. \n\nInvestment being your time and energy. Return : Revenue, clients, network and case building \n\n\nPS: Yes, we have gifts for the winners! 🎁🎁",
+        "timestamp": 1760606028,
+        "type": "chat"
+      }
+    ],
+    "aiEnabled": false,
+    "syncToGHL": false,
+    "lastSyncedMessageId": 0,
+    "createdAt": 1760605682794,
+    "updatedAt": 1760606028393,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "false_120363422860393133@g.us_3A71E93517048D1FA82E_202142686167130@lid",
+          "from": "user",
+          "body": "Hey everyone,\n\nWe are planning a hackathon - one of its kind where you build some revenue for brand. Please answer the question below and we will brainstorm ahead🔥",
+          "timestamp": 1760605682,
+          "type": "chat"
+        },
+        {
+          "id": "false_120363422860393133@g.us_3A8902E44D25A92ADDC4_202142686167130@lid",
+          "from": "user",
+          "body": "Which category do you fit in?",
+          "timestamp": 1760605818,
+          "type": "poll_creation"
+        },
+        {
+          "id": "false_120363422860393133@g.us_3AB17FE8EBD62C205E88_202142686167130@lid",
+          "from": "user",
+          "body": "We will be launching this post Diwali. \n\nBut I need at least 150-200 responses for all of us to build the maximum ROI. \n\nInvestment being your time and energy. Return : Revenue, clients, network and case building \n\n\nPS: Yes, we have gifts for the winners! 🎁🎁",
+          "timestamp": 1760606028,
+          "type": "chat"
+        }
+      ]
+    }
+  },
+  "918123133382@c.us": {
+    "id": "918123133382@c.us",
+    "phone": "918123133382@c.us",
+    "name": "Unknown Contact",
+    "type": "chat",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "false_918123133382@c.us_3A02AEEB1B7EE7426E33",
+        "from": "user",
+        "body": "Hello this is new",
+        "timestamp": 1760606618,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A5DCE551DCBE70B39F6",
+        "from": "user",
+        "body": "Hello this new 10",
+        "timestamp": 1760606642,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AB8B85D804EEC55ADFD",
+        "from": "user",
+        "body": "Helooooo",
+        "timestamp": 1760608087,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3ADD565129564740D0BC",
+        "from": "user",
+        "body": "Me k",
+        "timestamp": 1760608089,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3ADE54CDE000E75DF4A4",
+        "from": "user",
+        "body": "So U are",
+        "timestamp": 1760608093,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A880E244D8F6EC433FA",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760609179,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A8A9AB4CEC9FBC22314",
+        "from": "user",
+        "body": "I need help",
+        "timestamp": 1760609205,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A343409D90FADD270AE",
+        "from": "user",
+        "body": "I won a gym , how can you help on that",
+        "timestamp": 1760609371,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AFF40A26B5D99BCDB2D",
+        "from": "user",
+        "body": "Hi",
+        "timestamp": 1760610047,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AE4496583229FA702AF",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760610048,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AD4DA228FEF17B0E2DA",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760610199,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760610201045",
+        "from": "ai",
+        "body": "Hello! I'm here to assist you. How can I help with your gym business?",
+        "timestamp": 1760610201045,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3AF091377BAFF137DF8C",
+        "from": "user",
+        "body": "Hi is your what app working",
+        "timestamp": 1760610263,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760610265036",
+        "from": "ai",
+        "body": "I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a WhatsApp account or the ability to directly communicate through WhatsApp. I'm designed to have natural conversations here through this text-based chat interface. How else can I assist you today?",
+        "timestamp": 1760610265036,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A90CF9CC35A31E54D24",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760610416,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A5C33458DF225553E12",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760610596,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760610610279",
+        "from": "ai",
+        "body": "Hello! How can I assist you today?",
+        "timestamp": 1760610610279,
+        "type": "text"
+      },
+      {
+        "id": "msg_1760610610657",
+        "from": "ai",
+        "body": "Hello! How can I assist you today?",
+        "timestamp": 1760610610657,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3AA9295373DB81313A0F",
+        "from": "user",
+        "body": "I need  help  in content creation",
+        "timestamp": 1760610686,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760610689258",
+        "from": "ai",
+        "body": "Okay, I'd be happy to help with content creation. Here are some suggestions:\n\n- What type of content do you need help creating? For example, blog posts, social media posts, videos, newsletters, etc.? Knowing the specific format will help me provide more tailored advice.\n\n- Do you have a content strategy or editorial calendar in place already? If so, I can help brainstorm ideas and topics that align with your goals.\n\n- If you're starting from scratch, I can offer tips on conducting keyword research, identifying your target audience, and developing a content calendar.\n\n- I can also provide feedback and edits on draft content to help refine and polish it before publishing.\n\nLet me know",
+        "timestamp": 1760610689258,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3ABEFF6C72BDFF00E90E",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760611115,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760611119810",
+        "from": "ai",
+        "body": "Hello! How can I assist you today?",
+        "timestamp": 1760611119810,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A1C8A514A6B7C700C63",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760611413,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760611418702",
+        "from": "ai",
+        "body": "Hello! How can I help you today?",
+        "timestamp": 1760611418702,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3ADE66DFFAF17003763C",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760611857,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760611861057",
+        "from": "ai",
+        "body": "Hello! I'm here to assist you. How can I help you today?",
+        "timestamp": 1760611861057,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A5969B881F5F59D4FA2",
+        "from": "user",
+        "body": "Hi are you there",
+        "timestamp": 1760611913,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760611916406",
+        "from": "ai",
+        "body": "Yes, I'm here. How can I assist you today?",
+        "timestamp": 1760611916406,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3ABC790910784B348D6C",
+        "from": "user",
+        "body": "Hi how are you",
+        "timestamp": 1760630421,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760630425560",
+        "from": "ai",
+        "body": "I'm doing well, thank you for asking! As an AI assistant, I don't have personal feelings, but I'm here and ready to help you with whatever you need. How can I be of assistance today?",
+        "timestamp": 1760630425560,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A480BDC8FA52060CF21",
+        "from": "user",
+        "body": "Hello",
+        "timestamp": 1760630811,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760630813953",
+        "from": "ai",
+        "body": "Hello! I'm here and ready to help. How can I assist you today?",
+        "timestamp": 1760630813953,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A2A1C63A176F6ABDB43",
+        "from": "user",
+        "body": "Hi",
+        "timestamp": 1760637638,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1760638263563",
+        "from": "ai",
+        "body": "Hello! I'm here and ready to help. How can I assist you today?",
+        "timestamp": 1760638263563,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": true,
+    "syncToGHL": true,
+    "lastSyncedMessageId": 1760630425560,
+    "createdAt": 1760606616889,
+    "updatedAt": 1760638263563,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "false_918123133382@c.us_3A90CF9CC35A31E54D24",
+          "from": "user",
+          "body": "Hello",
+          "timestamp": 1760610416,
+          "type": "chat"
+        },
+        {
+          "id": "false_918123133382@c.us_3A5C33458DF225553E12",
+          "from": "user",
+          "body": "Hello",
+          "timestamp": 1760610596,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760610610279",
+          "from": "ai",
+          "body": "Hello! How can I assist you today?",
+          "timestamp": 1760610610279,
+          "type": "text"
+        },
+        {
+          "id": "msg_1760610610657",
+          "from": "ai",
+          "body": "Hello! How can I assist you today?",
+          "timestamp": 1760610610657,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3AA9295373DB81313A0F",
+          "from": "user",
+          "body": "I need  help  in content creation",
+          "timestamp": 1760610686,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760610689258",
+          "from": "ai",
+          "body": "Okay, I'd be happy to help with content creation. Here are some suggestions:\n\n- What type of content do you need help creating? For example, blog posts, social media posts, videos, newsletters, etc.? Knowing the specific format will help me provide more tailored advice.\n\n- Do you have a content strategy or editorial calendar in place already? If so, I can help brainstorm ideas and topics that align with your goals.\n\n- If you're starting from scratch, I can offer tips on conducting keyword research, identifying your target audience, and developing a content calendar.\n\n- I can also provide feedback and edits on draft content to help refine and polish it before publishing.\n\nLet me know",
+          "timestamp": 1760610689258,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3ABEFF6C72BDFF00E90E",
+          "from": "user",
+          "body": "Hello",
+          "timestamp": 1760611115,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760611119810",
+          "from": "ai",
+          "body": "Hello! How can I assist you today?",
+          "timestamp": 1760611119810,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A1C8A514A6B7C700C63",
+          "from": "user",
+          "body": "Hello",
+          "timestamp": 1760611413,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760611418702",
+          "from": "ai",
+          "body": "Hello! How can I help you today?",
+          "timestamp": 1760611418702,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3ADE66DFFAF17003763C",
+          "from": "user",
+          "body": "Hello",
+          "timestamp": 1760611857,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760611861057",
+          "from": "ai",
+          "body": "Hello! I'm here to assist you. How can I help you today?",
+          "timestamp": 1760611861057,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A5969B881F5F59D4FA2",
+          "from": "user",
+          "body": "Hi are you there",
+          "timestamp": 1760611913,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760611916406",
+          "from": "ai",
+          "body": "Yes, I'm here. How can I assist you today?",
+          "timestamp": 1760611916406,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3ABC790910784B348D6C",
+          "from": "user",
+          "body": "Hi how are you",
+          "timestamp": 1760630421,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760630425560",
+          "from": "ai",
+          "body": "I'm doing well, thank you for asking! As an AI assistant, I don't have personal feelings, but I'm here and ready to help you with whatever you need. How can I be of assistance today?",
+          "timestamp": 1760630425560,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A480BDC8FA52060CF21",
+          "from": "user",
+          "body": "Hello",
+          "timestamp": 1760630811,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760630813953",
+          "from": "ai",
+          "body": "Hello! I'm here and ready to help. How can I assist you today?",
+          "timestamp": 1760630813953,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A2A1C63A176F6ABDB43",
+          "from": "user",
+          "body": "Hi",
+          "timestamp": 1760637638,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1760638263563",
+          "from": "ai",
+          "body": "Hello! I'm here and ready to help. How can I assist you today?",
+          "timestamp": 1760638263563,
+          "type": "text"
+        }
+      ]
+    }
+  },
+  "status@broadcast": {
+    "id": "status@broadcast",
+    "phone": "status@broadcast",
+    "name": "Unknown Contact",
+    "type": "video",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "false_status@broadcast_ACB2B90DC537F293A61A3C546CC1DFC9_918800922514@c.us",
+        "from": "user",
+        "body": "",
+        "timestamp": 1760626055,
+        "type": "video"
+      },
+      {
+        "id": "false_status@broadcast_AC1DB6BE34CD5C2FEBB86633452D7989_918800922514@c.us",
+        "from": "user",
+        "body": "Life changing persons 🔥🔥🥳",
+        "timestamp": 1760626123,
+        "type": "video"
+      },
+      {
+        "id": "false_status@broadcast_ACF21ECA907997C7FC2252A0E87273E2_918800922514@c.us",
+        "from": "user",
+        "body": "",
+        "timestamp": 1760626139,
+        "type": "video"
+      }
+    ],
+    "aiEnabled": false,
+    "syncToGHL": false,
+    "lastSyncedMessageId": 0,
+    "createdAt": 1760626054779,
+    "updatedAt": 1760626138280,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "false_status@broadcast_ACB2B90DC537F293A61A3C546CC1DFC9_918800922514@c.us",
+          "from": "user",
+          "body": "",
+          "timestamp": 1760626055,
+          "type": "video"
+        },
+        {
+          "id": "false_status@broadcast_AC1DB6BE34CD5C2FEBB86633452D7989_918800922514@c.us",
+          "from": "user",
+          "body": "Life changing persons 🔥🔥🥳",
+          "timestamp": 1760626123,
+          "type": "video"
+        },
+        {
+          "id": "false_status@broadcast_ACF21ECA907997C7FC2252A0E87273E2_918800922514@c.us",
+          "from": "user",
+          "body": "",
+          "timestamp": 1760626139,
+          "type": "video"
+        }
+      ]
+    }
+  }
+}

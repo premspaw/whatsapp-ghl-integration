@@ -1,0 +1,82 @@
+{
+  "appName": "WhatsApp-syn",
+  "appDescription": "Native WhatsApp integration for GHL with AI-powered conversations",
+  "appVersion": "1.0.0",
+  "appUrl": "http://localhost:3000/ghl-whatsapp-tab.html",
+  "appIcon": "https://cdn-icons-png.flaticon.com/512/3670/3670051.png",
+  "appCategory": "Communication",
+  "appPermissions": [
+    "contacts.read",
+    "contacts.write",
+    "conversations.read",
+    "conversations.write",
+    "messages.read",
+    "messages.write"
+  ],
+  "appFeatures": [
+    "WhatsApp Business Integration",
+    "AI-Powered Responses",
+    "Real-time Message Sync",
+    "Conversation Management",
+    "Contact Management",
+    "Statistics Dashboard"
+  ],
+  "appSettings": {
+    "autoRefresh": true,
+    "refreshInterval": 30000,
+    "aiEnabled": true,
+    "syncToGHL": true,
+    "showStatistics": true
+  },
+  "appIntegration": {
+    "ghlTabs": [
+      {
+        "tabName": "WhatsApp-syn",
+        "tabUrl": "http://localhost:3000/ghl-whatsapp-tab.html",
+        "tabIcon": "📱",
+        "tabPosition": "after",
+        "tabAfter": "email"
+      }
+    ],
+    "contactFields": [
+      {
+        "fieldName": "WhatsApp Number",
+        "fieldType": "phone",
+        "fieldRequired": false
+      },
+      {
+        "fieldName": "WhatsApp Status",
+        "fieldType": "select",
+        "fieldOptions": ["Active", "Inactive", "Blocked"],
+        "fieldRequired": false
+      }
+    ],
+    "webhooks": [
+      {
+        "event": "conversation.message.created",
+        "url": "http://localhost:3000/webhooks/ghl",
+        "description": "Sync WhatsApp messages to GHL"
+      }
+    ]
+  },
+  "appRequirements": {
+    "nodeVersion": ">=18.0.0",
+    "dependencies": [
+      "express",
+      "socket.io",
+      "axios",
+      "whatsapp-web.js"
+    ],
+    "environmentVariables": [
+      "GHL_API_KEY",
+      "GHL_LOCATION_ID",
+      "OPENROUTER_API_KEY"
+    ]
+  },
+  "appDocumentation": {
+    "setup": "Install dependencies and configure environment variables",
+    "configuration": "Set up GHL API credentials and WhatsApp connection",
+    "deployment": "Deploy to production server with HTTPS",
+    "integration": "Add tab to GHL dashboard using custom fields or app marketplace"
+  }
+}

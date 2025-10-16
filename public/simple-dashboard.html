@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp-GHL Integration Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-connected { background: #28a745; }
+        .status-disconnected { background: #dc3545; }
+        .status-pending { background: #ffc107; }
+        .training-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .whatsapp-preview {
+            background: #dcf8c6;
+            border-radius: 18px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            max-width: 80%;
+            margin-left: auto;
+        }
+        .user-message {
+            background: #e3f2fd;
+            margin-right: auto;
+            margin-left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h2 class="mb-0">
+                            <i class="fab fa-whatsapp text-success"></i>
+                            WhatsApp-GHL Integration
+                        </h2>
+                        <p class="text-muted mb-0">Connect WhatsApp → Train AI → Save to GHL (Save $10/month)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column - WhatsApp Connection -->
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h5><i class="fas fa-phone"></i> WhatsApp Business Connection</h5>
+                        
+                        <!-- Connection Status -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <span id="headerWhatsappIndicator" class="status-indicator status-disconnected"></span>
+                                <strong>WhatsApp Business API</strong>
+                            </div>
+                            <small id="headerWhatsappLabel" class="text-muted">Connect your business WhatsApp number</small>
+                        </div>
+
+                        <!-- Connected State (hidden by default) -->
+                        <div id="connectedState" class="alert alert-success d-none">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="mb-1"><i class="fas fa-check-circle text-success"></i> <strong>Connected</strong></div>
+                                    <div><small><strong>Number:</strong> <span id="connectedPhone">-</span></small></div>
+                                    <div><small><strong>Name:</strong> <span id="connectedName">-</span></small></div>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm" onclick="cancelWhatsApp()">
+                                    <i class="fas fa-times"></i> Cancel Connection
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Connection Form (shown when not connected) -->
+                        <div id="connectionForm">
+                        
+                        <!-- Connection Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label">Connection Type</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="connectionType" id="whatsappApi" value="api">
+                                <label class="form-check-label" for="whatsappApi">
+                                    <strong>WhatsApp Business API</strong> (Full Meta setup - for bulk messaging)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="connectionType" id="whatsappBusiness" value="business" checked>
+                                <label class="form-check-label" for="whatsappBusiness">
+                                    <strong>Existing WhatsApp Business</strong> (Your current number - like Make.com)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- WhatsApp Business API Setup (Full Meta) -->
+                        <div id="whatsappApiSetup" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>WhatsApp Business API Setup</strong><br>
+                                Full Meta setup for bulk messaging and advanced features.
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">WhatsApp Business Number</label>
+                                <input type="tel" class="form-control" id="whatsappNumber" placeholder="+1234567890">
+                                <small class="form-text text-muted">Your verified WhatsApp Business number</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Meta Access Token</label>
+                                <input type="password" class="form-control" id="metaToken" placeholder="Your Meta API token">
+                                <small class="form-text text-muted">Get this from Meta for Developers Console</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Phone Number ID</label>
+                                <input type="text" class="form-control" id="phoneNumberId" placeholder="Phone number ID from Meta">
+                                <small class="form-text text-muted">Get this from Meta for Developers Console</small>
+                            </div>
+                        </div>
+
+                        <!-- Existing WhatsApp Business Setup (Like Make.com) -->
+                        <div id="whatsappBusinessSetup">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Existing WhatsApp Business</strong><br>
+                                Connect your current WhatsApp Business number for conversations (like Make.com).
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Your WhatsApp Business Number</label>
+                                <input type="tel" class="form-control" id="businessNumber" placeholder="+918660395136" value="+918660395136">
+                                <small class="form-text text-muted">The number you're currently using for WhatsApp Business</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Business Name</label>
+                                <input type="text" class="form-control" id="businessName" placeholder="synthcore.ai" value="synthcore.ai">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Meta App ID (Optional)</label>
+                                <input type="text" class="form-control" id="metaAppId" placeholder="Your Meta App ID (optional)">
+                                <small class="form-text text-muted">Only needed if you have a Meta App ID (like Make.com uses). Leave empty if you don't have one.</small>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>How it works:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Uses your existing WhatsApp Business number</li>
+                                    <li>Coexists with your regular WhatsApp</li>
+                                    <li>AI responds to conversations automatically</li>
+                                    <li>All conversations saved to GHL CRM</li>
+                                    <li>No bulk messaging - just conversations</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" onclick="connectWhatsApp()">
+                            <i class="fas fa-link"></i> Connect WhatsApp
+                        </button>
+
+                        <!-- Test Message -->
+                        <div class="mt-4">
+                            <h6>Test WhatsApp Connection</h6>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="testMessage" placeholder="Send test message...">
+                                <button class="btn btn-outline-primary" onclick="sendTestMessage()">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GHL Connection -->
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h5><i class="fas fa-database"></i> GHL CRM Connection</h5>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="status-indicator status-connected"></span>
+                                <strong>GHL CRM</strong>
+                            </div>
+                            <small class="text-muted">All conversations will be saved to GHL</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">GHL API Key</label>
+                            <input type="password" class="form-control" id="ghlApiKey" value="pit-89789df0-5431-4cc6-9787-8d2423d5d120" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">GHL Location ID</label>
+                            <input type="text" class="form-control" id="ghlLocationId" value="dXh04Cd8ixM9hnk1IS5b" readonly>
+                        </div>
+
+                        <button class="btn btn-info" onclick="testGHLConnection()">
+                            <i class="fas fa-check"></i> Test GHL Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - AI Training -->
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h5><i class="fas fa-robot"></i> AI Agent Training</h5>
+                        <p class="text-muted">Train your AI how to respond to WhatsApp messages</p>
+
+                        <!-- Add Training Data -->
+                        <div class="mb-4">
+                            <h6>Add Training Data</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Customer Question</label>
+                                <input type="text" class="form-control" id="customerQuestion" placeholder="What are your business hours?">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">AI Response</label>
+                                <textarea class="form-control" id="aiResponse" rows="3" placeholder="Our business hours are Monday to Friday, 9 AM to 5 PM."></textarea>
+                            </div>
+                            <button class="btn btn-primary" onclick="addTrainingData()">
+                                <i class="fas fa-plus"></i> Add Training Data
+                            </button>
+                        </div>
+
+                        <!-- Training Data List -->
+                        <div class="mb-4">
+                            <h6>Training Data</h6>
+                            <div id="trainingDataList">
+                                <!-- Training items will be added here -->
+                            </div>
+                        </div>
+
+                        <!-- Test AI Response -->
+                        <div class="mb-4">
+                            <h6>Test AI Response</h6>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="testQuestion" placeholder="Test question...">
+                            </div>
+                            <button class="btn btn-warning" onclick="testAIResponse()">
+                                <i class="fas fa-brain"></i> Test AI
+                            </button>
+                            <div id="aiTestResult" class="mt-3" style="display: none;">
+                                <div class="whatsapp-preview">
+                                    <strong>AI Response:</strong>
+                                    <div id="aiTestResponse"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Preview -->
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h5><i class="fas fa-comments"></i> Message Preview</h5>
+                        
+                        <div class="user-message">
+                            <strong>Customer:</strong> What are your business hours?
+                        </div>
+                        
+                        <div class="whatsapp-preview">
+                            <strong>AI Response:</strong> Our business hours are Monday to Friday, 9 AM to 5 PM.
+                        </div>
+
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                All messages will be automatically saved to GHL CRM
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row - Status & Settings -->
+        <div class="row">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h5><i class="fas fa-cog"></i> Integration Status</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div id="bottomWhatsappIndicator" class="status-indicator status-disconnected mx-auto mb-2"></div>
+                                    <h6>WhatsApp</h6>
+                                    <small id="bottomWhatsappLabel" class="text-muted">Not Connected</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="status-indicator status-pending mx-auto mb-2"></div>
+                                    <h6>AI Agent</h6>
+                                    <small class="text-muted">Training Mode</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="status-indicator status-connected mx-auto mb-2"></div>
+                                    <h6>GHL CRM</h6>
+                                    <small class="text-muted">Connected</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="status-indicator status-pending mx-auto mb-2"></div>
+                                    <h6>Automation</h6>
+                                    <small class="text-muted">Ready to Start</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 text-center">
+                            <button class="btn btn-success btn-lg" onclick="startAutomation()" disabled>
+                                <i class="fas fa-play"></i> Start WhatsApp Automation
+                            </button>
+                            <p class="text-muted mt-2">Connect WhatsApp first to start automation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let trainingData = [];
+        let isWhatsAppConnected = false;
+
+        // Load existing training data
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTrainingData();
+            loadConnectionStatus();
+            setupConnectionTypeToggle();
+        });
+
+        function setupConnectionTypeToggle() {
+            const apiRadio = document.getElementById('whatsappApi');
+            const businessRadio = document.getElementById('whatsappBusiness');
+            const apiSetup = document.getElementById('whatsappApiSetup');
+            const businessSetup = document.getElementById('whatsappBusinessSetup');
+
+            apiRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    apiSetup.style.display = 'block';
+                    businessSetup.style.display = 'none';
+                }
+            });
+
+            businessRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    apiSetup.style.display = 'none';
+                    businessSetup.style.display = 'block';
+                }
+            });
+        }
+
+
+        function connectWhatsApp() {
+            const connectionType = document.querySelector('input[name="connectionType"]:checked').value;
+            
+            if (connectionType === 'api') {
+                // WhatsApp Business API connection (Full Meta setup)
+                const phoneNumber = document.getElementById('whatsappNumber').value;
+                const metaToken = document.getElementById('metaToken').value;
+                const phoneNumberId = document.getElementById('phoneNumberId').value;
+
+                if (!phoneNumber || !metaToken || !phoneNumberId) {
+                    alert('Please fill in all required WhatsApp API connection details');
+                    return;
+                }
+
+                console.log('Connecting WhatsApp Business API:', { phoneNumber, metaToken, phoneNumberId });
+                
+                // Call API to connect WhatsApp Business API
+                fetch('/api/whatsapp/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        connectionType: 'api',
+                        phoneNumber: phoneNumber,
+                        metaToken: metaToken,
+                        phoneNumberId: phoneNumberId
+                    })
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        setConnectedUI();
+                        alert('WhatsApp Business API connected successfully!');
+                    } else {
+                        alert('Connection failed: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error details:', error);
+                    alert('Error connecting WhatsApp Business API: ' + error.message);
+                });
+                
+            } else if (connectionType === 'business') {
+                // Existing WhatsApp Business connection (Like Make.com)
+                const businessNumber = document.getElementById('businessNumber').value;
+                const businessName = document.getElementById('businessName').value;
+                const metaAppId = document.getElementById('metaAppId').value || '';
+
+                if (!businessNumber || !businessName) {
+                    alert('Please fill in your WhatsApp Business details');
+                    return;
+                }
+
+                console.log('Connecting existing WhatsApp Business (Make.com style):', { businessNumber, businessName, metaAppId });
+                
+                // Call API to connect existing WhatsApp Business
+                fetch('/api/whatsapp/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        connectionType: 'business',
+                        businessNumber: businessNumber,
+                        businessName: businessName,
+                        metaAppId: metaAppId
+                    })
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        // Populate immediately
+                        document.getElementById('connectedPhone').textContent = data.phoneNumber || '';
+                        if (document.getElementById('businessName')) {
+                            document.getElementById('connectedName').textContent = document.getElementById('businessName').value || '';
+                        }
+                        setConnectedUI();
+                        alert('Existing WhatsApp Business connected successfully! (Like Make.com)');
+                    } else {
+                        alert('Connection failed: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error details:', error);
+                    alert('Error connecting existing WhatsApp Business: ' + error.message);
+                });
+            }
+        }
+
+        function testGHLConnection() {
+            // Test GHL connection
+            fetch('/api/ghl/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    apiKey: document.getElementById('ghlApiKey').value,
+                    locationId: document.getElementById('ghlLocationId').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('GHL connection successful!');
+                } else {
+                    alert('GHL connection failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error testing GHL connection');
+            });
+        }
+
+        function addTrainingData() {
+            const question = document.getElementById('customerQuestion').value;
+            const answer = document.getElementById('aiResponse').value;
+
+            if (!question || !answer) {
+                alert('Please fill in both question and answer');
+                return;
+            }
+
+            const trainingItem = {
+                id: Date.now(),
+                question: question,
+                answer: answer,
+                timestamp: new Date().toISOString()
+            };
+
+            trainingData.push(trainingItem);
+            saveTrainingData();
+            displayTrainingData();
+            
+            // Clear form
+            document.getElementById('customerQuestion').value = '';
+            document.getElementById('aiResponse').value = '';
+
+            alert('Training data added successfully!');
+        }
+
+        function displayTrainingData() {
+            const container = document.getElementById('trainingDataList');
+            container.innerHTML = '';
+
+            trainingData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'training-item';
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>Q:</strong> ${item.question}<br>
+                            <strong>A:</strong> ${item.answer}
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removeTrainingData(${item.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function removeTrainingData(id) {
+            trainingData = trainingData.filter(item => item.id !== id);
+            saveTrainingData();
+            displayTrainingData();
+        }
+
+        function saveTrainingData() {
+            localStorage.setItem('whatsapp-ghl-training', JSON.stringify(trainingData));
+        }
+
+        function loadTrainingData() {
+            const saved = localStorage.getItem('whatsapp-ghl-training');
+            if (saved) {
+                trainingData = JSON.parse(saved);
+                displayTrainingData();
+            }
+        }
+
+        function testAIResponse() {
+            const question = document.getElementById('testQuestion').value;
+            if (!question) {
+                alert('Please enter a test question');
+                return;
+            }
+
+            // Mock AI response - in real implementation, this would use your AI service
+            const response = generateAIResponse(question);
+            
+            document.getElementById('aiTestResponse').textContent = response;
+            document.getElementById('aiTestResult').style.display = 'block';
+        }
+
+        function generateAIResponse(question) {
+            // Simple keyword matching - in real implementation, this would use your trained AI
+            const lowerQuestion = question.toLowerCase();
+            
+            for (const item of trainingData) {
+                if (lowerQuestion.includes(item.question.toLowerCase()) || 
+                    item.question.toLowerCase().includes(lowerQuestion)) {
+                    return item.answer;
+                }
+            }
+            
+            return "I'm sorry, I don't have information about that. Please contact our support team for assistance.";
+        }
+
+        function sendTestMessage() {
+            const message = document.getElementById('testMessage').value;
+            if (!message) {
+                alert('Please enter a test message');
+                return;
+            }
+
+            if (!isWhatsAppConnected) {
+                alert('Please connect WhatsApp first');
+                return;
+            }
+
+            // Mock sending message
+            console.log('Sending test message:', message);
+            alert('Test message sent! (This is a demo)');
+        }
+
+        function updateConnectionStatus() {
+            const statusIndicators = document.querySelectorAll('.status-indicator');
+            const startButton = document.querySelector('button[onclick="startAutomation()"]');
+            
+            if (isWhatsAppConnected) {
+                statusIndicators[0].className = 'status-indicator status-connected';
+                startButton.disabled = false;
+                startButton.innerHTML = '<i class="fas fa-play"></i> Start WhatsApp Automation';
+            }
+        }
+
+        function setConnectedUI() {
+            isWhatsAppConnected = true;
+            const headerIndicator = document.getElementById('headerWhatsappIndicator');
+            const headerLabel = document.getElementById('headerWhatsappLabel');
+            const bottomIndicator = document.getElementById('bottomWhatsappIndicator');
+            const bottomLabel = document.getElementById('bottomWhatsappLabel');
+            const startButton = document.querySelector('button[onclick="startAutomation()"]');
+            const connectionForm = document.getElementById('connectionForm');
+            const connectedState = document.getElementById('connectedState');
+
+            if (headerIndicator) headerIndicator.className = 'status-indicator status-connected';
+            if (headerLabel) headerLabel.textContent = 'Connected';
+            if (bottomIndicator) bottomIndicator.className = 'status-indicator status-connected mx-auto mb-2';
+            if (bottomLabel) bottomLabel.textContent = 'Connected';
+            if (startButton) {
+                startButton.disabled = false;
+                startButton.innerHTML = '<i class="fas fa-play"></i> Start WhatsApp Automation';
+            }
+            if (connectionForm) connectionForm.classList.add('d-none');
+            if (connectedState) connectedState.classList.remove('d-none');
+
+            // Load phone/name
+            fetch('/api/whatsapp/status')
+              .then(r => r.json())
+              .then(s => {
+                if (s.phoneNumber) document.getElementById('connectedPhone').textContent = s.phoneNumber;
+                if (s.businessName) document.getElementById('connectedName').textContent = s.businessName;
+              })
+              .catch(() => {});
+        }
+
+        function setDisconnectedUI() {
+            isWhatsAppConnected = false;
+            const headerIndicator = document.getElementById('headerWhatsappIndicator');
+            const headerLabel = document.getElementById('headerWhatsappLabel');
+            const bottomIndicator = document.getElementById('bottomWhatsappIndicator');
+            const bottomLabel = document.getElementById('bottomWhatsappLabel');
+            const startButton = document.querySelector('button[onclick="startAutomation()"]');
+            const connectionForm = document.getElementById('connectionForm');
+            const connectedState = document.getElementById('connectedState');
+
+            if (headerIndicator) headerIndicator.className = 'status-indicator status-disconnected';
+            if (headerLabel) headerLabel.textContent = 'Connect your business WhatsApp number';
+            if (bottomIndicator) bottomIndicator.className = 'status-indicator status-disconnected mx-auto mb-2';
+            if (bottomLabel) bottomLabel.textContent = 'Not Connected';
+            if (startButton) {
+                startButton.disabled = true;
+                startButton.innerHTML = '<i class="fas fa-play"></i> Start WhatsApp Automation';
+            }
+            if (connectedState) connectedState.classList.add('d-none');
+            if (connectionForm) connectionForm.classList.remove('d-none');
+        }
+
+        function loadConnectionStatus() {
+            // Load connection status from server
+            fetch('/api/integration/status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Integration status:', data);
+                if (data.whatsapp === 'connected') {
+                    if (data.phoneNumber) document.getElementById('connectedPhone').textContent = data.phoneNumber;
+                    if (data.businessName) document.getElementById('connectedName').textContent = data.businessName;
+                    setConnectedUI();
+                } else {
+                    setDisconnectedUI();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading status:', error);
+            });
+        }
+
+        async function cancelWhatsApp() {
+            try {
+                const res = await fetch('/api/whatsapp/cancel', { method: 'POST' });
+                const data = await res.json();
+                if (data && data.success) {
+                    setDisconnectedUI();
+                    alert('WhatsApp connection cancelled');
+                } else {
+                    alert('Failed to cancel connection');
+                }
+            } catch (e) {
+                console.error('Cancel error:', e);
+                alert('Error cancelling connection');
+            }
+        }
+
+        // Poll status periodically
+        setInterval(loadConnectionStatus, 5000);
+
+        function startAutomation() {
+            if (!isWhatsAppConnected) {
+                alert('Please connect WhatsApp first');
+                return;
+            }
+
+            if (trainingData.length === 0) {
+                alert('Please add some training data first');
+                return;
+            }
+
+            // Start automation
+            alert('WhatsApp automation started! All messages will be processed and saved to GHL CRM.');
+            
+            // Update status
+            const statusIndicators = document.querySelectorAll('.status-indicator');
+            statusIndicators[3].className = 'status-indicator status-connected';
+        }
+
+    </script>
+</body>
+</html>

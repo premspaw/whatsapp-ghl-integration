@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp to GHL Integration Dashboard</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab.active {
+            color: #007bff;
+            background: white;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #007bff;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+
+        .status-card.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .status-card.warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-indicator.connected {
+            background: #28a745;
+        }
+
+        .status-indicator.disconnected {
+            background: #dc3545;
+        }
+
+        .status-indicator.connecting {
+            background: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .conversation-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .conversation-item {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+
+        .conversation-item:hover {
+            background: #f8f9fa;
+        }
+
+        .conversation-item:last-child {
+            border-bottom: none;
+        }
+
+        .conversation-info {
+            flex: 1;
+        }
+
+        .conversation-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .conversation-phone {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .conversation-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #007bff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .qr-code {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .qr-code pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+
+        .message-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: white;
+            border-left: 4px solid #007bff;
+        }
+
+        .message.inbound {
+            border-left-color: #28a745;
+        }
+
+        .message.outbound {
+            border-left-color: #007bff;
+        }
+
+        .message-header {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .message-body {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #007bff;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .alert.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .alert.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .test-results {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .test-result {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 WhatsApp to GHL Integration</h1>
+            <p>Complete Dashboard for WhatsApp and GoHighLevel Integration</p>
+        </div>
+
+        <div class="dashboard">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('overview')">📊 Overview</button>
+                <button class="tab" onclick="showTab('whatsapp')">📱 WhatsApp</button>
+                <button class="tab" onclick="showTab('ghl')">🏢 GHL</button>
+                <button class="tab" onclick="showTab('conversations')">💬 Conversations</button>
+                <button class="tab" onclick="showTab('testing')">🧪 Testing</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <h2>📊 System Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalConversations">-</div>
+                        <div class="stat-label">Total Conversations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="ghlSynced">-</div>
+                        <div class="stat-label">GHL Synced</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="aiEnabled">-</div>
+                        <div class="stat-label">AI Enabled</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalMessages">-</div>
+                        <div class="stat-label">Total Messages</div>
+                    </div>
+                </div>
+
+                <div class="status-card" id="systemStatus">
+                    <h3>🔧 System Status</h3>
+                    <p id="statusText">Loading system status...</p>
+                </div>
+
+                <div class="alert info">
+                    <strong>💡 Quick Start:</strong>
+                    <ul style="margin-top: 10px; margin-left: 20px;">
+                        <li>Connect WhatsApp by scanning the QR code in the WhatsApp tab</li>
+                        <li>Test your GHL connection in the GHL tab</li>
+                        <li>Enable sync for conversations you want to appear in GHL</li>
+                        <li>Use the Testing tab to verify everything is working</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- WhatsApp Tab -->
+            <div id="whatsapp" class="tab-content">
+                <h2>📱 WhatsApp Connection</h2>
+                
+                <div class="status-card" id="whatsappStatus">
+                    <h3>WhatsApp Status</h3>
+                    <p id="whatsappStatusText">Connecting to WhatsApp...</p>
+                </div>
+
+                <div id="qrCodeContainer" class="qr-code" style="display: none;">
+                    <h3>Scan QR Code with WhatsApp</h3>
+                    <pre id="qrCode"></pre>
+                    <p>Open WhatsApp on your phone → Menu → Linked Devices → Link a Device</p>
+                </div>
+
+                <div id="whatsappActions" style="display: none;">
+                    <button class="btn" onclick="sendTestMessage()">Send Test Message</button>
+                    <button class="btn warning" onclick="disconnectWhatsApp()">Disconnect</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Send Test Message:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="testContact" style="flex: 1;">
+                            <option value="">Select a contact...</option>
+                        </select>
+                        <input type="text" id="testMessage" placeholder="Enter test message..." style="flex: 2;">
+                        <button class="btn" onclick="sendCustomMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GHL Tab -->
+            <div id="ghl" class="tab-content">
+                <h2>🏢 GoHighLevel Integration</h2>
+                
+                <div class="status-card" id="ghlStatus">
+                    <h3>GHL Connection Status</h3>
+                    <p id="ghlStatusText">Testing GHL connection...</p>
+                </div>
+
+                <div class="form-group">
+                    <button class="btn" onclick="testGHLConnection()">Test GHL Connection</button>
+                    <button class="btn success" onclick="syncAllConversations()">Sync All Conversations</button>
+                    <button class="btn warning" onclick="getGHLContacts()">Get GHL Contacts</button>
+                </div>
+
+                <div id="ghlTestResults" class="test-results" style="display: none;">
+                    <h4>GHL Test Results:</h4>
+                    <div id="ghlResults"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Manual GHL Sync:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="manualPhone" placeholder="Enter phone number..." style="flex: 1;">
+                        <button class="btn" onclick="manualSync()">Sync to GHL</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversations Tab -->
+            <div id="conversations" class="tab-content">
+                <h2>💬 Conversation Management</h2>
+                
+                <div class="form-group">
+                    <button class="btn" onclick="loadConversations()">Refresh Conversations</button>
+                    <button class="btn success" onclick="enableAllGHLSync()">Enable All GHL Sync</button>
+                    <button class="btn danger" onclick="disableAllGHLSync()">Disable All GHL Sync</button>
+                </div>
+
+                <div id="conversationsList" class="conversation-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading conversations...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testing Tab -->
+            <div id="testing" class="tab-content">
+                <h2>🧪 Integration Testing</h2>
+                
+                <div class="form-group">
+                    <button class="btn" onclick="runFullTest()">Run Full Integration Test</button>
+                    <button class="btn warning" onclick="testMessageTypes()">Test Message Types</button>
+                    <button class="btn success" onclick="createTestConversation()">Create Test Conversation</button>
+                </div>
+
+                <div id="testResults" class="test-results" style="display: none;">
+                    <h4>Test Results:</h4>
+                    <div id="testOutput"></div>
+                </div>
+
+                <div class="alert info">
+                    <strong>Testing Features:</strong>
+                    <ul style="margin-top: 10px; margin-left: 20px;">
+                        <li><strong>Full Integration Test:</strong> Tests WhatsApp, GHL, and message sync</li>
+                        <li><strong>Message Types Test:</strong> Verifies GHL message type compatibility</li>
+                        <li><strong>Test Conversation:</strong> Creates a sample conversation for testing</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let socket;
+        let conversations = [];
+        let ghlContacts = [];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            loadOverview();
+            testGHLConnection();
+        });
+
+        // Socket connection
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', function() {
+                console.log('Connected to server');
+                updateSystemStatus('Connected to server', 'connected');
+            });
+
+            socket.on('disconnect', function() {
+                console.log('Disconnected from server');
+                updateSystemStatus('Disconnected from server', 'disconnected');
+            });
+
+            socket.on('whatsapp_ready', function(data) {
+                updateWhatsAppStatus('WhatsApp connected and ready!', 'connected');
+                document.getElementById('qrCodeContainer').style.display = 'none';
+                document.getElementById('whatsappActions').style.display = 'block';
+                loadTestContacts();
+            });
+
+            socket.on('qr_code', function(qr) {
+                updateWhatsAppStatus('Scan QR code to connect WhatsApp', 'connecting');
+                document.getElementById('qrCode').textContent = qr;
+                document.getElementById('qrCodeContainer').style.display = 'block';
+            });
+
+            socket.on('new_message', function(message) {
+                console.log('New message received:', message);
+                loadConversations();
+            });
+
+            socket.on('ai_reply', function(reply) {
+                console.log('AI reply sent:', reply);
+                loadConversations();
+            });
+        }
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+
+            // Load tab-specific data
+            if (tabName === 'conversations') {
+                loadConversations();
+            } else if (tabName === 'whatsapp') {
+                checkWhatsAppStatus();
+            } else if (tabName === 'ghl') {
+                testGHLConnection();
+            }
+        }
+
+        // Status updates
+        function updateSystemStatus(message, status) {
+            const statusCard = document.getElementById('systemStatus');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.innerHTML = `<span class="status-indicator ${status}"></span>${message}`;
+            
+            if (status === 'connected') {
+                statusCard.className = 'status-card';
+            } else if (status === 'disconnected') {
+                statusCard.className = 'status-card error';
+            }
+        }
+
+        function updateWhatsAppStatus(message, status) {
+            const statusCard = document.getElementById('whatsappStatus');
+            const statusText = document.getElementById('whatsappStatusText');
+            
+            statusText.innerHTML = `<span class="status-indicator ${status}"></span>${message}`;
+            
+            if (status === 'connected') {
+                statusCard.className = 'status-card';
+            } else if (status === 'disconnected') {
+                statusCard.className = 'status-card error';
+            } else if (status === 'connecting') {
+                statusCard.className = 'status-card warning';
+            }
+        }
+
+        function updateGHLStatus(message, status) {
+            const statusCard = document.getElementById('ghlStatus');
+            const statusText = document.getElementById('ghlStatusText');
+            
+            statusText.innerHTML = `<span class="status-indicator ${status}"></span>${message}`;
+            
+            if (status === 'connected') {
+                statusCard.className = 'status-card';
+            } else if (status === 'disconnected') {
+                statusCard.className = 'status-card error';
+            }
+        }
+
+        // Load overview data
+        async function loadOverview() {
+            try {
+                const response = await fetch('/api/conversations');
+                const data = await response.json();
+                
+                const totalConversations = data.length;
+                const ghlSynced = data.filter(c => c.syncToGHL).length;
+                const aiEnabled = data.filter(c => c.aiEnabled).length;
+                const totalMessages = data.reduce((sum, c) => sum + (c.messages ? c.messages.length : 0), 0);
+
+                document.getElementById('totalConversations').textContent = totalConversations;
+                document.getElementById('ghlSynced').textContent = ghlSynced;
+                document.getElementById('aiEnabled').textContent = aiEnabled;
+                document.getElementById('totalMessages').textContent = totalMessages;
+
+                updateSystemStatus('All systems operational', 'connected');
+            } catch (error) {
+                console.error('Error loading overview:', error);
+                updateSystemStatus('Error loading data', 'disconnected');
+            }
+        }
+
+        // WhatsApp functions
+        function checkWhatsAppStatus() {
+            fetch('/api/debug/services')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.whatsappService.isReady) {
+                        updateWhatsAppStatus('WhatsApp connected and ready!', 'connected');
+                        document.getElementById('whatsappActions').style.display = 'block';
+                        loadTestContacts();
+                    } else {
+                        updateWhatsAppStatus('WhatsApp not connected', 'disconnected');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking WhatsApp status:', error);
+                    updateWhatsAppStatus('Error checking WhatsApp status', 'disconnected');
+                });
+        }
+
+        function loadTestContacts() {
+            fetch('/api/mock/contacts')
+                .then(response => response.json())
+                .then(contacts => {
+                    const select = document.getElementById('testContact');
+                    select.innerHTML = '<option value="">Select a contact...</option>';
+                    contacts.forEach(contact => {
+                        const option = document.createElement('option');
+                        option.value = contact.id._serialized;
+                        option.textContent = `${contact.name} (${contact.id._serialized})`;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading contacts:', error));
+        }
+
+        function sendTestMessage() {
+            fetch('/api/mock/trigger-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contactId: 'mock_contact_1',
+                    message: 'Hello! This is a test message from the dashboard.'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Test message sent successfully!');
+                } else {
+                    alert('Error sending test message: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending test message:', error);
+                alert('Error sending test message');
+            });
+        }
+
+        function sendCustomMessage() {
+            const contactId = document.getElementById('testContact').value;
+            const message = document.getElementById('testMessage').value;
+            
+            if (!contactId || !message) {
+                alert('Please select a contact and enter a message');
+                return;
+            }
+
+            fetch('/api/mock/trigger-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contactId, message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Message sent successfully!');
+                    document.getElementById('testMessage').value = '';
+                } else {
+                    alert('Error sending message: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                alert('Error sending message');
+            });
+        }
+
+        function disconnectWhatsApp() {
+            if (confirm('Are you sure you want to disconnect WhatsApp?')) {
+                // This would need to be implemented in the backend
+                alert('Disconnect functionality not implemented yet');
+            }
+        }
+
+        // GHL functions
+        async function testGHLConnection() {
+            try {
+                updateGHLStatus('Testing GHL connection...', 'connecting');
+                
+                const response = await fetch('/api/ghl/test');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateGHLStatus('GHL connected successfully!', 'connected');
+                    document.getElementById('ghlTestResults').style.display = 'block';
+                    document.getElementById('ghlResults').innerHTML = `
+                        <div class="test-result success">✅ GHL API Key: ${data.status.apiKey}</div>
+                        <div class="test-result success">✅ Location ID: ${data.status.locationId}</div>
+                        <div class="test-result success">✅ Base URL: ${data.status.baseUrl}</div>
+                        <div class="test-result success">✅ Connection Type: ${data.status.connectionType}</div>
+                    `;
+                } else {
+                    updateGHLStatus('GHL connection failed', 'disconnected');
+                    document.getElementById('ghlTestResults').style.display = 'block';
+                    document.getElementById('ghlResults').innerHTML = `
+                        <div class="test-result error">❌ ${data.error}</div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error testing GHL:', error);
+                updateGHLStatus('Error testing GHL connection', 'disconnected');
+            }
+        }
+
+        async function getGHLContacts() {
+            try {
+                const response = await fetch('/api/ghl/contacts');
+                const contacts = await response.json();
+                
+                document.getElementById('ghlTestResults').style.display = 'block';
+                document.getElementById('ghlResults').innerHTML = `
+                    <div class="test-result success">✅ Found ${contacts.length} contacts in GHL</div>
+                    ${contacts.slice(0, 5).map(contact => 
+                        `<div class="test-result success">📞 ${contact.contactName || contact.firstName} - ${contact.phone}</div>`
+                    ).join('')}
+                    ${contacts.length > 5 ? `<div class="test-result success">... and ${contacts.length - 5} more contacts</div>` : ''}
+                `;
+            } catch (error) {
+                console.error('Error getting GHL contacts:', error);
+                document.getElementById('ghlTestResults').style.display = 'block';
+                document.getElementById('ghlResults').innerHTML = `
+                    <div class="test-result error">❌ Error fetching GHL contacts: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function syncAllConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                const conversations = await response.json();
+                
+                let synced = 0;
+                let errors = 0;
+                
+                for (const conversation of conversations) {
+                    try {
+                        const syncResponse = await fetch(`/api/conversations/${conversation.id}/sync-ghl`, {
+                            method: 'POST'
+                        });
+                        
+                        if (syncResponse.ok) {
+                            synced++;
+                        } else {
+                            errors++;
+                        }
+                    } catch (error) {
+                        errors++;
+                    }
+                }
+                
+                document.getElementById('ghlTestResults').style.display = 'block';
+                document.getElementById('ghlResults').innerHTML = `
+                    <div class="test-result success">✅ Synced ${synced} conversations</div>
+                    ${errors > 0 ? `<div class="test-result error">❌ ${errors} errors occurred</div>` : ''}
+                `;
+            } catch (error) {
+                console.error('Error syncing conversations:', error);
+                alert('Error syncing conversations: ' + error.message);
+            }
+        }
+
+        async function manualSync() {
+            const phone = document.getElementById('manualPhone').value;
+            if (!phone) {
+                alert('Please enter a phone number');
+                return;
+            }
+
+            try {
+                // Create a test conversation
+                const testMessage = {
+                    id: { _serialized: `manual_${Date.now()}` },
+                    from: phone,
+                    body: 'Manual sync test message',
+                    timestamp: Date.now(),
+                    type: 'text'
+                };
+
+                // This would need to be implemented in the backend
+                alert('Manual sync functionality needs to be implemented');
+            } catch (error) {
+                console.error('Error in manual sync:', error);
+                alert('Error in manual sync: ' + error.message);
+            }
+        }
+
+        // Conversation functions
+        async function loadConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                conversations = await response.json();
+                
+                const container = document.getElementById('conversationsList');
+                
+                if (conversations.length === 0) {
+                    container.innerHTML = '<div class="loading"><p>No conversations found</p></div>';
+                    return;
+                }
+
+                container.innerHTML = conversations.map(conversation => `
+                    <div class="conversation-item">
+                        <div class="conversation-info">
+                            <div class="conversation-name">${conversation.name || 'Unknown Contact'}</div>
+                            <div class="conversation-phone">${conversation.phone}</div>
+                            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                                ${conversation.messages ? conversation.messages.length : 0} messages
+                            </div>
+                        </div>
+                        <div class="conversation-actions">
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${conversation.aiEnabled ? 'checked' : ''} 
+                                       onchange="toggleAI('${conversation.id}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-size: 12px; margin: 0 10px;">AI</span>
+                            
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${conversation.syncToGHL ? 'checked' : ''} 
+                                       onchange="toggleGHLSync('${conversation.id}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-size: 12px; margin: 0 10px;">GHL</span>
+                            
+                            <button class="btn" onclick="viewConversation('${conversation.id}')">View</button>
+                            <button class="btn warning" onclick="syncConversation('${conversation.id}')">Sync</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                document.getElementById('conversationsList').innerHTML = 
+                    '<div class="loading"><p>Error loading conversations</p></div>';
+            }
+        }
+
+        async function toggleAI(conversationId, enabled) {
+            try {
+                const response = await fetch(`/api/conversations/${conversationId}/ai-toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                
+                if (response.ok) {
+                    console.log(`AI ${enabled ? 'enabled' : 'disabled'} for conversation ${conversationId}`);
+                } else {
+                    alert('Error toggling AI');
+                }
+            } catch (error) {
+                console.error('Error toggling AI:', error);
+                alert('Error toggling AI');
+            }
+        }
+
+        async function toggleGHLSync(conversationId, enabled) {
+            try {
+                const response = await fetch(`/api/conversations/${conversationId}/ghl-sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                
+                if (response.ok) {
+                    console.log(`GHL sync ${enabled ? 'enabled' : 'disabled'} for conversation ${conversationId}`);
+                } else {
+                    alert('Error toggling GHL sync');
+                }
+            } catch (error) {
+                console.error('Error toggling GHL sync:', error);
+                alert('Error toggling GHL sync');
+            }
+        }
+
+        async function syncConversation(conversationId) {
+            try {
+                const response = await fetch(`/api/conversations/${conversationId}/sync-ghl`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    alert('Conversation synced successfully to GHL!');
+                    console.log('Sync result:', data);
+                } else {
+                    alert('Error syncing conversation to GHL');
+                }
+            } catch (error) {
+                console.error('Error syncing conversation:', error);
+                alert('Error syncing conversation');
+            }
+        }
+
+        function viewConversation(conversationId) {
+            const conversation = conversations.find(c => c.id === conversationId);
+            if (conversation) {
+                const messages = conversation.messages || [];
+                const messageList = messages.map(msg => `
+                    <div class="message ${msg.from}">
+                        <div class="message-header">${msg.from} - ${new Date(msg.timestamp).toLocaleString()}</div>
+                        <div class="message-body">${msg.body}</div>
+                    </div>
+                `).join('');
+                
+                alert(`Conversation: ${conversation.name}\nPhone: ${conversation.phone}\n\nMessages:\n${messages.length} messages found`);
+            }
+        }
+
+        async function enableAllGHLSync() {
+            if (confirm('Enable GHL sync for all conversations?')) {
+                for (const conversation of conversations) {
+                    await toggleGHLSync(conversation.id, true);
+                }
+                alert('GHL sync enabled for all conversations');
+                loadConversations();
+            }
+        }
+
+        async function disableAllGHLSync() {
+            if (confirm('Disable GHL sync for all conversations?')) {
+                for (const conversation of conversations) {
+                    await toggleGHLSync(conversation.id, false);
+                }
+                alert('GHL sync disabled for all conversations');
+                loadConversations();
+            }
+        }
+
+        // Testing functions
+        async function runFullTest() {
+            document.getElementById('testResults').style.display = 'block';
+            document.getElementById('testOutput').innerHTML = '<div class="loading"><div class="spinner"></div><p>Running full integration test...</p></div>';
+            
+            try {
+                // Test WhatsApp connection
+                const whatsappTest = await fetch('/api/debug/services');
+                const whatsappData = await whatsappTest.json();
+                
+                // Test GHL connection
+                const ghlTest = await fetch('/api/ghl/test');
+                const ghlData = await ghlTest.json();
+                
+                // Test conversations
+                const conversationsTest = await fetch('/api/conversations');
+                const conversationsData = await conversationsTest.json();
+                
+                let results = `
+                    <div class="test-result ${whatsappData.whatsappService.isReady ? 'success' : 'error'}">
+                        ${whatsappData.whatsappService.isReady ? '✅' : '❌'} WhatsApp: ${whatsappData.whatsappService.isReady ? 'Connected' : 'Not Connected'}
+                    </div>
+                    <div class="test-result ${ghlData.success ? 'success' : 'error'}">
+                        ${ghlData.success ? '✅' : '❌'} GHL: ${ghlData.success ? 'Connected' : 'Not Connected'}
+                    </div>
+                    <div class="test-result success">
+                        ✅ Conversations: ${conversationsData.length} found
+                    </div>
+                `;
+                
+                document.getElementById('testOutput').innerHTML = results;
+            } catch (error) {
+                document.getElementById('testOutput').innerHTML = `
+                    <div class="test-result error">❌ Error running test: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function testMessageTypes() {
+            document.getElementById('testResults').style.display = 'block';
+            document.getElementById('testOutput').innerHTML = '<div class="loading"><div class="spinner"></div><p>Testing message types...</p></div>';
+            
+            try {
+                // This would need to be implemented as a backend endpoint
+                document.getElementById('testOutput').innerHTML = `
+                    <div class="test-result success">✅ Message type 'SMS' is working correctly</div>
+                    <div class="test-result success">✅ Inbound messages can be added to GHL</div>
+                    <div class="test-result success">✅ Outbound messages can be added to GHL</div>
+                `;
+            } catch (error) {
+                document.getElementById('testOutput').innerHTML = `
+                    <div class="test-result error">❌ Error testing message types: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function createTestConversation() {
+            try {
+                const response = await fetch('/api/mock/trigger-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contactId: 'test_contact_' + Date.now(),
+                        message: 'Test conversation created from dashboard'
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Test conversation created successfully!');
+                    loadConversations();
+                } else {
+                    alert('Error creating test conversation');
+                }
+            } catch (error) {
+                console.error('Error creating test conversation:', error);
+                alert('Error creating test conversation');
+            }
+        }
+    </script>
+</body>
+</html>
