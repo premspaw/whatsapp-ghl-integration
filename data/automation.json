@@ -1,0 +1,28 @@
+{
+  "rule_1760729391977": {
+    "id": "rule_1760729391977",
+    "name": "welcome",
+    "trigger": "keyword",
+    "templateId": "tpl_1760729292502",
+    "conditions": {
+      "keywords": [
+        "welcome message"
+      ]
+    },
+    "enabled": true,
+    "createdAt": 1760729392011
+  },
+  "rule_1761067297235": {
+    "id": "rule_1761067297235",
+    "name": "gym",
+    "trigger": "keyword",
+    "templateId": "tpl_1761067226395",
+    "conditions": {
+      "keywords": [
+        "welcom"
+      ]
+    },
+    "enabled": true,
+    "createdAt": 1761067297336
+  }
+}

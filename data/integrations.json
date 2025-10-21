@@ -1,0 +1,29 @@
+{
+  "integrations": [
+    {
+      "id": "int_1760727224265",
+      "name": "Synthcoreai",
+      "description": "Sales",
+      "status": "connected",
+      "connectionType": "business",
+      "whatsappNumber": "+918660395136",
+      "businessName": "Synthcore",
+      "metaAppId": "",
+      "phoneNumberId": "",
+      "metaAccessToken": "",
+      "ghlApiKey": "pit-89789df0-5431-4cc6-9787-8d2423d5d120",
+      "ghlLocationId": "dXh04Cd8ixM9hnk1IS5b",
+      "ghlLocationName": "Synthcore",
+      "aiEnabled": true,
+      "aiModel": "gpt-4",
+      "aiSystemPrompt": "You are a helpful AI assistant.",
+      "aiTemperature": 0.7,
+      "messagesToday": 0,
+      "activeConversations": 0,
+      "activeContacts": 0,
+      "uptime": 100,
+      "createdAt": "2025-10-17T18:53:44.265Z",
+      "updatedAt": "2025-10-17T18:54:29.146Z"
+    }
+  ]
+}

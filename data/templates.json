@@ -1,0 +1,18 @@
+{
+  "tpl_1760729292502": {
+    "id": "tpl_1760729292502",
+    "name": "welcome",
+    "content": "Hi  {name}  this new automation working checking",
+    "category": "general",
+    "createdAt": 1760729292514
+  },
+  "tpl_1761067226395": {
+    "id": "tpl_1761067226395",
+    "name": "welcome2",
+    "content": "Hi {first_name},\nthi gym membership reneval",
+    "category": "general",
+    "mediaUrl": "https://storage.googleapis.com/msgsndr/dXh04Cd8ixM9hnk1IS5b/media/6821eaac31661a2879c6a865.png",
+    "mediaType": "image",
+    "createdAt": 1761067999748
+  }
+}

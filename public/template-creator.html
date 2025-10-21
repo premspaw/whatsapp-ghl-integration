@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Template Creator - GHL Integration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+        
+        .ghl-variables {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .variable-chip {
+            background: #f0f4ff;
+            color: #667eea;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .variable-chip:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .help-text {
+            color: #888;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .preview {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .preview h3 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .preview-message {
+            background: #dcf8c6;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .templates-list {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        .templates-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .templates-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .templates-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+        
+        .template-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            position: relative;
+        }
+        
+        .template-item h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+            padding-right: 80px;
+        }
+        
+        .template-item p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .template-actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .edit-btn, .delete-btn {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .edit-btn {
+            background: #667eea;
+            color: white;
+        }
+        
+        .edit-btn:hover {
+            background: #5568d3;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        
+        .webhook-code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        
+        .webhook-code pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        
+        .copy-button {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .copy-button:hover {
+            background: #218838;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button id="backButton" style="position: absolute; top: 20px; left: 20px; background: white; border: 2px solid #667eea; color: #667eea; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; display: none;">
+                ← Back to WhatsApp
+            </button>
+            <h1>📝 WhatsApp Template Creator</h1>
+            <p>Create templates with GHL variables and images</p>
+        </div>
+        
+        <div class="content">
+            <!-- Template Creator -->
+            <div class="card">
+                <h2>✏️ Create Template</h2>
+                
+                <div class="form-group">
+                    <label>Template Name</label>
+                    <input type="text" id="templateName" placeholder="e.g., welcome_message">
+                    <div class="help-text">Use lowercase, underscores only</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Insert GHL Variable</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <select id="variableSelector" style="flex: 1;">
+                            <option value="">Choose a variable to insert...</option>
+                            <optgroup label="Contact Info">
+                                <option value="{name}">👤 Name (Full Name)</option>
+                                <option value="{first_name}">👤 First Name</option>
+                                <option value="{last_name}">👤 Last Name</option>
+                                <option value="{email}">📧 Email</option>
+                                <option value="{phone}">📞 Phone</option>
+                                <option value="{company}">🏢 Company</option>
+                            </optgroup>
+                            <optgroup label="Appointment">
+                                <option value="{date}">📅 Date</option>
+                                <option value="{time}">⏰ Time</option>
+                                <option value="{location}">📍 Location</option>
+                            </optgroup>
+                            <optgroup label="Order/Payment">
+                                <option value="{amount}">💰 Amount</option>
+                                <option value="{order_id}">🔖 Order ID</option>
+                                <option value="{status}">📊 Status</option>
+                            </optgroup>
+                            <optgroup label="Custom">
+                                <option value="{custom1}">⚙️ Custom Field 1</option>
+                                <option value="{custom2}">⚙️ Custom Field 2</option>
+                            </optgroup>
+                        </select>
+                        <button type="button" class="button" style="width: auto; padding: 12px 24px; margin: 0;" onclick="insertSelectedVariable()">
+                            ➕ Insert
+                        </button>
+                    </div>
+                    <div class="ghl-variables">
+                        <span class="variable-chip" onclick="insertVariable('{name}')">👤 {name}</span>
+                        <span class="variable-chip" onclick="insertVariable('{first_name}')">👤 {first_name}</span>
+                        <span class="variable-chip" onclick="insertVariable('{last_name}')">👤 {last_name}</span>
+                        <span class="variable-chip" onclick="insertVariable('{email}')">📧 {email}</span>
+                        <span class="variable-chip" onclick="insertVariable('{phone}')">📞 {phone}</span>
+                        <span class="variable-chip" onclick="insertVariable('{company}')">🏢 {company}</span>
+                        <span class="variable-chip" onclick="insertVariable('{date}')">📅 {date}</span>
+                        <span class="variable-chip" onclick="insertVariable('{time}')">⏰ {time}</span>
+                        <span class="variable-chip" onclick="insertVariable('{amount}')">💰 {amount}</span>
+                    </div>
+                    <div class="help-text">Select from dropdown or click chips to insert into message</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Message Content</label>
+                    <textarea id="templateContent" placeholder="Hi {name}! Welcome to our service..."></textarea>
+                    <div class="help-text">Use variables like {name}, {phone}, etc.</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Image URL (Optional)</label>
+                    <input type="text" id="imageUrl" placeholder="https://storage.googleapis.com/...">
+                    <div class="help-text">Upload to GHL Media Library first, then paste URL</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="category">
+                        <option value="general">General</option>
+                        <option value="welcome">Welcome Messages</option>
+                        <option value="appointments">Appointments</option>
+                        <option value="orders">Orders</option>
+                        <option value="reminders">Reminders</option>
+                        <option value="promotions">Promotions</option>
+                    </select>
+                </div>
+                
+                <button class="button" id="saveButton" onclick="saveTemplate()">
+                    ✨ Create Template
+                </button>
+                
+                <button class="button" id="cancelButton" onclick="cancelEdit()" style="display: none; background: #6c757d; margin-top: 10px;">
+                    ❌ Cancel
+                </button>
+                
+                <div class="success-message" id="successMessage"></div>
+                <div class="error-message" id="errorMessage"></div>
+                
+                <div class="preview">
+                    <h3>📱 Preview</h3>
+                    <div class="preview-message" id="previewMessage">
+                        <div id="previewImage"></div>
+                        <div id="previewText">Your message will appear here...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GHL Webhook Config -->
+            <div class="card">
+                <h2>⚙️ GHL Webhook Configuration</h2>
+                
+                <div class="form-group">
+                    <label>Selected Template</label>
+                    <select id="selectedTemplate" onchange="updateWebhookConfig()">
+                        <option value="">Select a template...</option>
+                    </select>
+                </div>
+                
+                <div class="webhook-code" id="webhookConfig">
+                    <pre>Create a template first to see webhook configuration</pre>
+                </div>
+                
+                <button class="copy-button" onclick="copyWebhookConfig()">
+                    📋 Copy Configuration
+                </button>
+                
+                <div style="margin-top: 30px;">
+                    <h3 style="color: #333; margin-bottom: 15px;">📋 Your Templates</h3>
+                    <div class="templates-list" id="templatesList">
+                        <p style="color: #888;">No templates yet. Create one above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentTemplate = '';
+        let editMode = false;
+        let editingTemplateId = null;
+        
+        // Insert variable from dropdown
+        function insertSelectedVariable() {
+            const selector = document.getElementById('variableSelector');
+            const variable = selector.value;
+            
+            if (!variable) {
+                alert('Please select a variable first');
+                return;
+            }
+            
+            insertVariable(variable);
+            selector.value = ''; // Reset dropdown
+        }
+        
+        // Insert variable at cursor position
+        function insertVariable(variable) {
+            const textarea = document.getElementById('templateContent');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            textarea.value = text.substring(0, start) + variable + text.substring(end);
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = start + variable.length;
+            
+            updatePreview();
+        }
+        
+        // Update preview in real-time
+        document.getElementById('templateContent').addEventListener('input', updatePreview);
+        document.getElementById('imageUrl').addEventListener('input', updatePreview);
+        
+        function updatePreview() {
+            const content = document.getElementById('templateContent').value;
+            const imageUrl = document.getElementById('imageUrl').value;
+            
+            // Replace variables with example values for preview
+            let preview = content
+                .replace(/{name}/g, 'John')
+                .replace(/{first_name}/g, 'John')
+                .replace(/{last_name}/g, 'Doe')
+                .replace(/{email}/g, 'john@example.com')
+                .replace(/{phone}/g, '+1 (555) 123-4567')
+                .replace(/{company}/g, 'ABC Company')
+                .replace(/{date}/g, 'Oct 22, 2025')
+                .replace(/{time}/g, '3:00 PM')
+                .replace(/{amount}/g, '$99.99');
+            
+            document.getElementById('previewText').textContent = preview || 'Your message will appear here...';
+            
+            // Show image preview if URL provided
+            if (imageUrl) {
+                document.getElementById('previewImage').innerHTML = 
+                    `<img src="${imageUrl}" class="preview-image" onerror="this.style.display='none'" />`;
+            } else {
+                document.getElementById('previewImage').innerHTML = '';
+            }
+        }
+        
+        // Save template (create or update)
+        async function saveTemplate() {
+            const name = document.getElementById('templateName').value.trim();
+            const content = document.getElementById('templateContent').value.trim();
+            const imageUrl = document.getElementById('imageUrl').value.trim();
+            const category = document.getElementById('category').value;
+            
+            if (!name || !content) {
+                showError('Please fill in template name and content');
+                return;
+            }
+            
+            const templateData = {
+                id: editMode ? editingTemplateId : 'tpl_' + Date.now(),
+                name: name,
+                content: content,
+                category: category,
+                mediaUrl: imageUrl || undefined,
+                mediaType: imageUrl ? 'image' : undefined
+            };
+            
+            try {
+                const response = await fetch('/api/templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(templateData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(editMode ? `Template "${name}" updated successfully!` : `Template "${name}" created successfully!`);
+                    loadTemplates();
+                    currentTemplate = name;
+                    updateWebhookConfig();
+                    
+                    // Reset form
+                    resetForm();
+                } else {
+                    showError(data.error || 'Failed to save template');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Edit template
+        async function editTemplate(templateId) {
+            try {
+                const response = await fetch(`/api/templates/${templateId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const template = data.template;
+                    
+                    // Enter edit mode
+                    editMode = true;
+                    editingTemplateId = templateId;
+                    
+                    // Populate form
+                    document.getElementById('templateName').value = template.name;
+                    document.getElementById('templateContent').value = template.content;
+                    document.getElementById('imageUrl').value = template.mediaUrl || '';
+                    document.getElementById('category').value = template.category || 'general';
+                    
+                    // Update button text
+                    document.getElementById('saveButton').innerHTML = '💾 Save Changes';
+                    document.getElementById('cancelButton').style.display = 'block';
+                    
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    updatePreview();
+                } else {
+                    showError('Failed to load template');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Delete template
+        async function deleteTemplate(templateId) {
+            if (!confirm('Are you sure you want to delete this template?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/templates/${templateId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Template deleted successfully!');
+                    loadTemplates();
+                    resetForm();
+                } else {
+                    showError(data.error || 'Failed to delete template');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Cancel edit
+        function cancelEdit() {
+            resetForm();
+        }
+        
+        // Reset form
+        function resetForm() {
+            editMode = false;
+            editingTemplateId = null;
+            
+            document.getElementById('templateName').value = '';
+            document.getElementById('templateContent').value = '';
+            document.getElementById('imageUrl').value = '';
+            document.getElementById('category').value = 'general';
+            
+            document.getElementById('saveButton').innerHTML = '✨ Create Template';
+            document.getElementById('cancelButton').style.display = 'none';
+            
+            updatePreview();
+        }
+        
+        // Load templates
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/templates');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const templates = Object.values(data.templates);
+                    const select = document.getElementById('selectedTemplate');
+                    const list = document.getElementById('templatesList');
+                    
+                    // Update select dropdown
+                    select.innerHTML = '<option value="">Select a template...</option>';
+                    templates.forEach(t => {
+                        const option = document.createElement('option');
+                        option.value = t.name;
+                        option.textContent = t.name;
+                        select.appendChild(option);
+                    });
+                    
+                    // Update templates list
+                    if (templates.length > 0) {
+                        list.innerHTML = templates.map(t => `
+                            <div class="template-item">
+                                <div class="template-actions">
+                                    <button class="edit-btn" onclick="editTemplate('${t.id}')">✏️ Edit</button>
+                                    <button class="delete-btn" onclick="deleteTemplate('${t.id}')">🗑️</button>
+                                </div>
+                                <h4>${t.name}</h4>
+                                <p>${t.content.substring(0, 100)}${t.content.length > 100 ? '...' : ''}</p>
+                                ${t.mediaUrl ? '<span style="color: #667eea;">📸 Has image</span>' : ''}
+                                <div style="margin-top: 8px; font-size: 12px; color: #999;">
+                                    Category: ${t.category || 'general'} | Created: ${t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A'}
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        list.innerHTML = '<p style="color: #888;">No templates yet. Create one above!</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+        
+        // Update webhook configuration
+        function updateWebhookConfig() {
+            const templateName = document.getElementById('selectedTemplate').value;
+            
+            if (!templateName) {
+                document.getElementById('webhookConfig').innerHTML = 
+                    '<pre>Select a template to see webhook configuration</pre>';
+                return;
+            }
+            
+            const config = `Method: POST
+URL: https://kathi-sensational-rosalyn.ngrok-free.dev/api/whatsapp/send-template
+
+Headers:
+Content-Type: application/json
+
+Custom Data:
+┌──────────────┬────────────────────────────────────────┐
+│ to           │ {{contact.phone}}                      │
+├──────────────┼────────────────────────────────────────┤
+│ templateName │ ${templateName}                        │
+├──────────────┼────────────────────────────────────────┤
+│ variables    │ {"name":"{{contact.first_name}}"}      │
+└──────────────┴────────────────────────────────────────┘
+
+GHL Variable Mapping Examples:
+- "name": "{{contact.first_name}}"
+- "email": "{{contact.email}}"
+- "phone": "{{contact.phone}}"
+- "company": "{{contact.company_name}}"
+- "date": "{{appointment.start_date}}"
+- "time": "{{appointment.start_time}}"
+- "amount": "{{custom_values.amount}}"`;
+            
+            document.getElementById('webhookConfig').innerHTML = '<pre>' + config + '</pre>';
+        }
+        
+        // Copy webhook config
+        function copyWebhookConfig() {
+            const config = document.getElementById('webhookConfig').textContent;
+            navigator.clipboard.writeText(config).then(() => {
+                alert('✅ Webhook configuration copied to clipboard!');
+            });
+        }
+        
+        function showSuccess(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = '✅ ' + message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+        
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = '❌ ' + message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+        
+        // Handle back button
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnUrl = urlParams.get('return');
+            
+            if (returnUrl) {
+                const backButton = document.getElementById('backButton');
+                backButton.style.display = 'block';
+                backButton.addEventListener('click', () => {
+                    window.location.href = '/' + returnUrl;
+                });
+            }
+        });
+        
+        // Load templates on page load
+        loadTemplates();
+    </script>
+</body>
+</html>
+

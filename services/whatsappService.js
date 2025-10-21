@@ -94,6 +94,48 @@ class WhatsAppService extends EventEmitter {
     }
   }
 
+  async sendMediaFromUrl(to, mediaUrl, caption = '', mediaType = 'image') {
+    if (!this.isReady) {
+      throw new Error('WhatsApp client is not ready');
+    }
+
+    try {
+      const { MessageMedia } = require('whatsapp-web.js');
+      const axios = require('axios');
+      
+      // Format phone number
+      let formattedNumber = to;
+      if (!formattedNumber.includes('@c.us')) {
+        formattedNumber = formattedNumber.replace(/[^\d+]/g, '');
+        if (formattedNumber.startsWith('+')) {
+          formattedNumber = formattedNumber.substring(1);
+        }
+        formattedNumber = formattedNumber + '@c.us';
+      }
+      
+      console.log(`📸 Fetching media from URL: ${mediaUrl}`);
+      // Fetch the media from URL
+      const response = await axios.get(mediaUrl, { 
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
+      
+      const base64 = Buffer.from(response.data, 'binary').toString('base64');
+      const mimeType = response.headers['content-type'] || (mediaType === 'image' ? 'image/jpeg' : 'video/mp4');
+      
+      console.log(`📤 Creating MessageMedia with MIME type: ${mimeType}`);
+      const media = new MessageMedia(mimeType, base64);
+      
+      console.log(`📤 Sending WhatsApp message with media to ${formattedNumber}`);
+      const result = await this.client.sendMessage(formattedNumber, media, { caption });
+      console.log('✅ Media message sent successfully:', result.id._serialized);
+      return result;
+    } catch (error) {
+      console.error('❌ Error sending media from URL:', error);
+      throw error;
+    }
+  }
+
   async getChats() {
     if (!this.isReady) {
       throw new Error('WhatsApp client is not ready');

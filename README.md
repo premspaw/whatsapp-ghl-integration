@@ -46,8 +46,15 @@ A comprehensive solution that connects WhatsApp to GoHighLevel (GHL) with AI-pow
    GHL_LOCATION_ID=your_ghl_location_id_here
    GHL_BASE_URL=https://services.leadconnectorhq.com
 
-   # OpenAI Configuration for AI Replies
-   OPENAI_API_KEY=your_openai_api_key_here
+   # OpenRouter Configuration for AI Replies
+   OPENROUTER_API_KEY=your_openrouter_api_key_here
+   OPENROUTER_MODEL=anthropic/claude-3-haiku
+   OPENROUTER_REFERER=http://localhost:3000
+   # Supabase (Server-side)
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SCHEMA=public
 
    # Server Configuration
    PORT=3000
@@ -75,6 +82,9 @@ A comprehensive solution that connects WhatsApp to GoHighLevel (GHL) with AI-pow
    - Click on any conversation to open it
    - Toggle "AI Reply" to enable automatic AI responses
    - Toggle "GHL Sync" to sync conversations with GoHighLevel
+
+5. **Verify DB Connection (Optional)**
+   - `GET /api/db/status` should return `{ configured: true, connected: true }` once your Supabase tables exist.
 
 ## API Endpoints
 
