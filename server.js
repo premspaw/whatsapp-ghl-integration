@@ -1133,7 +1133,7 @@ app.get('/api/mock/test', async (req, res) => {
 
 // Serve the main page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'ghl-whatsapp-tab.html'));
 });
 
 // Serve WhatsApp conversations page
@@ -1143,7 +1143,7 @@ app.get('/whatsapp', (req, res) => {
 
 // Serve the unified dashboard
 app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+  res.sendFile(path.join(__dirname, 'public', 'ghl-whatsapp-tab.html'));
 });
 
 
