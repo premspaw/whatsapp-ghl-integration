@@ -1,0 +1,414 @@
+Complete rules & implementation plan — Options A & B (AI with memory, training, GHL data access) 🎯
+
+Nice — you’re building a proper platform. Below I give a single, thorough blueprint you can drop into Cursor: architecture, DB schema, data flows, AI memory/RAG training, GHL mapping (tags/tasks/pipelines), automations, security, and exactly what Cursor will need from you (Supabase info, API keys, webhooks). I won’t ask questions — I’ll assume you own GHL API keys, a WhatsApp provider, and can create a Supabase project.
+
+1 — High-level choices (quick recap)
+
+Option A: “Custom WhatsApp channel” — post messages to GHL as channel: "whatsapp" if GHL has native WhatsApp enabled for your account, otherwise use channel: "sms" with meta.source=whatsapp. Clean separation, recommended.
+
+Option B: “Hijack SMS” — intercept GHL outgoing SMS events and send via WhatsApp; post inbound messages as channel: "sms". Easier to make automations work unchanged but mixes analytics.
+
+I’ll give unified rules that work for both, with clear differences flagged.
+
+2 — Architecture overview (components)
+
+Webhook / API Gateway (Node/Express server) — receives:
+
+WhatsApp provider callbacks (inbound messages, media).
+
+GHL outbound webhooks (send-message triggers, contact updates).
+
+Core services (modular):
+
+ghlService — wrappers: fetch contacts, tags, tasks, opportunities, pipeline stage, push messages, create contact.
+
+whatsappService — send/receive via chosen WhatsApp provider (Meta Cloud API, 360Dialog, UltraMsg).
+
+aiService — RAG + memory + model orchestration (OpenAI/DeepSeek or self-hosted).
+
+syncService — reconciles GHL ↔ DB ↔ WhatsApp.
+
+Database — Supabase (Postgres + vector extension) or Postgres + a vector DB. Supabase is recommended inside Cursor.
+
+Embeddings store / Vector DB — use Supabase vector extension or Pinecone/Weaviate.
+
+Automation engine — use n8n or internal worker for complex flows.
+
+Frontend (optional) — admin dashboard (React/Tailwind) to view messages, train data, and see AI suggestions.
+
+Background jobs / queue — for heavy tasks (embedding generation, training jobs, retries).
+
+Logging & monitoring (Sentry, Prometheus).
+
+3 — Data model / Supabase schema (recommended)
+
+Use Postgres tables; vector table for embeddings.
+
+Tables (column highlights)
+
+contacts
+
+id (uuid), phone, ghl_contact_id, name, metadata (jsonb), last_seen_at, created_at
+
+conversations
+
+id (uuid), contact_id, ghl_location_id, channel (whatsapp|sms|email), last_message_at
+
+messages
+
+id, conversation_id, contact_id, direction (INCOMING|OUTGOING), provider_message_id, content, media[], meta jsonb (e.g., {source: "whatsapp"}), created_at, delivered_at
+
+ai_conversation_memory (short-term)
+
+id, conversation_id, message_id, role (user|assistant|system), text, tokens, created_at
+
+ai_embeddings (vector)
+
+id, conversation_id (nullable), source_type (webpage|doc|manual_note|ghl_task), source_id, text, embedding vector, chunk_meta jsonb, created_at
+
+training_sources
+
+id, type (website/page/doc), url, last_crawled_at, status
+
+users (team users)
+
+id, name, email, role, api_key
+
+events_queue (for retries)
+
+id, type, payload jsonb, attempts, next_attempt_at
+
+ai_models (model config)
+
+id, provider, model_name, temperature, system_prompt_template
+
+Note: Supabase provides row-level security and JWT auth; store service keys in Cursor env vars, not in client code.
+
+4 — AI design: Memory + RAG + Training
+Core idea
+
+Short-term memory = recent last N messages (conversation window).
+
+Long-term memory = vectorized facts about user: contact tags, tasks, pipeline stage, opportunities, previous decisions, custom FAQs, website docs.
+
+RAG: at query time, retrieve relevant embeddings (contact-specific > org-wide docs > website pages) and inject into prompt.
+
+Workflow (on incoming message)
+
+Receive message → store in messages.
+
+Append to ai_conversation_memory.
+
+Build context:
+
+Pull last 6-12 messages (short-term memory).
+
+Pull relevant embeddings: retrieve top-K from ai_embeddings filtered by contact_id or tags (vector similarity).
+
+Pull GHL metadata for contact: tags, open tasks, active opportunities/pipeline stage, custom fields.
+
+Construct prompt:
+
+System prompt: you are an assistant for company X, use friendly tone, refer to contact by name, follow policies.
+
+Context section: structured JSON summary of GHL data (tags, tasks, pipeline stage).
+
+Retriever documents: top N retrieved docs (each chunk labeled).
+
+Conversation history.
+
+User query (latest message).
+
+Call model (completion/chat) with RAG context. Optionally use retrieval-augmented LLM chain (if provider supports).
+
+Post-process response: check for action intent (create task, book appointment, transfer to human).
+
+Send reply via whatsappService (or via pushing to GHL and letting GHL UI handle it, depending on Option A/B).
+
+Store assistant reply in messages and ai_conversation_memory.
+
+Memory TTL & retention
+
+Keep short-term memory ≈ last 30 messages (or last 7 days).
+
+Longer term facts: save explicit facts into ai_embeddings (e.g., “Contact prefers emails on weekends”) — persists.
+
+Fine-tuning vs RAG
+
+RAG + prompt engineering is primary. Train/customize with:
+
+Company docs, FAQs, website pages, past conversation logs → chunk + embed → index.
+
+Use fine-tuning only for domain adaptation if necessary (and if provider supports) — but RAG + prompt + instruction is usually sufficient and safer.
+
+Training pipeline (how to add website & docs)
+
+Crawl website pages / onboarding docs / product sheets. Use a crawler or manual upload.
+
+Clean & chunk text (chunk size 500–1000 chars with 20% overlap).
+
+Generate embeddings for each chunk via model embedding API.
+
+Insert chunks into ai_embeddings with metadata (url, title, tags).
+
+Re-run retrieval quality checks: sample queries and inspect retrieved chunks.
+
+5 — GHL data usage (tags, tasks, opportunities, pipeline stage)
+
+You’ll need to fetch and cache GHL data for each contact on each request. Rules:
+
+What to fetch from GHL per contact
+
+contact details (id, phone, name, custom fields)
+
+tags array
+
+open tasks (title, due_date, created_by)
+
+opportunities / pipeline stage (amount, stage_name, last_activity_at)
+
+locationId (for message posting)
+
+notes and last_activities (optional)
+
+How to present to AI
+
+Include a short, structured JSON block before the conversation, e.g.:
+
+GHL Contact Summary:
+{
+ "name": "Ravi",
+ "phone": "...",
+ "tags": ["trial","vip"],
+ "open_tasks": [{"id":"t1","title":"Call about pricing","due":"2025-10-20"}],
+ "opportunities": [{"id":"opp1","stage":"Negotiation","amount":499}]
+}
+
+
+Then system instructions: “Prioritize pipeline-stage messaging. If contact is in stage ‘Negotiation’, follow up with price + CTA.”
+
+Sync cadence and caching
+
+Cache contact metadata in Supabase with TTL 5–15 minutes.
+
+On important events (pipeline changed, tag changed) GHL should call your webhook to invalidate cache.
+
+6 — Automations & webhooks (how actions & triggers work)
+
+Rule: Prefer webhooks for real-time and background queue for heavy tasks.
+
+Inbound events
+
+WhatsApp provider → your webhook POST /webhook/whatsapp
+
+Validate signature
+
+Create or find contact
+
+Save message
+
+Trigger AI processing job
+
+Outbound events (from GHL)
+
+In GHL Triggers:
+
+On “New Message (Outbound SMS)” → point webhook to POST /webhook/ghl/outgoing-message
+
+Payload includes contactId, message, locationId
+
+Your server: detect if this outbound should go to Twilio (SMS) or WhatsApp (based on contact meta or organization settings)
+
+Send via whatsappService if WhatsApp
+
+Post result back into GHL /conversations/messages with the same message status
+
+Suggested webhook endpoints
+
+POST /webhook/whatsapp — inbound messages & delivery receipts
+
+POST /webhook/ghl/outgoing — GHL outbound messages (triggers)
+
+POST /webhook/ghl/events — contact updates (tags/tasks/opportunities changed)
+
+POST /webhook/ai/actions — AI-generated actions (create task, update tag)
+
+Action mapping (AI → automation)
+
+If AI detects intent like “Schedule demo”:
+
+AI returns structured action:
+
+{
+  "action": "create_task",
+  "task": {"title":"Book demo", "due":"2025-10-22", "notes":"Suggested times..."}
+}
+
+
+Server posts to GHL tasks API and adds note to contact; push confirmation message to user.
+
+7 — Option-specific rules
+Option A (Custom WhatsApp channel)
+
+Preferred channel when posting to GHL: whatsapp only if GHL's native WhatsApp is enabled for that location; otherwise use sms with meta tag.
+
+Keep meta: { provider: 'custom_whatsapp', source: 'inbound' }
+
+Advantages: clean channel separation; GHL UI shows WhatsApp label (if enabled).
+
+Automations: GHL triggers on incoming whatsapp messages work normally only if channel recognized by GHL. If not, triggers will still work for sms messages.
+
+Option B (Hijack SMS)
+
+Post inbound WhatsApp messages as channel: "sms".
+
+On outbound sms webhook from GHL: intercept via ghlService and send via WhatsApp instead of Twilio.
+
+Add meta {sent_via: 'whatsapp_proxy', original_channel: 'whatsapp'} so you can filter.
+
+Watch out: analytics & Twilio billing logic may break; maintain a small mapping layer to separate actual SMS vs proxied messages.
+
+8 — Security, compliance & opt-in rules
+
+Always ensure contact has opted in to receive WhatsApp messages from you. Store opt-in timestamp.
+
+Validate signatures of inbound webhook payloads (WhatsApp provider signature).
+
+Encrypt API keys and service tokens; store in Cursor env or secrets manager (never in client code).
+
+Implement rate limiting per contact to avoid WhatsApp bans (e.g., 1 message / 10s and daily caps).
+
+Provide a human-handoff keyword (e.g., “agent”, “human”) which bypasses AI and routes to agents.
+
+Data retention policy: expose a "forget" endpoint and follow GDPR (delete personal data when requested).
+
+9 — Operational rules & reliability
+
+Use job queue (BullMQ or Supabase background workers) to process AI jobs, embedding jobs, and webhook retries.
+
+Always ack incoming webhook with 200 before heavy processing; then push to job queue.
+
+Idempotency: store provider message id and dedupe.
+
+Log events for audit (who/what/when).
+
+Monitor usage and cost of LLM calls (tokens) — include sampling strategy: if short response, call cheaper model.
+
+10 — What Cursor will need you to provide (Supabase / API / auth)
+
+When you create this project in Cursor you should have ready:
+
+Supabase project
+
+SUPABASE_URL
+
+SUPABASE_SERVICE_ROLE_KEY (server only) or anon key for client + row-level security
+
+Postgres credentials if not using Supabase
+
+Create necessary tables above (I can generate SQL migration in next step)
+
+GHL credentials
+
+GHL_API_KEY (server)
+
+GHL_LOCATION_ID
+
+Webhook secret if available
+
+WhatsApp provider credentials
+
+WHATSAPP_API_URL and WHATSAPP_API_TOKEN (Meta or chosen provider)
+
+Webhook validation secret (for inbound requests)
+
+AI provider
+
+OPENAI_API_KEY or DEESEEK_API_KEY
+
+Model preferences (embedding model, chat model)
+
+Cursor environment & secrets
+
+Env vars listed above set in Cursor project settings
+
+Public URL for your server (ngrok during dev; Cursor dev URLs or deployed server for prod)
+
+CORS rules configured for GHL webhook
+
+Optional
+
+Pinecone/Weaviate creds if not using Supabase vector
+
+n8n credentials (if using n8n)
+
+Tell Cursor to ask you for: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and GHL_API_KEY (server only). Do NOT put service role key in client-side.
+
+11 — Sample pseudocode flows (condensed)
+Inbound WhatsApp webhook
+app.post('/webhook/whatsapp', verifySignature, async (req,res)=>{
+  res.status(200).send('ok'); // ack quickly
+  const payload = req.body;
+  await saveMessage(payload);
+  await queue.push({type:'process_ai', messageId: savedMessage.id});
+});
+
+AI worker
+jobProcessor('process_ai', async ({messageId})=>{
+  const msg = await db.getMessage(messageId);
+  const contact = await getOrCreateContact(msg.phone);
+  const ghlMeta = await cache.getContactGHL(contact.ghl_contact_id) || await ghlService.getContactMeta(contact.ghl_contact_id);
+  const shortMem = await aiService.getShortMemory(contact.id);
+  const docs = await vectorDB.retrieve(msg.text, { filter: {contact_id: contact.id} , topK:5});
+  const prompt = buildPrompt({ghlMeta, shortMem, docs, userMsg: msg.content});
+  const aiResp = await aiService.chat(prompt, modelConfig);
+  await messages.saveAssistantReply(contact.id, aiResp);
+  await whatsappService.send(contact.phone, aiResp.text);
+  // Optionally create GHL task if AI decided so
+});
+
+12 — Training & continuous improvement
+
+Daily job to crawl new website pages & docs and push embeddings.
+
+Periodically sample AI responses to manually label and create supervised training data.
+
+Use feedback loop: allow agents to mark AI reply as “good” or “bad”; store differences as training examples.
+
+Retain conversation logs for improvement; delete per retention policy.
+
+13 — Edge cases & mitigations
+
+Duplicate events — dedupe by provider message_id.
+
+Media messages — store media URL and local copy if needed; include thumbnails in AI context.
+
+Large docs — chunk and limit max tokens used in RAG.
+
+Model hallucination — add instruction: “If you don’t know, ask to escalate or say ‘I’m not sure’.”
+
+High traffic — autoscale worker instances and enforce quotas.
+
+14 — Next practical steps (what I can generate now)
+
+I can immediately (drop into Cursor):
+
+Full Node/Express starter project with:
+
+webhook endpoints
+
+ghlService, whatsappService, aiService scaffolding
+
+Supabase schema SQL migration
+
+Queue/worker skeleton
+
+Example prompt templates and embedding/insertion code
+
+Example n8n workflow JSON for automations.
+
+SQL migrations for Supabase tables above.
+
+A README with exact Cursor env var names to set and minimal dev steps (ngrok, test payloads).
+
+Tell me which of the four you want first and I’ll generate it now (I’ll include exact env var names and cod
