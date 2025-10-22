@@ -4,7 +4,9 @@ services:
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: npm run render
     envVars:
       - key: NODE_ENV
         value: production
+      - key: LOCAL_SERVER_URL
+        value: http://localhost:3000

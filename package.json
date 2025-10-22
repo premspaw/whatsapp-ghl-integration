@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "render": "node server-render.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
