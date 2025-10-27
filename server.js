@@ -679,6 +679,49 @@ app.post('/api/send-message', async (req, res) => {
   }
 });
 
+// Simple webhook endpoint for GHL
+app.post('/send-message', async (req, res) => {
+  const { number, message } = req.body;
+  
+  console.log('📨 GHL webhook received - /send-message');
+  console.log('Number:', number);
+  console.log('Message:', message);
+  
+  try {
+    if (!whatsappService || !whatsappService.client || !whatsappService.isReady) {
+      console.error('❌ WhatsApp service not initialized or not ready');
+      return res.status(503).json({ 
+        success: false, 
+        error: 'WhatsApp service not ready. Please ensure WhatsApp is connected.' 
+      });
+    }
+
+    // Format number - add @c.us suffix if not present
+    const formattedNumber = number.includes('@c.us') ? number : `${number}@c.us`;
+    
+    console.log('📤 Sending to:', formattedNumber);
+    
+    // Send message using the WhatsApp client
+    const result = await whatsappService.client.sendMessage(formattedNumber, message);
+    
+    console.log('✅ Message sent successfully:', result.id._serialized);
+    
+    res.json({ 
+      success: true, 
+      number: formattedNumber, 
+      message: message,
+      messageId: result.id._serialized
+    });
+  } catch (err) {
+    console.error('❌ Error sending message:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: err.message,
+      details: 'Check if WhatsApp is connected and number format is correct'
+    });
+  }
+});
+
 app.get('/api/ghl/contacts', async (req, res) => {
   try {
     const contacts = await ghlService.getContacts();
@@ -1129,6 +1172,21 @@ app.get('/api/mock/test', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  const status = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    whatsappReady: whatsappService ? whatsappService.isReady : false,
+    services: {
+      whatsapp: !!whatsappService,
+      ghl: !!ghlService,
+      ai: !!aiService
+    }
+  };
+  res.json(status);
 });
 
 // Serve the main page
