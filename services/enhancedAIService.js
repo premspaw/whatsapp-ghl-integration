@@ -7,12 +7,13 @@ class EnhancedAIService extends EventEmitter {
   constructor(ghlService) {
     super();
     this.ghlService = ghlService;
-    this.conversationMemory = new Map(); // Store last 10 conversations per user
+    this.conversationMemory = new Map(); // Store conversations per user
     this.userProfiles = new Map(); // Cache user details from GHL
     this.knowledgeBase = new Map(); // Store knowledge base items
     this.templates = new Map(); // Store message templates
     this.automationRules = new Map(); // Store automation triggers
-    this.maxConversationsPerUser = 10;
+    this.maxConversationsPerUser = 10; // Store up to 10 conversations per user
+    this.conversationContextWindow = 5; // Number of previous conversations to include in context
     this.knowledgeBasePath = path.join(__dirname, '..', 'data', 'knowledge-base.json');
     this.templatesPath = path.join(__dirname, '..', 'data', 'templates.json');
     this.automationPath = path.join(__dirname, '..', 'data', 'automation.json');
@@ -162,25 +163,28 @@ class EnhancedAIService extends EventEmitter {
   // Generate enhanced reply with memory and knowledge
   async generateEnhancedReply(message, userProfile, memory, relevantKnowledge) {
     try {
-      // Build context from memory
-      const contextMessages = memory.slice(-5).map(m => 
+      // Build context from memory - use more context (up to this.conversationContextWindow)
+      const contextMessages = memory.slice(-this.conversationContextWindow).map(m => 
         `User: ${m.user}\nAI: ${m.ai}`
       ).join('\n\n');
       
-      // Build user context
+      // Build user context with more details if available
       const userContext = userProfile ? 
-        `User: ${userProfile.name} (${userProfile.email || 'No email'})` : 
+        `User: ${userProfile.name} (${userProfile.email || 'No email'}, Phone: ${userProfile.phone || 'Unknown'})
+User Tags: ${userProfile.tags ? userProfile.tags.join(', ') : 'None'}
+Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFields) : 'None'}` : 
         'User: Unknown Contact';
       
-      // Build knowledge context
+      // Build knowledge context with more complete information
       const knowledgeContext = relevantKnowledge.length > 0 ?
-        `Relevant Information:\n${relevantKnowledge.map(k => `- ${k.title}: ${k.content.substring(0, 100)}...`).join('\n')}` :
+        `Relevant Information:\n${relevantKnowledge.map(k => `- ${k.title}: ${k.content.substring(0, 200)}...`).join('\n\n')}` :
         '';
       
-      // Generate contextual prompt
+      // Generate contextual prompt with enhanced context
       const prompt = this.buildEnhancedContextPrompt(message, userContext, contextMessages, knowledgeContext);
       
       // For now, use simple AI logic (you can integrate with OpenAI/Claude later)
+      // In production, this would call an external AI API with the prompt
       return this.generateSimpleContextualReply(message, userProfile, memory, relevantKnowledge);
       
     } catch (error) {

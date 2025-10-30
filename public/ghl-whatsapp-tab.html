@@ -928,11 +928,15 @@
             const total = conversations.length;
             const today = new Date().toDateString();
             const activeToday = conversations.filter(conv => {
-                const lastMessage = conv.messages[conv.messages.length - 1];
+                // Add null check for conv.messages
+                if (!conv.messages || !Array.isArray(conv.messages)) return false;
+                const lastMessage = conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null;
                 return lastMessage && new Date(lastMessage.timestamp).toDateString() === today;
             }).length;
             
             const aiResponses = conversations.reduce((count, conv) => {
+                // Add null check for conv.messages
+                if (!conv.messages || !Array.isArray(conv.messages)) return count;
                 return count + conv.messages.filter(msg => msg.from === 'ai').length;
             }, 0);
 
