@@ -1204,6 +1204,10 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'ghl-whatsapp-tab.html'));
 });
 
+// Serve the GHL WhatsApp tab dashboard (explicit route for VPS)
+app.get('/ghl-whatsapp-tab.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'ghl-whatsapp-tab.html'));
+});
 
 // Serve the workflow automation interface
 app.get('/workflow', (req, res) => {
