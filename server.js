@@ -507,6 +507,10 @@ smsService.on('message', async (message) => {
 // Email service removed - WhatsApp only integration
 
 // API Routes
+app.get('/api/test-route', (req, res) => {
+  res.json({ message: 'Test route is working!' });
+});
+
 app.get('/api/conversations', async (req, res) => {
   try {
     const conversations = await conversationManager.getAllConversations();
@@ -519,49 +523,20 @@ app.get('/api/conversations', async (req, res) => {
 // Custom WhatsApp Conversations API for the custom tab
 app.get('/api/whatsapp/conversations', async (req, res) => {
   try {
-    const conversations = await conversationManager.getAllConversations();
-    
-    // Format conversations for the custom tab with GHL contact names
-    const formattedConversations = await Promise.all(conversations.map(async (conv) => {
-      let contactName = conv.contactName || 'Unknown Contact';
-      
-      // Try to get the actual GHL contact name
-      try {
-        const normalizedPhone = ghlService.normalizePhoneNumber(conv.phoneNumber || conv.phone);
-        if (normalizedPhone) {
-          const ghlContact = await ghlService.findContactByPhone(normalizedPhone);
-          if (ghlContact) {
-            contactName = ghlContact.firstName || ghlContact.name || contactName;
-            console.log(`📞 Using GHL contact name: ${contactName} for ${normalizedPhone}`);
-          }
-        }
-      } catch (error) {
-        console.log(`⚠️ Could not fetch GHL contact name for ${conv.phoneNumber || conv.phone}:`, error.message);
-      }
-      
-      return {
-        id: conv.id,
-        contactName: contactName,
-        phoneNumber: conv.phoneNumber || conv.phone,
-        messages: conv.messages || [],
-        lastMessage: conv.messages && conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null,
-        messageCount: conv.messages ? conv.messages.length : 0,
-        aiEnabled: conv.aiEnabled || false,
-        createdAt: conv.createdAt,
-        updatedAt: conv.updatedAt
-      };
-    }));
-
+    // Temporarily returning static data to debug 'Unexpected token <' error
     res.json({ 
       success: true,
-      conversations: formattedConversations,
-      total: formattedConversations.length
+      conversations: [
+        { id: 'dummy1', contactName: 'Test Contact 1', phoneNumber: '1234567890', lastMessage: { body: 'Hello' } },
+        { id: 'dummy2', contactName: 'Test Contact 2', phoneNumber: '0987654321', lastMessage: { body: 'Hi there' } }
+      ],
+      total: 2
     });
   } catch (error) {
-    console.error('Error fetching WhatsApp conversations:', error);
+    console.error('Error fetching WhatsApp conversations (simplified route):', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to fetch WhatsApp conversations' 
+      error: 'Failed to fetch WhatsApp conversations (simplified)' 
     });
   }
 });
