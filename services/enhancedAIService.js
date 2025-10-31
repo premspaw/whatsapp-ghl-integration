@@ -18,6 +18,8 @@ class EnhancedAIService extends EventEmitter {
     this.templatesPath = path.join(__dirname, '..', 'data', 'templates.json');
     this.automationPath = path.join(__dirname, '..', 'data', 'automation.json');
     this.handoffKeywords = ['human', 'agent'];
+    this.handoffRulesPath = path.join(__dirname, '..', 'data', 'handoff_rules.json');
+    this.handoffRules = null; // Loaded from handoff_rules.json
     
     this.aiPersonality = {
       name: "Sarah",
@@ -30,6 +32,7 @@ class EnhancedAIService extends EventEmitter {
     this.loadKnowledgeBase();
     this.loadTemplates();
     this.loadAutomationRules();
+    this.loadHandoffRules();
     this.embeddings = new EmbeddingsService();
   }
 
@@ -70,17 +73,17 @@ class EnhancedAIService extends EventEmitter {
     try {
       console.log('🧠 Enhanced AI generating contextual reply for', phoneNumber);
 
-      // Human handoff bypass: emit event and skip AI when keywords detected
-      if (this.isHandoffRequested(message)) {
-        this.emit('handoff', { phoneNumber, conversationId, message });
-        return null;
-      }
-      
       // Load conversation memory
       const memory = await this.loadConversationMemory(phoneNumber);
       
       // Get user profile from GHL
       const userProfile = await this.getUserProfileFromGHL(phoneNumber);
+
+      // Human handoff: check with profile + rules before generating reply
+      if (this.isHandoffRequested(message, userProfile)) {
+        this.emit('handoff', { phoneNumber, conversationId, message });
+        return null;
+      }
       
       // Retrieve vector matches (RAG)
       const vectorMatches = await this.safeRetrieveEmbeddings(message, conversationId);
@@ -111,15 +114,89 @@ class EnhancedAIService extends EventEmitter {
     }
   }
 
-  // Detect human handoff intent based on keywords
-  isHandoffRequested(message) {
+  // Detect human handoff intent based on keywords + rules
+  isHandoffRequested(message, userProfile) {
     try {
       if (!message || typeof message !== 'string') return false;
       const lower = message.toLowerCase();
-      return this.handoffKeywords.some(k => lower.includes(k));
+
+      // Keyword-based
+      if (this.handoffKeywords.some(k => lower.includes(k))) return true;
+
+      // Topic-based (from rules)
+      if (this.handoffRules && Array.isArray(this.handoffRules.auto_handoff_topics)) {
+        if (this.handoffRules.auto_handoff_topics.some(t => lower.includes(String(t).toLowerCase()))) {
+          return true;
+        }
+      }
+
+      // Priority contacts (GHL tags)
+      if (userProfile && this.isPriorityContact(userProfile)) return true;
+
+      // Outside business hours
+      if (this.isOutsideBusinessHours()) return !!(this.handoffRules && this.handoffRules.business_hours && this.handoffRules.business_hours.auto_handoff_outside_hours);
+
+      return false;
     } catch (e) {
       return false;
     }
+  }
+
+  // Load handoff rules from file
+  async loadHandoffRules() {
+    try {
+      const data = await fs.readFile(this.handoffRulesPath, 'utf8');
+      const rules = JSON.parse(data);
+      this.handoffRules = rules;
+      if (Array.isArray(rules.keywords) && rules.keywords.length > 0) {
+        this.handoffKeywords = rules.keywords;
+      }
+      console.log('🤝 Loaded handoff rules');
+    } catch (error) {
+      // Fallback: keep defaults
+      this.handoffRules = null;
+      console.log('No handoff_rules.json found, using default keywords');
+    }
+  }
+
+  // Utility: check business hours from rules
+  isOutsideBusinessHours() {
+    try {
+      if (!this.handoffRules || !this.handoffRules.business_hours || !this.handoffRules.business_hours.enabled) return false;
+      const bh = this.handoffRules.business_hours;
+      const tz = bh.timezone || 'UTC';
+      const now = new Date();
+      // Approximate timezone by using system time; detailed tz handling can be added later
+      const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const day = dayNames[now.getDay()];
+      const schedule = bh.schedule && bh.schedule[day];
+      if (!schedule || !schedule.start || !schedule.end) return true;
+      const [startH, startM] = schedule.start.split(':').map(Number);
+      const [endH, endM] = schedule.end.split(':').map(Number);
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      const startMin = startH * 60 + startM;
+      const endMin = endH * 60 + endM;
+      return minutes < startMin || minutes > endMin;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Utility: check if user has priority tags
+  isPriorityContact(userProfile) {
+    try {
+      if (!this.handoffRules || !this.handoffRules.priority_contacts || !this.handoffRules.priority_contacts.enabled) return false;
+      const requiredTags = this.handoffRules.priority_contacts.ghl_tags || [];
+      const tags = (userProfile && userProfile.tags) ? userProfile.tags.map(t => String(t).toLowerCase()) : [];
+      return requiredTags.some(t => tags.includes(String(t).toLowerCase()));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Allow runtime reload (used by API)
+  async reloadHandoffRules() {
+    await this.loadHandoffRules();
   }
 
   // Get user profile from GHL

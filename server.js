@@ -122,16 +122,23 @@ try {
       }
     } catch (e) {}
   };
-  // Initialize Supabase (server-side)
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { db: { schema: process.env.SUPABASE_SCHEMA || 'public' } }
-    );
-    console.log('✅ Supabase client initialized');
-  } else {
-    console.log('ℹ️ Supabase not configured (set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)');
+  // Initialize Supabase (server-side) — resilient to invalid config
+  try {
+    const supaUrl = process.env.SUPABASE_URL;
+    const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const looksValidUrl = typeof supaUrl === 'string' && /^https?:\/\/.+/.test(supaUrl);
+    if (looksValidUrl && typeof supaKey === 'string' && supaKey.length > 0) {
+      supabase = createClient(
+        supaUrl,
+        supaKey,
+        { db: { schema: process.env.SUPABASE_SCHEMA || 'public' } }
+      );
+      console.log('✅ Supabase client initialized');
+    } else {
+      console.log('ℹ️ Supabase not configured or invalid; continuing without DB');
+    }
+  } catch (e) {
+    console.warn('⚠️ Supabase initialization failed:', e.message);
   }
   // Listen for AI human-handoff requests
   enhancedAIService.on('handoff', ({ phoneNumber, conversationId, message }) => {
@@ -174,6 +181,41 @@ app.use('/api/ghl', require('./routes/ghlRoutes')(ghlService));
 app.use('/api/ai', require('./routes/aiRoutes')(aiService, mcpAIService, enhancedAIService));
 app.use('/api/analytics', require('./routes/analyticsRoutes')(analyticsService, securityService));
 app.use('/api/knowledge', require('./routes/knowledgeRoutes')(enhancedAIService, pdfProcessingService, websiteScraperService));
+app.use('/api/handoff-rules', require('./routes/handoffRulesRoutes')(enhancedAIService));
+
+// Conversation utilities used by the WhatsApp tab
+app.post('/api/conversations/:id/mark-read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!conversationManager || typeof conversationManager.markAsRead !== 'function') {
+      return res.status(500).json({ success: false, error: 'ConversationManager not available' });
+    }
+    await conversationManager.markAsRead(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/conversations/:id/sync-ghl', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!ghlService || typeof ghlService.syncConversation !== 'function') {
+      return res.status(500).json({ success: false, error: 'GHL service not available' });
+    }
+    if (!conversationManager || typeof conversationManager.getConversation !== 'function') {
+      return res.status(500).json({ success: false, error: 'ConversationManager not available' });
+    }
+    const conv = await conversationManager.getConversation(id);
+    if (!conv) {
+      return res.status(404).json({ success: false, error: 'Conversation not found' });
+    }
+    const result = await ghlService.syncConversation(conv);
+    res.json({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Serve analytics dashboard
 app.get('/analytics', (req, res) => {
