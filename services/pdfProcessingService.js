@@ -1,7 +1,20 @@
 const fs = require('fs').promises;
 const path = require('path');
-const pdf = require('pdf-parse');
-const { v4: uuidv4 } = require('uuid');
+// Optional imports with graceful fallbacks to avoid startup crashes
+let pdf;
+try {
+  pdf = require('pdf-parse');
+} catch (e) {
+  pdf = null;
+}
+
+let uuidv4;
+try {
+  uuidv4 = require('uuid').v4;
+} catch (e) {
+  // Fallback UUID generator if 'uuid' isn't installed
+  uuidv4 = () => `fallback-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 class PDFProcessingService {
   constructor(embeddingsService) {
@@ -18,6 +31,9 @@ class PDFProcessingService {
    */
   async processPDF(filePath) {
     try {
+      if (!pdf) {
+        throw new Error('pdf-parse module is not installed. PDF processing is temporarily disabled.');
+      }
       // Read the PDF file
       const dataBuffer = await fs.readFile(filePath);
       
@@ -134,6 +150,7 @@ class PDFProcessingService {
     const results = [];
     
     for (const filePath of filePaths) {
+        
       try {
         const result = await this.addPDFToKnowledgeBase(filePath, category, description);
         results.push({

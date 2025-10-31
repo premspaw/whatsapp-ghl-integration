@@ -1,6 +1,12 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { v4: uuidv4 } = require('uuid');
+// Optional uuid import with fallback to avoid startup crashes
+let uuidv4;
+try {
+  uuidv4 = require('uuid').v4;
+} catch (e) {
+  uuidv4 = () => `fallback-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 const url = require('url');
 
 class WebsiteScraperService {

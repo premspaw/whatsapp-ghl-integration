@@ -36,36 +36,46 @@ const upload = multer({
 });
 
 module.exports = function(enhancedAIService, pdfProcessingService, websiteScraperService) {
-  // Process and index PDF document
-  router.post('/pdf', upload.single('pdf'), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: 'No PDF file uploaded' });
+  // Process and index PDF document (conditionally enabled)
+  if (pdfProcessingService && typeof pdfProcessingService.processPDF === 'function') {
+    router.post('/pdf', upload.single('pdf'), async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ error: 'No PDF file uploaded' });
+        }
+
+        const metadata = {
+          title: req.body.title || path.basename(req.file.originalname, '.pdf'),
+          description: req.body.description || '',
+          category: req.body.category || 'general',
+          tags: req.body.tags ? req.body.tags.split(',') : []
+        };
+
+        const result = await pdfProcessingService.processPDF(req.file.path, metadata);
+        
+        // Delete the file after processing
+        fs.unlinkSync(req.file.path);
+        
+        res.status(200).json({
+          success: true,
+          message: 'PDF processed successfully',
+          documentId: result.documentId,
+          chunks: result.chunks.length
+        });
+      } catch (error) {
+        console.error('Error processing PDF:', error);
+        res.status(500).json({ error: 'Failed to process PDF' });
       }
-
-      const metadata = {
-        title: req.body.title || path.basename(req.file.originalname, '.pdf'),
-        description: req.body.description || '',
-        category: req.body.category || 'general',
-        tags: req.body.tags ? req.body.tags.split(',') : []
-      };
-
-      const result = await pdfProcessingService.processPDF(req.file.path, metadata);
-      
-      // Delete the file after processing
-      fs.unlinkSync(req.file.path);
-      
-      res.status(200).json({
-        success: true,
-        message: 'PDF processed successfully',
-        documentId: result.documentId,
-        chunks: result.chunks.length
+    });
+  } else {
+    // Respond with 501 if PDF service is unavailable
+    router.post('/pdf', upload.single('pdf'), async (req, res) => {
+      return res.status(501).json({
+        success: false,
+        error: 'PDF upload is temporarily disabled on this server'
       });
-    } catch (error) {
-      console.error('Error processing PDF:', error);
-      res.status(500).json({ error: 'Failed to process PDF' });
-    }
-  });
+    });
+  }
 
   // Scrape and index website content
   router.post('/website', async (req, res) => {
