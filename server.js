@@ -89,6 +89,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 let whatsappService, ghlService, aiService, enhancedAIService, mcpAIService, conversationManager, smsService, webhookService, securityService;
 let useMockWhatsApp;
 let supabase;
+// Ensure these services are scoped outside try/catch so routes can access them
+let pdfProcessingService, websiteScraperService, analyticsService;
 
 try {
   useMockWhatsApp = process.env.USE_MOCK_WHATSAPP === 'true';
@@ -107,10 +109,10 @@ try {
   const WebsiteScraperService = require('./services/websiteScraperService');
   const AnalyticsService = require('./services/analyticsService');
   
-  // Initialize the new services
-  const pdfProcessingService = new PDFProcessingService(enhancedAIService.embeddings);
-  const websiteScraperService = new WebsiteScraperService(enhancedAIService.embeddings);
-  const analyticsService = new AnalyticsService();
+  // Initialize the new services (assign to outer-scoped vars)
+  pdfProcessingService = new PDFProcessingService(enhancedAIService.embeddings);
+  websiteScraperService = new WebsiteScraperService(enhancedAIService.embeddings);
+  analyticsService = new AnalyticsService();
   
   // Connect webhook cache invalidation to GHL service cache
   webhookService.onInvalidate = (contactId) => {
