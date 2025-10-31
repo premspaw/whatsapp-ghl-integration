@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { normalize: normalizePhone } = require('../utils/phoneNormalizer');
 
 class GHLService {
   constructor() {
@@ -23,35 +24,7 @@ class GHLService {
 
   // Helper function to normalize phone numbers for GHL API
   normalizePhoneNumber(phone) {
-    if (!phone || typeof phone !== 'string') return null;
-    
-    // Skip if it's not a phone number (like 'ai', 'system', etc.)
-    if (phone.toLowerCase() === 'ai' || phone.toLowerCase() === 'system' || phone.toLowerCase() === 'bot') {
-      return null;
-    }
-    
-    // Skip if it's clearly a name (contains only letters and spaces)
-    if (/^[a-zA-Z\s]+$/.test(phone)) {
-      console.log('Skipping name (not phone number):', phone);
-      return null;
-    }
-    
-    // Remove @c.us suffix and any non-digit characters except +
-    let normalized = phone.replace('@c.us', '').replace(/[^\d+]/g, '');
-    
-    // If it doesn't start with +, add it
-    if (!normalized.startsWith('+')) {
-      normalized = '+' + normalized;
-    }
-    
-    // Ensure we have a valid phone number (at least 7 digits for international)
-    const digitsOnly = normalized.replace('+', '');
-    if (digitsOnly.length < 7) {
-      console.error('Invalid phone number after normalization:', phone, '->', normalized);
-      return null;
-    }
-    
-    return normalized;
+    return normalizePhone(phone);
   }
 
   async getContacts() {

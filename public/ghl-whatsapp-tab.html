@@ -185,6 +185,17 @@
         .conversation-item.unread {
             background-color: #fef3c7;
             font-weight: 600;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .conversation-item.unread .contact-name {
+            font-weight: 700;
+            color: #92400e;
+        }
+
+        .conversation-item.unread .last-message {
+            font-weight: 600;
+            color: #451a03;
         }
 
         .unread-badge {
@@ -198,6 +209,22 @@
             justify-content: center;
             font-size: 12px;
             font-weight: 600;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+        }
+
+        .read-status {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .unread-badge {
             position: absolute;
             top: 0.5rem;
             right: 0.5rem;
@@ -448,6 +475,188 @@
             color: #475569;
         }
 
+        /* WhatsApp Connection Styles */
+        .whatsapp-connection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 2rem;
+        }
+
+        .connection-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .connection-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .whatsapp-logo {
+            font-size: 2rem;
+        }
+
+        .connection-header h3 {
+            margin: 0;
+            color: #1e293b;
+            font-size: 1.25rem;
+        }
+
+        .connection-state {
+            display: none;
+        }
+
+        .connection-state.active {
+            display: block;
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .connection-state h4 {
+            margin: 0 0 0.5rem 0;
+            color: #1e293b;
+            font-size: 1.125rem;
+        }
+
+        .connection-state p {
+            margin: 0 0 1.5rem 0;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .qr-code-container {
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        #qrCodeImage {
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .qr-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: #64748b;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .qr-instructions {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: left;
+        }
+
+        .qr-instructions ol {
+            margin: 0;
+            padding-left: 1.25rem;
+            color: #475569;
+        }
+
+        .qr-instructions li {
+            margin-bottom: 0.25rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn.primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn.primary:hover {
+            background: #2563eb;
+        }
+
+        .btn.secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn.secondary:hover {
+            background: #475569;
+        }
+
+        .btn.ghost {
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn.ghost:hover {
+            background: #f8fafc;
+            color: #475569;
+        }
+
+        .connected .status-icon {
+            color: #10b981;
+        }
+
+        .connecting .status-icon {
+            color: #3b82f6;
+            animation: pulse 2s infinite;
+        }
+
+        .disconnected .status-icon {
+            color: #ef4444;
+        }
+
+        .error .status-icon {
+            color: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         .loading {
             display: flex;
             align-items: center;
@@ -475,6 +684,46 @@
         .stat-value {
             font-weight: 600;
             color: #1e293b;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .filter-btn:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .filter-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .filter-btn.active:hover {
+            background: #2563eb;
         }
 
         /* Message Input Area */
@@ -770,6 +1019,21 @@
                 </div>
             </div>
             
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all" id="filterAll">
+                        📋 All
+                    </button>
+                    <button class="filter-btn" data-filter="unread" id="filterUnread">
+                        🔴 Unread
+                    </button>
+                    <button class="filter-btn" data-filter="read" id="filterRead">
+                        ✅ Read
+                    </button>
+                </div>
+            </div>
+            
             <div class="conversation-list" id="conversationList">
                 <div class="loading">Loading conversations...</div>
             </div>
@@ -791,9 +1055,66 @@
             </div>
             
             <div class="messages-area" id="messagesArea">
-                <div class="empty-state">
+                <div class="empty-state" id="emptyState">
                     <h3>Welcome to WhatsApp-syn</h3>
                     <p>Select a conversation from the sidebar to view messages</p>
+                </div>
+                
+                <!-- WhatsApp Connection Status -->
+                <div class="whatsapp-connection" id="whatsappConnection" style="display: none;">
+                    <div class="connection-card">
+                        <div class="connection-header">
+                            <div class="whatsapp-logo">📱</div>
+                            <h3>WhatsApp Connection</h3>
+                        </div>
+                        
+                        <!-- Connected State -->
+                        <div class="connection-state connected" id="connectedState" style="display: none;">
+                            <div class="status-icon">✅</div>
+                            <h4>WhatsApp Connected</h4>
+                            <p>Your WhatsApp is connected and ready to receive messages</p>
+                            <button class="btn secondary" id="disconnectBtn">Disconnect</button>
+                        </div>
+                        
+                        <!-- Connecting State -->
+                        <div class="connection-state connecting" id="connectingState" style="display: none;">
+                            <div class="status-icon">🔄</div>
+                            <h4>Scan QR Code</h4>
+                            <p>Scan this QR code with your WhatsApp mobile app</p>
+                            <div class="qr-code-container">
+                                <img id="qrCodeImage" src="" alt="QR Code" style="display: none;">
+                                <div class="qr-loading" id="qrLoading">
+                                    <div class="spinner"></div>
+                                    <p>Generating QR code...</p>
+                                </div>
+                            </div>
+                            <div class="qr-instructions">
+                                <ol>
+                                    <li>Open WhatsApp on your phone</li>
+                                    <li>Go to Settings → Linked Devices</li>
+                                    <li>Tap "Link a Device"</li>
+                                    <li>Scan this QR code</li>
+                                </ol>
+                            </div>
+                            <button class="btn ghost" id="refreshQRBtn">🔄 Refresh QR Code</button>
+                        </div>
+                        
+                        <!-- Disconnected State -->
+                        <div class="connection-state disconnected" id="disconnectedState" style="display: none;">
+                            <div class="status-icon">❌</div>
+                            <h4>WhatsApp Not Connected</h4>
+                            <p>Connect your WhatsApp to start receiving messages</p>
+                            <button class="btn primary" id="connectBtn">Connect WhatsApp</button>
+                        </div>
+                        
+                        <!-- Error State -->
+                        <div class="connection-state error" id="errorState" style="display: none;">
+                            <div class="status-icon">⚠️</div>
+                            <h4>Connection Error</h4>
+                            <p id="errorMessage">Failed to connect to WhatsApp</p>
+                            <button class="btn primary" id="retryBtn">Try Again</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -914,8 +1235,13 @@
                 if (data.success) {
                     conversations = data.conversations || [];
                     filteredConversations = [...conversations];
+                    console.log('📊 Loaded conversations:', conversations.length);
                     updateStats();
                     renderConversations();
+                    
+                    // Restore the saved filter state after conversations are loaded and rendered
+                    console.log('🔄 About to restore filter state...');
+                    restoreFilterState();
                 } else {
                     throw new Error(data.error || 'Failed to load conversations');
                 }
@@ -1156,6 +1482,7 @@
 
         // Filter conversations by read status
         function filterConversations(filter) {
+            console.log('🔍 Filtering conversations:', filter, 'Total conversations:', conversations.length);
             if (filter === 'all') {
                 filteredConversations = [...conversations];
             } else if (filter === 'unread') {
@@ -1164,7 +1491,70 @@
                 filteredConversations = conversations.filter(conv => conv.isRead && (!conv.unreadCount || conv.unreadCount === 0));
             }
             
+            console.log('📋 Filtered conversations:', filteredConversations.length);
             renderConversations();
+        }
+
+        // Set filter and update UI
+        function setFilter(filter) {
+            // Save filter state to localStorage
+            localStorage.setItem('conversationFilter', filter);
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`).classList.add('active');
+            
+            // Apply filter
+            filterConversations(filter);
+            
+            // Update stats to show filtered counts
+            updateFilteredStats(filter);
+        }
+
+        // Restore filter state from localStorage
+        function restoreFilterState() {
+            const savedFilter = localStorage.getItem('conversationFilter') || 'all';
+            console.log('🔄 Restoring filter state:', savedFilter);
+            
+            // Update UI to show the correct active button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`filter${savedFilter.charAt(0).toUpperCase() + savedFilter.slice(1)}`).classList.add('active');
+            
+            // Only apply filter if it's not 'all' (since conversations are already loaded as 'all')
+            if (savedFilter !== 'all') {
+                filterConversations(savedFilter);
+            } else {
+                // Update stats for 'all' filter
+                updateFilteredStats(savedFilter);
+            }
+        }
+
+        // Update stats based on current filter
+        function updateFilteredStats(filter) {
+            const totalElement = document.getElementById('totalConversations');
+            const activeTodayElement = document.getElementById('activeToday');
+            
+            if (filter === 'all') {
+                totalElement.textContent = conversations.length;
+                activeTodayElement.textContent = conversations.filter(conv => {
+                    const today = new Date().toDateString();
+                    return new Date(conv.updatedAt).toDateString() === today;
+                }).length;
+            } else if (filter === 'unread') {
+                const unreadConvs = conversations.filter(conv => !conv.isRead || (conv.unreadCount && conv.unreadCount > 0));
+                totalElement.textContent = unreadConvs.length;
+                activeTodayElement.textContent = unreadConvs.filter(conv => {
+                    const today = new Date().toDateString();
+                    return new Date(conv.updatedAt).toDateString() === today;
+                }).length;
+            } else if (filter === 'read') {
+                const readConvs = conversations.filter(conv => conv.isRead && (!conv.unreadCount || conv.unreadCount === 0));
+                totalElement.textContent = readConvs.length;
+                activeTodayElement.textContent = readConvs.filter(conv => {
+                    const today = new Date().toDateString();
+                    return new Date(conv.updatedAt).toDateString() === today;
+                }).length;
+            }
         }
 
         // Initialize Socket.IO connection
@@ -1385,13 +1775,8 @@
         // Filter functionality
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active class from all buttons
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
-                btn.classList.add('active');
-                
                 const filter = btn.dataset.filter;
-                filterConversations(filter);
+                setFilter(filter);
             });
         });
 
@@ -1431,6 +1816,221 @@
             document.getElementById('createRuleBtn').addEventListener('click', createKeywordRule);
             document.getElementById('testAutomationBtn').addEventListener('click', testAutomation);
             document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+            
+            // Search functionality
+            document.getElementById('searchBox').addEventListener('input', searchConversations);
+            
+            // Keyboard shortcuts for filters (like WhatsApp)
+            document.addEventListener('keydown', (e) => {
+                // Only trigger if not typing in an input field
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case '1':
+                            e.preventDefault();
+                            setFilter('all');
+                            break;
+                        case '2':
+                            e.preventDefault();
+                            setFilter('unread');
+                            break;
+                        case '3':
+                            e.preventDefault();
+                            setFilter('read');
+                            break;
+                    }
+                }
+            });
+            
+            // WhatsApp connection functionality
+            initializeWhatsAppConnection();
+        });
+
+        // WhatsApp Connection Management
+        let whatsappConnectionInterval;
+        let qrCodeRefreshTimeout;
+
+        function initializeWhatsAppConnection() {
+            // Add event listeners for WhatsApp connection buttons
+            document.getElementById('connectBtn').addEventListener('click', connectWhatsApp);
+            document.getElementById('disconnectBtn').addEventListener('click', disconnectWhatsApp);
+            document.getElementById('retryBtn').addEventListener('click', connectWhatsApp);
+            document.getElementById('refreshQRBtn').addEventListener('click', refreshQRCode);
+            
+            // Check initial WhatsApp status
+            checkWhatsAppStatus();
+            
+            // Set up periodic status checking
+            whatsappConnectionInterval = setInterval(checkWhatsAppStatus, 5000);
+        }
+
+        async function checkWhatsAppStatus() {
+            try {
+                const response = await fetch('/api/whatsapp/status');
+                const data = await response.json();
+                updateConnectionUI(data.status, data.message);
+            } catch (error) {
+                console.error('Error checking WhatsApp status:', error);
+                updateConnectionUI('error', 'Failed to check connection status');
+            }
+        }
+
+        function updateConnectionUI(status, message = '') {
+            const emptyState = document.getElementById('emptyState');
+            const whatsappConnection = document.getElementById('whatsappConnection');
+            const connectedState = document.getElementById('connectedState');
+            const connectingState = document.getElementById('connectingState');
+            const disconnectedState = document.getElementById('disconnectedState');
+            const errorState = document.getElementById('errorState');
+
+            // Check if all required elements exist
+            if (!emptyState || !whatsappConnection || !connectedState || !connectingState || !disconnectedState || !errorState) {
+                console.warn('Some WhatsApp connection UI elements are missing');
+                return;
+            }
+
+            // Hide all states first
+            [connectedState, connectingState, disconnectedState, errorState].forEach(el => {
+                if (el) {
+                    el.classList.remove('active');
+                    el.style.display = 'none';
+                }
+            });
+
+            switch (status) {
+                case 'connected':
+                case 'ready':
+                    emptyState.style.display = 'none';
+                    whatsappConnection.style.display = 'flex';
+                    connectedState.style.display = 'block';
+                    connectedState.classList.add('active');
+                    break;
+                    
+                case 'connecting':
+                case 'qr':
+                    emptyState.style.display = 'none';
+                    whatsappConnection.style.display = 'flex';
+                    connectingState.style.display = 'block';
+                    connectingState.classList.add('active');
+                    if (status === 'qr') {
+                        loadQRCode();
+                    }
+                    break;
+                    
+                case 'disconnected':
+                case 'not_connected':
+                    emptyState.style.display = 'none';
+                    whatsappConnection.style.display = 'flex';
+                    disconnectedState.style.display = 'block';
+                    disconnectedState.classList.add('active');
+                    break;
+                    
+                case 'error':
+                    emptyState.style.display = 'none';
+                    whatsappConnection.style.display = 'flex';
+                    errorState.style.display = 'block';
+                    errorState.classList.add('active');
+                    const errorMessage = document.getElementById('errorMessage');
+                    if (errorMessage) {
+                        errorMessage.textContent = message || 'Connection error occurred';
+                    }
+                    break;
+                    
+                default:
+                    // Show empty state if status is unknown
+                    emptyState.style.display = 'flex';
+                    whatsappConnection.style.display = 'none';
+            }
+        }
+
+        async function connectWhatsApp() {
+            try {
+                updateConnectionUI('connecting');
+                const response = await fetch('/api/whatsapp/reconnect', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Status will be updated by the periodic check
+                    setTimeout(checkWhatsAppStatus, 1000);
+                } else {
+                    updateConnectionUI('error', data.message || 'Failed to connect');
+                }
+            } catch (error) {
+                console.error('Error connecting WhatsApp:', error);
+                updateConnectionUI('error', 'Failed to initiate connection');
+            }
+        }
+
+        async function disconnectWhatsApp() {
+            try {
+                const response = await fetch('/api/whatsapp/disconnect', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateConnectionUI('disconnected');
+                } else {
+                    updateConnectionUI('error', data.message || 'Failed to disconnect');
+                }
+            } catch (error) {
+                console.error('Error disconnecting WhatsApp:', error);
+                updateConnectionUI('error', 'Failed to disconnect');
+            }
+        }
+
+        async function loadQRCode() {
+            try {
+                const qrImage = document.getElementById('qrCodeImage');
+                const qrLoading = document.getElementById('qrLoading');
+                
+                if (!qrImage || !qrLoading) {
+                    console.warn('QR code elements not found');
+                    return;
+                }
+                
+                qrImage.style.display = 'none';
+                qrLoading.style.display = 'flex';
+                
+                const response = await fetch('/api/whatsapp/qr-code');
+                const data = await response.json();
+                
+                if (data.success && data.qrCode) {
+                    qrImage.src = data.qrCode;
+                    qrImage.style.display = 'block';
+                    qrLoading.style.display = 'none';
+                    
+                    // Auto-refresh QR code after 30 seconds
+                    if (qrCodeRefreshTimeout) {
+                        clearTimeout(qrCodeRefreshTimeout);
+                    }
+                    qrCodeRefreshTimeout = setTimeout(refreshQRCode, 30000);
+                } else {
+                    qrLoading.innerHTML = '<p>Failed to load QR code</p>';
+                }
+            } catch (error) {
+                console.error('Error loading QR code:', error);
+                const qrLoading = document.getElementById('qrLoading');
+                if (qrLoading) {
+                    qrLoading.innerHTML = '<p>Error loading QR code</p>';
+                }
+            }
+        }
+
+        function refreshQRCode() {
+            if (qrCodeRefreshTimeout) {
+                clearTimeout(qrCodeRefreshTimeout);
+            }
+            loadQRCode();
+        }
+
+        // Clean up intervals when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (whatsappConnectionInterval) {
+                clearInterval(whatsappConnectionInterval);
+            }
+            if (qrCodeRefreshTimeout) {
+                clearTimeout(qrCodeRefreshTimeout);
+            }
         });
 
         // Settings page helpers

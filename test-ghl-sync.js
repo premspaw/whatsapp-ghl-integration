@@ -1,3 +1,4 @@
+require('dotenv').config();
 const axios = require('axios');
 
 // Test script to check GHL conversation sync

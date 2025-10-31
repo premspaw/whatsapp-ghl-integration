@@ -1,6 +1,7 @@
 const EventEmitter = require('events');
 const fs = require('fs').promises;
 const path = require('path');
+const { normalize: normalizePhone } = require('../utils/phoneNormalizer');
 
 class MCPAIService extends EventEmitter {
   constructor(ghlService) {
@@ -278,28 +279,7 @@ I'm here to help you with any questions or support you might need. To provide yo
 
   // Normalize phone number
   normalizePhoneNumber(phone) {
-    if (!phone || typeof phone !== 'string') return null;
-    
-    // Skip if it's not a phone number
-    if (phone.toLowerCase() === 'ai' || phone.toLowerCase() === 'system' || phone.toLowerCase() === 'bot') {
-      return null;
-    }
-    
-    // Remove @c.us suffix and any non-digit characters except +
-    let normalized = phone.replace('@c.us', '').replace(/[^\d+]/g, '');
-    
-    // If it doesn't start with +, add it
-    if (!normalized.startsWith('+')) {
-      normalized = '+' + normalized;
-    }
-    
-    // Ensure we have a valid phone number (at least 7 digits for international)
-    const digitsOnly = normalized.replace('+', '');
-    if (digitsOnly.length < 7) {
-      return null;
-    }
-    
-    return normalized;
+    return normalizePhone(phone);
   }
 
   // Get conversation history

@@ -2,6 +2,7 @@ const EventEmitter = require('events');
 const fs = require('fs').promises;
 const path = require('path');
 const EmbeddingsService = require('./embeddingsService');
+const UserContextService = require('./userContextService');
 
 class EnhancedAIService extends EventEmitter {
   constructor(ghlService) {
@@ -20,6 +21,9 @@ class EnhancedAIService extends EventEmitter {
     this.handoffKeywords = ['human', 'agent'];
     this.handoffRulesPath = path.join(__dirname, '..', 'data', 'handoff_rules.json');
     this.handoffRules = null; // Loaded from handoff_rules.json
+    
+    // Initialize User Context Service for RAG
+    this.userContextService = new UserContextService(ghlService);
     
     this.aiPersonality = {
       name: "Sarah",
@@ -104,10 +108,10 @@ class EnhancedAIService extends EventEmitter {
     }
   }
 
-  async safeRetrieveEmbeddings(query, conversationId) {
+  async safeRetrieveEmbeddings(query, conversationId, userContext = null) {
     try {
       if (!this.embeddings) return [];
-      const results = await this.embeddings.retrieve({ query, topK: 5, conversationId: null });
+      const results = await this.embeddings.retrieve({ query, topK: 5, conversationId: null, userContext });
       return Array.isArray(results) ? results : [];
     } catch (e) {
       return [];
@@ -238,19 +242,18 @@ class EnhancedAIService extends EventEmitter {
   }
 
   // Generate enhanced reply with memory and knowledge
-  async generateEnhancedReply(message, userProfile, memory, relevantKnowledge) {
+  async generateEnhancedReply(message, userProfile, memory, relevantKnowledge, userContext = null) {
     try {
+      // Ensure memory is an array
+      const memoryArray = Array.isArray(memory) ? memory : [];
+      
       // Build context from memory - use more context (up to this.conversationContextWindow)
-      const contextMessages = memory.slice(-this.conversationContextWindow).map(m => 
+      const contextMessages = memoryArray.slice(-this.conversationContextWindow).map(m => 
         `User: ${m.user}\nAI: ${m.ai}`
       ).join('\n\n');
       
-      // Build user context with more details if available
-      const userContext = userProfile ? 
-        `User: ${userProfile.name} (${userProfile.email || 'No email'}, Phone: ${userProfile.phone || 'Unknown'})
-User Tags: ${userProfile.tags ? userProfile.tags.join(', ') : 'None'}
-Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFields) : 'None'}` : 
-        'User: Unknown Contact';
+      // Build comprehensive user context using RAG data
+      let contextString = this.buildComprehensiveUserContext(userProfile, userContext);
       
       // Build knowledge context with more complete information
       const knowledgeContext = relevantKnowledge.length > 0 ?
@@ -258,15 +261,310 @@ Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFie
         '';
       
       // Generate contextual prompt with enhanced context
-      const prompt = this.buildEnhancedContextPrompt(message, userContext, contextMessages, knowledgeContext);
+      const prompt = this.buildEnhancedContextPrompt(message, contextString, contextMessages, knowledgeContext, userContext);
       
-      // For now, use simple AI logic (you can integrate with OpenAI/Claude later)
-      // In production, this would call an external AI API with the prompt
-      return this.generateSimpleContextualReply(message, userProfile, memory, relevantKnowledge);
+      // Generate contextual reply using comprehensive user data
+      return this.generateContextualReply(message, userProfile, memory, relevantKnowledge, userContext);
       
     } catch (error) {
       console.error('Error generating enhanced reply:', error);
       return this.getFallbackResponse(message);
+    }
+  }
+
+  // Build comprehensive user context from RAG data
+  buildComprehensiveUserContext(userProfile, userContext) {
+    let contextString = '';
+    
+    if (userContext) {
+      // Basic Information
+      contextString += `User: ${userContext.basic.name} (${userContext.basic.email || 'No email'})`;
+      contextString += `\nPhone: ${userContext.basic.phone}`;
+      contextString += `\nCustomer Type: ${userContext.relationship.customerType}`;
+      contextString += `\nRelationship Stage: ${userContext.relationship.relationshipStage}`;
+      
+      // Business Context
+      if (userContext.business.company) {
+        contextString += `\nCompany: ${userContext.business.company}`;
+      }
+      if (userContext.business.jobTitle) {
+        contextString += `\nJob Title: ${userContext.business.jobTitle}`;
+      }
+      
+      // Sales Context
+      if (userContext.sales.totalRevenue > 0) {
+        contextString += `\nTotal Revenue: $${userContext.sales.totalRevenue}`;
+      }
+      if (userContext.sales.activeDeals.length > 0) {
+        contextString += `\nActive Deals: ${userContext.sales.activeDeals.length}`;
+      }
+      if (userContext.sales.salesStage) {
+        contextString += `\nSales Stage: ${userContext.sales.salesStage}`;
+      }
+      
+      // Behavioral Context (Enhanced with Analytics)
+      if (userContext.behavioral) {
+        contextString += `\nCommunication Style: ${userContext.behavioral.communicationStyle}`;
+        contextString += `\nEngagement Level: ${(userContext.behavioral.engagementLevel * 100).toFixed(1)}%`;
+        contextString += `\nResponsiveness: ${(userContext.behavioral.responsiveness * 100).toFixed(1)}%`;
+        contextString += `\nInteraction Style: ${userContext.behavioral.interactionStyle}`;
+        contextString += `\nActivity Pattern: ${userContext.behavioral.activityPattern}`;
+        contextString += `\nSupport Level: ${userContext.behavioral.supportLevel}`;
+        contextString += `\nSatisfaction Score: ${(userContext.behavioral.satisfactionScore * 100).toFixed(1)}%`;
+        
+        if (userContext.behavioral.preferredTopics.length > 0) {
+          contextString += `\nPreferred Topics: ${userContext.behavioral.preferredTopics.map(t => t.topic).join(', ')}`;
+        }
+        
+        if (userContext.behavioral.behavioralInsights.length > 0) {
+          contextString += `\nBehavioral Insights: ${userContext.behavioral.behavioralInsights.map(i => i.insight).join('; ')}`;
+        }
+      }
+      
+      // Conversation Intelligence
+      if (userContext.conversationIntelligence) {
+        contextString += `\nConversation Intelligence Summary: ${userContext.conversationIntelligence.summary}`;
+        
+        if (userContext.conversationIntelligence.sentiment) {
+          contextString += `\nSentiment Analysis: Overall ${userContext.conversationIntelligence.sentiment.overallSentiment.toFixed(2)}, Recent ${userContext.conversationIntelligence.sentiment.recentSentiment.toFixed(2)}, Pattern: ${userContext.conversationIntelligence.sentiment.moodPattern}`;
+        }
+        
+        if (userContext.conversationIntelligence.timing) {
+          contextString += `\nPreferred Contact Times: ${userContext.conversationIntelligence.timing.preferredHours.join(', ')}h on ${userContext.conversationIntelligence.timing.preferredDays.join(', ')}`;
+        }
+        
+        if (userContext.conversationIntelligence.predictions) {
+          const predictions = userContext.conversationIntelligence.predictions;
+          contextString += `\nPredictive Indicators: Churn Risk ${(predictions.churnRisk * 100).toFixed(1)}%, Upsell Potential ${(predictions.upsellPotential * 100).toFixed(1)}%, Support Risk ${(predictions.supportRisk * 100).toFixed(1)}%`;
+        }
+      }
+      
+      // Traditional Behavioral Context (Legacy)
+      if (userContext.behavior.tags.length > 0) {
+        contextString += `\nTags: ${userContext.behavior.tags.map(t => t.name).join(', ')}`;
+      }
+      if (userContext.behavior.preferences && Object.keys(userContext.behavior.preferences).length > 0) {
+        contextString += `\nPreferences: ${JSON.stringify(userContext.behavior.preferences)}`;
+      }
+      if (userContext.behavior.painPoints.length > 0) {
+        contextString += `\nPain Points: ${userContext.behavior.painPoints.map(p => p.keyword).join(', ')}`;
+      }
+      if (userContext.behavior.interests.length > 0) {
+        contextString += `\nInterests: ${userContext.behavior.interests.map(i => i.keyword).join(', ')}`;
+      }
+      
+      // Conversation Context
+      if (userContext.conversation.sentiment) {
+        contextString += `\nSentiment: ${userContext.conversation.sentiment.overall}`;
+      }
+      if (userContext.conversation.recentTopics.length > 0) {
+        contextString += `\nRecent Topics: ${userContext.conversation.recentTopics.slice(0, 5).join(', ')}`;
+      }
+      if (userContext.relationship.lastInteraction) {
+        contextString += `\nLast Interaction: ${userContext.relationship.lastInteraction.date}`;
+      }
+      
+      // Custom Fields
+      if (userContext.behavior.customFields && Object.keys(userContext.behavior.customFields).length > 0) {
+        contextString += `\nCustom Fields: ${JSON.stringify(userContext.behavior.customFields)}`;
+      }
+      
+    } else if (userProfile) {
+      // Fallback to basic user profile
+      contextString = `User: ${userProfile.name} (${userProfile.email || 'No email'}, Phone: ${userProfile.phone || 'Unknown'})
+User Tags: ${userProfile.tags ? userProfile.tags.join(', ') : 'None'}
+Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFields) : 'None'}`;
+    } else {
+      contextString = 'User: Unknown Contact';
+    }
+    
+    return contextString;
+  }
+
+  // Generate contextual reply using comprehensive user data
+  generateContextualReply(message, userProfile, memory, relevantKnowledge, userContext) {
+    const userName = userContext?.basic?.name || userProfile?.name || 'there';
+    const lowerMessage = message.toLowerCase();
+    
+    // Use comprehensive context for personalization
+    const customerType = userContext?.relationship?.customerType || 'prospect';
+    const relationshipStage = userContext?.relationship?.relationshipStage || 'new';
+    const salesStage = userContext?.sales?.salesStage;
+    const sentiment = userContext?.conversation?.sentiment?.overall || 'neutral';
+    const painPoints = userContext?.behavior?.painPoints || [];
+    const interests = userContext?.behavior?.interests || [];
+    const recentTopics = userContext?.conversation?.recentTopics || [];
+    
+    // Enhanced behavioral context from analytics
+    const communicationStyle = userContext?.behavioral?.communicationStyle || 'unknown';
+    const engagementLevel = userContext?.behavioral?.engagementLevel || 0;
+    const responsiveness = userContext?.behavioral?.responsiveness || 0;
+    const interactionStyle = userContext?.behavioral?.interactionStyle || 'unknown';
+    const supportLevel = userContext?.behavioral?.supportLevel || 'low';
+    const satisfactionScore = userContext?.behavioral?.satisfactionScore || 0.5;
+    const behavioralInsights = userContext?.behavioral?.behavioralInsights || [];
+    
+    // Conversation intelligence
+    const conversationIntelligence = userContext?.conversationIntelligence;
+    const overallSentiment = conversationIntelligence?.sentiment?.overallSentiment || 0;
+    const recentSentiment = conversationIntelligence?.sentiment?.recentSentiment || 0;
+    const moodPattern = conversationIntelligence?.sentiment?.moodPattern || 'unknown';
+    const churnRisk = conversationIntelligence?.predictions?.churnRisk || 0.5;
+    const upsellPotential = conversationIntelligence?.predictions?.upsellPotential || 0.5;
+    const supportRisk = conversationIntelligence?.predictions?.supportRisk || 0.5;
+    
+    // Use memory for context
+    const memoryArray = Array.isArray(memory) ? memory : [];
+    const recentMemoryTopics = memoryArray.slice(-3).map(m => m.user.toLowerCase());
+    const isFollowUp = recentMemoryTopics.some(topic => 
+      topic.includes('help') || topic.includes('question') || topic.includes('problem')
+    );
+    
+    // Adaptive response based on behavioral analytics
+    let responseStyle = 'standard';
+    if (communicationStyle === 'brief') {
+      responseStyle = 'concise';
+    } else if (communicationStyle === 'verbose') {
+      responseStyle = 'detailed';
+    } else if (engagementLevel > 0.8) {
+      responseStyle = 'enthusiastic';
+    } else if (responsiveness < 0.3) {
+      responseStyle = 'patient';
+    }
+    
+    // Sentiment-aware responses
+    let sentimentModifier = '';
+    if (recentSentiment < -0.3) {
+      sentimentModifier = 'empathetic';
+    } else if (recentSentiment > 0.5) {
+      sentimentModifier = 'positive';
+    } else if (moodPattern === 'declining') {
+      sentimentModifier = 'supportive';
+    }
+    
+    // Generate personalized responses based on comprehensive context
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+      if (customerType === 'customer' || customerType === 'repeat_customer') {
+        if (satisfactionScore > 0.7) {
+          return responseStyle === 'concise' ? 
+            `Hi ${userName}! How can I help?` :
+            `Hello ${userName}! Great to hear from you again. I see you've been satisfied with our service. How can I help you today?`;
+        } else if (supportLevel === 'high') {
+          return `Hello ${userName}! I see you've needed some support recently. I'm here to make sure everything is working perfectly for you. What can I help with?`;
+        } else {
+          return `Hello ${userName}! Great to hear from you again. How can I help you today?`;
+        }
+      } else if (relationshipStage === 'new') {
+        return responseStyle === 'concise' ? 
+          `Hello ${userName}! Welcome!` :
+          `Hello ${userName}! Welcome! I'm here to help you with any questions you might have.`;
+      } else {
+        return `Hello ${userName}! How can I assist you today?`;
+      }
+    } 
+    
+    else if (lowerMessage.includes('help')) {
+      if (supportRisk > 0.7) {
+        return `I'm here to help you, ${userName}! I want to make sure we address any concerns you might have. What specific assistance do you need?`;
+      } else if (painPoints.length > 0) {
+        const mainPainPoint = painPoints[0].keyword;
+        return `I'm here to help you, ${userName}! I see you've mentioned ${mainPainPoint} before. Is this related to that, or something new I can assist with?`;
+      } else if (salesStage) {
+        return `I'm here to help you, ${userName}! I see you're in the ${salesStage} stage. What specific assistance do you need?`;
+      } else if (interactionStyle === 'inquisitive') {
+        return `I'm here to help you, ${userName}! I know you like to ask detailed questions, so feel free to be as specific as you'd like. What can I assist with?`;
+      } else {
+        return responseStyle === 'concise' ? 
+          `How can I help, ${userName}?` :
+          `I'm here to help you, ${userName}! What specific assistance do you need?`;
+      }
+    } 
+    
+    else if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
+      if (upsellPotential > 0.7) {
+        return `I'd be happy to discuss pricing with you, ${userName}! Based on your engagement, I think you might be interested in our premium features. Let me connect you with our sales team to explore options that could add even more value.`;
+      } else if (customerType === 'customer') {
+        return `I'd be happy to discuss pricing for additional services, ${userName}. Let me connect you with our account manager.`;
+      } else if (salesStage === 'negotiation' || salesStage === 'proposal') {
+        return `I see you're interested in pricing, ${userName}. Let me get you connected with our sales team to discuss your specific needs.`;
+      } else {
+        return `I'd be happy to discuss pricing with you, ${userName}. Let me connect you with our sales team to provide you with detailed information.`;
+      }
+    } 
+    
+    else if (lowerMessage.includes('thank')) {
+      if (satisfactionScore > 0.8) {
+        return `You're very welcome, ${userName}! I'm so glad I could help. Your satisfaction means everything to us. Is there anything else I can assist you with?`;
+      } else if (sentiment === 'positive' || recentSentiment > 0.3) {
+        return `You're very welcome, ${userName}! I'm so glad I could help. Is there anything else I can assist you with?`;
+      } else {
+        return `You're welcome, ${userName}! Is there anything else I can help you with today?`;
+      }
+    }
+    
+    else if (lowerMessage.includes('problem') || lowerMessage.includes('issue') || lowerMessage.includes('not working')) {
+      if (supportLevel === 'high') {
+        return `I understand you're experiencing an issue, ${userName}. I see you've needed support before, so let me make sure we get this resolved quickly for you. Can you describe what's happening?`;
+      } else if (churnRisk > 0.7) {
+        return `I'm sorry to hear you're having an issue, ${userName}. Let me personally ensure we get this resolved for you right away. Your experience is very important to us. What's going on?`;
+      } else if (communicationStyle === 'detailed') {
+        return `I'm sorry to hear you're experiencing an issue, ${userName}. I know you prefer detailed explanations, so please feel free to describe everything that's happening, and I'll make sure we get it resolved thoroughly.`;
+      } else {
+        return `I'm sorry to hear you're having an issue, ${userName}. Let me help you get this resolved. Can you tell me what's happening?`;
+      }
+    }
+    
+    else if (lowerMessage.includes('cancel') || lowerMessage.includes('unsubscribe')) {
+      if (churnRisk > 0.6) {
+        return `I understand you're considering canceling, ${userName}. Before we proceed, I'd love to see if there's anything we can do to address your concerns. Would you be open to a quick conversation about what's not working for you?`;
+      } else if (satisfactionScore < 0.4) {
+        return `I'm sorry to hear you want to cancel, ${userName}. Your satisfaction is important to us. Can you help me understand what led to this decision so we can try to make things right?`;
+      } else {
+        return `I understand you're looking to cancel, ${userName}. I'd be happy to help with that, but first, is there anything specific that's not meeting your needs that we might be able to address?`;
+      }
+    }
+    
+    else if (isFollowUp) {
+      if (recentTopics.length > 0) {
+        const topic = recentTopics[0];
+        return `I understand you're looking for help with ${topic}, ${userName}. Can you tell me more about what specific assistance you need?`;
+      } else {
+        return `I understand you're looking for help, ${userName}. Can you tell me more about what you need assistance with?`;
+      }
+    } 
+    
+    // Check for topic-specific responses based on interests
+    else if (interests.length > 0) {
+      const userInterests = interests.map(i => i.keyword.toLowerCase());
+      if (userInterests.some(interest => lowerMessage.includes(interest))) {
+        return `That's great, ${userName}! I see you're interested in this topic. How can I help you with that?`;
+      }
+    }
+    
+    // Default response with behavioral adaptation
+    else {
+      if (behavioralInsights.length > 0) {
+        const insight = behavioralInsights[0];
+        if (insight.type === 'engagement' && insight.confidence > 0.8) {
+          return `Thanks for your message, ${userName}! I appreciate how engaged you are with our service. Let me help you with that right away.`;
+        } else if (insight.type === 'communication_style' && insight.confidence > 0.8) {
+          return responseStyle === 'concise' ? 
+            `Got it, ${userName}. Let me help.` :
+            `Thanks for reaching out, ${userName}! I understand you like to ask questions, so please feel free to be as detailed as you need. How can I assist you?`;
+        }
+      }
+      
+      if (engagementLevel > 0.8) {
+        return `Thanks for your message, ${userName}! I can see you're really engaged with our service. How can I help you today?`;
+      } else if (responsiveness > 0.8) {
+        return `Hi ${userName}! I know you're usually quick to respond, so I'll make sure to get back to you promptly. What can I help with?`;
+      } else if (supportLevel === 'high') {
+        return `Hi ${userName}! I'm here to help. What can I assist you with today?`;
+      } else {
+        return responseStyle === 'concise' ? 
+          `Hi ${userName}! How can I help?` :
+          `Thanks for your message, ${userName}! How can I assist you today?`;
+      }
     }
   }
 
@@ -286,33 +584,6 @@ Current message: ${message}
 
 Respond as ${this.aiPersonality.name} would, using the context and knowledge above to provide a helpful, personalized response.
     `.trim();
-  }
-
-  // Generate simple contextual reply (fallback)
-  generateSimpleContextualReply(message, userProfile, memory, relevantKnowledge) {
-    const userName = userProfile ? userProfile.name : 'there';
-    const lowerMessage = message.toLowerCase();
-    
-    // Use memory for context
-    const recentTopics = memory.slice(-3).map(m => m.user.toLowerCase());
-    const isFollowUp = recentTopics.some(topic => 
-      topic.includes('help') || topic.includes('question') || topic.includes('problem')
-    );
-    
-    // Generate contextual responses
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return `Hello ${userName}! How can I help you today?`;
-    } else if (lowerMessage.includes('help')) {
-      return `I'm here to help you, ${userName}! What specific assistance do you need?`;
-    } else if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
-      return `I'd be happy to discuss pricing with you, ${userName}. Let me connect you with our sales team.`;
-    } else if (lowerMessage.includes('thank')) {
-      return `You're very welcome, ${userName}! Is there anything else I can help you with?`;
-    } else if (isFollowUp) {
-      return `I understand you're looking for help, ${userName}. Can you tell me more about what you need assistance with?`;
-    } else {
-      return `Hello ${userName}! Thanks for reaching out. How can I help you today?`;
-    }
   }
 
   // Template Management

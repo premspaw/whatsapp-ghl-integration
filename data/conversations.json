@@ -1,4 +1,41 @@
 {
+  "+91": {
+    "id": "+91",
+    "name": "Unknown Contact",
+    "contactName": "Unknown Contact",
+    "type": "whatsapp",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "msg_1761937361570",
+        "from": "user",
+        "direction": "inbound",
+        "timestamp": 1761937361570,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": true,
+    "syncToGHL": true,
+    "lastSyncedMessageId": 0,
+    "isRead": true,
+    "unreadCount": 0,
+    "createdAt": 1761937361570,
+    "updatedAt": 1761938283530,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "msg_1761937361570",
+          "from": "user",
+          "direction": "inbound",
+          "timestamp": 1761937361570,
+          "type": "text"
+        }
+      ]
+    },
+    "phone": "+91",
+    "phoneNumber": "+91"
+  },
   "+918123133382": {
     "id": "+918123133382",
     "phone": "+918123133382",
@@ -231,11 +268,27 @@
         "type": "chat"
       },
       {
+        "id": "false_9108123133382@c.us_3EB0F89CC053213DB4B0",
+        "from": "user",
+        "direction": "inbound",
+        "body": "",
+        "timestamp": 1761056760,
+        "type": "notification_template"
+      },
+      {
         "id": "false_918123133382@c.us_3A899953FA09B76BED52",
         "from": "user",
         "direction": "inbound",
         "body": "Bro",
         "timestamp": 1761061182,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A17CB6D5D99C257FAB0",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello test drive",
+        "timestamp": 1761062152,
         "type": "chat"
       },
       {
@@ -487,6 +540,22 @@
         "type": "text"
       },
       {
+        "id": "sent_1761056760581",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hello PREM PAWAR! This is automation check",
+        "timestamp": 1761056760581,
+        "type": "text"
+      },
+      {
+        "id": "msg_1761056762903",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hello there! Thanks for reaching out. How can I help you today?",
+        "timestamp": 1761056762901,
+        "type": "text"
+      },
+      {
         "id": "sent_1761061079724",
         "from": "ai",
         "direction": "outbound",
@@ -501,14 +570,6 @@
         "body": "Hello prem! Thanks for reaching out. How can I help you today?",
         "timestamp": 1761061186818,
         "type": "text"
-      },
-      {
-        "id": "false_918123133382@c.us_3A17CB6D5D99C257FAB0",
-        "from": "user",
-        "direction": "inbound",
-        "body": "Hello test drive",
-        "timestamp": 1761062152,
-        "type": "chat"
       },
       {
         "id": "msg_1761062158512",
@@ -577,7 +638,7 @@
     ],
     "aiEnabled": true,
     "createdAt": "2025-10-17T13:27:22.920Z",
-    "updatedAt": 1761071982554,
+    "updatedAt": 1761938718765,
     "phoneNumber": "+918123133382",
     "context": {
       "type": "default",
@@ -739,40 +800,72 @@
       ]
     },
     "unreadCount": 0,
-    "lastSyncedMessageId": 77,
+    "lastSyncedMessageId": 78,
     "isRead": true
   },
-  "+9108123133382": {
-    "id": "+9108123133382",
-    "phone": "+9108123133382",
-    "phoneNumber": "+9108123133382",
+  "+1234567890": {
+    "id": "+1234567890",
+    "phone": "+1234567890",
+    "phoneNumber": "+1234567890",
     "name": "Unknown Contact",
     "contactName": "Unknown Contact",
     "type": "text",
     "channel": "whatsapp_private",
     "messages": [
       {
-        "id": "false_9108123133382@c.us_3EB0F89CC053213DB4B0",
+        "id": "test_1761935170663",
         "from": "user",
         "direction": "inbound",
-        "body": "",
-        "timestamp": 1761056760,
-        "type": "notification_template"
-      },
-      {
-        "id": "sent_1761056760581",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello PREM PAWAR! This is automation check",
-        "timestamp": 1761056760581,
+        "body": "Hello, I need help with your premium services and pricing information",
+        "timestamp": 1761935170663,
         "type": "text"
       },
       {
-        "id": "msg_1761056762903",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello there! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1761056762901,
+        "id": "test_1761935208042",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello, I need help with your premium services and pricing information",
+        "timestamp": 1761935208042,
+        "type": "text"
+      },
+      {
+        "id": "test_1761935326809",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello, I need help with your premium services and pricing information",
+        "timestamp": 1761935326809,
+        "type": "text"
+      },
+      {
+        "id": "test_1761935618079",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello, I need help with your premium services and pricing information",
+        "timestamp": 1761935618079,
+        "type": "text"
+      },
+      {
+        "id": "test_1761935706083",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello, I need help with your premium services and pricing information",
+        "timestamp": 1761935706082,
+        "type": "text"
+      },
+      {
+        "id": "test_1761935930299",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello, I need help with your premium services and pricing information",
+        "timestamp": 1761935930299,
+        "type": "text"
+      },
+      {
+        "id": "test_1761936228842",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello, I need help with your premium services and pricing information",
+        "timestamp": 1761936228842,
         "type": "text"
       }
     ],
@@ -781,17 +874,65 @@
     "lastSyncedMessageId": 0,
     "isRead": true,
     "unreadCount": 0,
-    "createdAt": 1761056760582,
-    "updatedAt": 1761062204346,
+    "createdAt": 1761935170826,
+    "updatedAt": 1761939085907,
     "context": {
       "type": "default",
       "messages": [
         {
-          "id": "sent_1761056760581",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello PREM PAWAR! This is automation check",
-          "timestamp": 1761056760581,
+          "id": "test_1761935170663",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello, I need help with your premium services and pricing information",
+          "timestamp": 1761935170663,
+          "type": "text"
+        },
+        {
+          "id": "test_1761935208042",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello, I need help with your premium services and pricing information",
+          "timestamp": 1761935208042,
+          "type": "text"
+        },
+        {
+          "id": "test_1761935326809",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello, I need help with your premium services and pricing information",
+          "timestamp": 1761935326809,
+          "type": "text"
+        },
+        {
+          "id": "test_1761935618079",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello, I need help with your premium services and pricing information",
+          "timestamp": 1761935618079,
+          "type": "text"
+        },
+        {
+          "id": "test_1761935706083",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello, I need help with your premium services and pricing information",
+          "timestamp": 1761935706082,
+          "type": "text"
+        },
+        {
+          "id": "test_1761935930299",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello, I need help with your premium services and pricing information",
+          "timestamp": 1761935930299,
+          "type": "text"
+        },
+        {
+          "id": "test_1761936228842",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello, I need help with your premium services and pricing information",
+          "timestamp": 1761936228842,
           "type": "text"
         }
       ]

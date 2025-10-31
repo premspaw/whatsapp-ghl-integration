@@ -3,6 +3,7 @@ const path = require('path');
 const { upsertContactByPhone, findByPhone } = require('./db/contactRepo');
 const { upsertConversation, touchLastMessageAt } = require('./db/conversationRepo');
 const { createMessage } = require('./db/messageRepo');
+const { normalize: normalizePhone } = require('../utils/phoneNormalizer');
 
 class ConversationManager {
   constructor() {
@@ -15,33 +16,7 @@ class ConversationManager {
 
   // Normalize phone number to consistent format: +918123133382
   normalizePhoneNumber(phone) {
-    if (!phone) return null;
-    
-    // Remove all non-digit characters except '+'
-    let normalized = phone.replace(/[^\d+]/g, '');
-    
-    // Remove @c.us suffix if present (WhatsApp format)
-    normalized = normalized.replace(/@c\.us$/, '');
-    
-    // If it starts with +, keep it
-    if (normalized.startsWith('+')) {
-      return normalized;
-    }
-    
-    // Remove leading zeros
-    normalized = normalized.replace(/^0+/, '');
-    
-    // If it doesn't start with country code, add +91 (India)
-    if (!normalized.startsWith('91')) {
-      normalized = '91' + normalized;
-    }
-    
-    // Ensure it starts with +
-    if (!normalized.startsWith('+')) {
-      normalized = '+' + normalized;
-    }
-    
-    return normalized;
+    return normalizePhone(phone);
   }
 
   async initializeDataDirectory() {

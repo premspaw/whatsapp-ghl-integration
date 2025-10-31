@@ -1,11 +1,123 @@
 const express = require('express');
+const QRCode = require('qrcode');
 
 module.exports = (whatsappService, ghlService, enhancedAIService, conversationManager) => {
   const router = express.Router();
 
+  // Store QR code data temporarily
+  let currentQRCode = null;
+  let connectionStatus = 'disconnected'; // disconnected, connecting, connected
+
+  // Listen for QR code events from WhatsApp service
+  if (whatsappService) {
+    whatsappService.on('qr', (qr) => {
+      currentQRCode = qr;
+      connectionStatus = 'connecting';
+      console.log('QR Code received for web display');
+    });
+
+    whatsappService.on('ready', () => {
+      currentQRCode = null;
+      connectionStatus = 'connected';
+      console.log('WhatsApp connected - clearing QR code');
+    });
+
+    whatsappService.on('disconnected', () => {
+      currentQRCode = null;
+      connectionStatus = 'disconnected';
+      console.log('WhatsApp disconnected');
+    });
+  }
+
   // Simple health check
   router.get('/health', (req, res) => {
     res.json({ success: true, service: 'whatsapp', timestamp: Date.now() });
+  });
+
+  // Get QR code for web display
+  router.get('/qr-code', async (req, res) => {
+    try {
+      if (!currentQRCode) {
+        return res.json({ 
+          success: false, 
+          error: 'No QR code available',
+          status: connectionStatus,
+          message: connectionStatus === 'connected' ? 'WhatsApp is already connected' : 'QR code not generated yet'
+        });
+      }
+
+      // Generate QR code as base64 image
+      const qrCodeImage = await QRCode.toDataURL(currentQRCode, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+
+      res.json({
+        success: true,
+        qrCode: qrCodeImage,
+        status: connectionStatus,
+        message: 'Scan this QR code with your WhatsApp mobile app'
+      });
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to generate QR code',
+        details: error.message 
+      });
+    }
+  });
+
+  // Get connection status
+  router.get('/status', (req, res) => {
+    const isReady = whatsappService ? whatsappService.isReady : false;
+    const actualStatus = isReady ? 'connected' : (currentQRCode ? 'connecting' : 'disconnected');
+    
+    res.json({
+      success: true,
+      status: actualStatus,
+      isReady: isReady,
+      hasQRCode: !!currentQRCode,
+      message: isReady ? 'WhatsApp is connected and ready' : 
+               currentQRCode ? 'Waiting for QR code scan' : 
+               'WhatsApp is not connected'
+    });
+  });
+
+  // Force reconnection (generates new QR code)
+  router.post('/reconnect', async (req, res) => {
+    try {
+      if (whatsappService && typeof whatsappService.disconnect === 'function') {
+        await whatsappService.disconnect();
+        // Wait a moment then reinitialize
+        setTimeout(() => {
+          if (whatsappService && typeof whatsappService.initialize === 'function') {
+            whatsappService.initialize();
+          }
+        }, 2000);
+        
+        res.json({
+          success: true,
+          message: 'Reconnection initiated. New QR code will be generated shortly.'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'WhatsApp service not available'
+        });
+      }
+    } catch (error) {
+      console.error('Error during reconnection:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to reconnect',
+        details: error.message
+      });
+    }
   });
 
   // WhatsApp conversations endpoint for custom tab
@@ -43,7 +155,9 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
             : null,
           aiEnabled: !!conv.aiEnabled,
           createdAt: conv.createdAt,
-          updatedAt: conv.updatedAt
+          updatedAt: conv.updatedAt,
+          isRead: conv.isRead !== undefined ? conv.isRead : true, // Default to read if not specified
+          unreadCount: conv.unreadCount || 0 // Default to 0 if not specified
         };
       }));
 
