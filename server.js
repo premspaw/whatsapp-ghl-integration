@@ -51,6 +51,7 @@ const WebhookService = require('./services/webhookService');
 const { createClient } = require('@supabase/supabase-js');
 const SecurityService = require('./services/securityService');
 const { createHandoff, listHandoffs, assignHandoff, resolveHandoff } = require('./services/db/handoffRepo');
+const phoneNormalizer = require('./utils/phoneNormalizer');
 
 const app = express();
 const server = http.createServer(app);
@@ -358,13 +359,23 @@ app.post('/webhook/whatsapp', async (req, res) => {
 
     console.log(`📨 Inbound WhatsApp message from ${from}: ${text}`);
 
+    // Normalize phone number for GHL integration
+    const normalizedPhone = phoneNormalizer.normalize(from);
+    if (!normalizedPhone) {
+      console.warn(`⚠️ Could not normalize phone number: ${from}. Skipping GHL integration.`);
+      // Still store the message locally but skip GHL processing
+      return;
+    }
+
+    console.log(`📞 Normalized phone: ${from} -> ${normalizedPhone}`);
+
     // Get or create GHL contact
     let contact;
     try {
-      contact = await ghlService.findContactByPhone(from);
+      contact = await ghlService.findContactByPhone(normalizedPhone);
       if (!contact) {
         contact = await ghlService.createContact({
-          phone: from,
+          phone: normalizedPhone,
           firstName: 'WhatsApp',
           lastName: 'Contact'
         });
@@ -390,14 +401,14 @@ app.post('/webhook/whatsapp', async (req, res) => {
 
     // Generate AI response using Enhanced AI Service with RAG
     try {
-      const aiResponse = await enhancedAIService.generateContextualReply(text, from, contact.id);
+      const aiResponse = await enhancedAIService.generateContextualReply(text, normalizedPhone, contact.id);
       
       if (aiResponse && aiResponse.trim()) {
         console.log(`🤖 AI Response: ${aiResponse}`);
         
         // Send AI response back via WhatsApp
         if (whatsappService && whatsappService.isReady) {
-          await whatsappService.sendMessage(from, aiResponse);
+          await whatsappService.sendMessage(normalizedPhone, aiResponse);
           console.log('✅ AI response sent via WhatsApp');
           
           // Log AI response to GHL

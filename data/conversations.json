@@ -634,36 +634,31 @@
         "body": "Hi PREM PAWAR,\nthi gym membership reneval",
         "timestamp": 1761071503747,
         "type": "template"
+      },
+      {
+        "id": "prov_1761975196482",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hi, I need help with my order status",
+        "timestamp": 1761975196407,
+        "type": "text"
+      },
+      {
+        "id": "prov_1761977021205",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hi, I need help with my order status",
+        "timestamp": 1761977021100,
+        "type": "text"
       }
     ],
     "aiEnabled": true,
     "createdAt": "2025-10-17T13:27:22.920Z",
-    "updatedAt": 1761938718765,
+    "updatedAt": 1761977021206,
     "phoneNumber": "+918123133382",
     "context": {
       "type": "default",
       "messages": [
-        {
-          "id": "sent_1761047450334",
-          "from": "ai",
-          "body": "test 2",
-          "timestamp": 1761047450334,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761047551534",
-          "from": "ai",
-          "body": "Hello prem! How can I help you today?",
-          "timestamp": 1761047551534,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761047599063",
-          "from": "ai",
-          "body": "Hello prem! How can I help you today?",
-          "timestamp": 1761047599063,
-          "type": "text"
-        },
         {
           "id": "msg_1761047661869",
           "from": "ai",
@@ -710,6 +705,22 @@
           "type": "text"
         },
         {
+          "id": "sent_1761056760581",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hello PREM PAWAR! This is automation check",
+          "timestamp": 1761056760581,
+          "type": "text"
+        },
+        {
+          "id": "msg_1761056762903",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hello there! Thanks for reaching out. How can I help you today?",
+          "timestamp": 1761056762901,
+          "type": "text"
+        },
+        {
           "id": "sent_1761061079724",
           "from": "ai",
           "direction": "outbound",
@@ -724,14 +735,6 @@
           "body": "Hello prem! Thanks for reaching out. How can I help you today?",
           "timestamp": 1761061186818,
           "type": "text"
-        },
-        {
-          "id": "false_918123133382@c.us_3A17CB6D5D99C257FAB0",
-          "from": "user",
-          "direction": "inbound",
-          "body": "Hello test drive",
-          "timestamp": 1761062152,
-          "type": "chat"
         },
         {
           "id": "msg_1761062158512",
@@ -796,12 +799,28 @@
           "body": "Hi PREM PAWAR,\nthi gym membership reneval",
           "timestamp": 1761071503747,
           "type": "template"
+        },
+        {
+          "id": "prov_1761975196482",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hi, I need help with my order status",
+          "timestamp": 1761975196407,
+          "type": "text"
+        },
+        {
+          "id": "prov_1761977021205",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hi, I need help with my order status",
+          "timestamp": 1761977021100,
+          "type": "text"
         }
       ]
     },
-    "unreadCount": 0,
+    "unreadCount": 2,
     "lastSyncedMessageId": 78,
-    "isRead": true
+    "isRead": false
   },
   "+1234567890": {
     "id": "+1234567890",

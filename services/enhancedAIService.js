@@ -3,11 +3,13 @@ const fs = require('fs').promises;
 const path = require('path');
 const EmbeddingsService = require('./embeddingsService');
 const UserContextService = require('./userContextService');
+const AIService = require('./aiService');
 
 class EnhancedAIService extends EventEmitter {
   constructor(ghlService) {
     super();
     this.ghlService = ghlService;
+    this.aiService = new AIService(); // Initialize AI service for actual API calls
     this.conversationMemory = new Map(); // Store conversations per user
     this.userProfiles = new Map(); // Cache user details from GHL
     this.knowledgeBase = new Map(); // Store knowledge base items
@@ -263,8 +265,17 @@ class EnhancedAIService extends EventEmitter {
       // Generate contextual prompt with enhanced context
       const prompt = this.buildEnhancedContextPrompt(message, contextString, contextMessages, knowledgeContext, userContext);
       
-      // Generate contextual reply using comprehensive user data
-      return this.generateContextualReply(message, userProfile, memory, relevantKnowledge, userContext);
+      // Generate AI reply using the aiService with enhanced context
+      const context = {
+        messages: memoryArray.map(m => ({ from: 'user', body: m.user })).concat(
+          memoryArray.map(m => ({ from: 'ai', body: m.ai }))
+        ),
+        type: 'support',
+        userProfile,
+        knowledgeContext
+      };
+      
+      return await this.aiService.generateCustomReply(message, prompt, context);
       
     } catch (error) {
       console.error('Error generating enhanced reply:', error);

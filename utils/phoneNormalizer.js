@@ -47,6 +47,12 @@ class PhoneNormalizer {
       return null;
     }
 
+    // Check for incomplete phone numbers (just country codes)
+    if (this.isIncompletePhoneNumber(phone)) {
+      console.warn(`Incomplete phone number detected (just country code): ${phone}`);
+      return null;
+    }
+
     // Clean the phone number
     let cleaned = this.cleanPhoneNumber(phone);
     if (!cleaned) {
@@ -237,6 +243,33 @@ class PhoneNormalizer {
     }
     
     return true;
+  }
+
+  /**
+   * Check if a phone number is incomplete (just country code)
+   */
+  isIncompletePhoneNumber(phone) {
+    if (!phone || typeof phone !== 'string') {
+      return true;
+    }
+
+    const cleaned = phone.replace(/[^\d+]/g, '');
+    
+    // Check for common incomplete patterns
+    const incompletePatterns = [
+      '+91',    // Just India country code
+      '+1',     // Just US country code
+      '+44',    // Just UK country code
+      '+86',    // Just China country code
+      '+81',    // Just Japan country code
+      '+49',    // Just Germany country code
+      '+33',    // Just France country code
+      '+39',    // Just Italy country code
+      '+34',    // Just Spain country code
+      '+7',     // Just Russia country code
+    ];
+    
+    return incompletePatterns.includes(cleaned);
   }
 
   /**
