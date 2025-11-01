@@ -1213,6 +1213,12 @@
                             ✨ Open Template Creator
                         </button>
                     </div>
+                    
+                    <!-- Templates List -->
+                    <div class="card" style="margin-top: 1rem;">
+                        <h4 style="margin-bottom: 1rem;">Your Templates</h4>
+                        <div id="templates_list">Loading...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2077,6 +2083,13 @@
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || 'Failed');
                 const list = document.getElementById('templates_list');
+                
+                // Add null check to prevent error
+                if (!list) {
+                    console.warn('templates_list element not found');
+                    return [];
+                }
+                
                 const templates = data.templates || [];
                 list.innerHTML = templates.length === 0 ? '<div>No templates yet</div>' : templates.map(t => `
                     <div class="card" style="margin-bottom:0.5rem;display:flex;justify-content:space-between;gap:0.5rem;align-items:center;">
@@ -2089,7 +2102,11 @@
                 `).join('');
                 return templates;
             } catch (e) {
-                document.getElementById('templates_list').innerHTML = '<div>Error loading templates</div>';
+                console.error('Error loading templates:', e);
+                const list = document.getElementById('templates_list');
+                if (list) {
+                    list.innerHTML = '<div>Error loading templates</div>';
+                }
                 return [];
             }
         }
