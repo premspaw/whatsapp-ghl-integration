@@ -1,11 +1,178 @@
 const express = require('express');
+console.log('[ghlRoutes] module loading');
+const GHLOAuthService = require('../services/ghlOAuthService');
 
 module.exports = (ghlService) => {
   const router = express.Router();
+  const oauthService = new GHLOAuthService();
 
   // Minimal health endpoint to prevent startup crash
   router.get('/health', (req, res) => {
     res.json({ success: true, service: 'ghl', timestamp: Date.now() });
+  });
+
+  // OAuth: get authorize URL
+  router.get('/oauth/authorize', (req, res) => {
+    console.log('[ghlRoutes] /oauth/authorize mounted');
+    try {
+      if (!oauthService.isConfigured()) {
+        return res.status(400).json({ success: false, error: 'OAuth not configured' });
+      }
+      const state = req.query.state || '';
+      const url = oauthService.getAuthorizeUrl({ state });
+      res.json({ success: true, authorizeUrl: url });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // OAuth: callback to exchange code for token
+  router.get('/oauth/callback', async (req, res) => {
+    console.log('[ghlRoutes] /oauth/callback mounted');
+    try {
+      const code = req.query.code;
+      if (!code) {
+        return res.status(400).json({ success: false, error: 'Missing code' });
+      }
+      const result = await oauthService.exchangeCodeForToken(code);
+      res.json({ success: true, token: { locationId: result.locationId, token_type: result.token_type, expires_in: result.expires_in } });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // OAuth: status
+  router.get('/oauth/status', (req, res) => {
+    console.log('[ghlRoutes] /oauth/status mounted');
+    try {
+      const status = oauthService.getStatus();
+      res.json({ success: true, status });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // OAuth: refresh token
+  router.post('/oauth/refresh', async (req, res) => {
+    console.log('[ghlRoutes] /oauth/refresh mounted');
+    try {
+      const locationId = req.body?.locationId || process.env.GHL_LOCATION_ID || 'default';
+      const result = await oauthService.refreshToken(locationId);
+      res.json({ success: true, token: { locationId: result.locationId, token_type: result.token_type, expires_in: result.expires_in } });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Contacts: safe fallback route
+  // Returns an empty list when GHL is not configured to avoid 404s in dashboards/tests
+  router.get('/contacts', async (req, res) => {
+    try {
+      if (!ghlService || typeof ghlService.isConfigured !== 'function' || !ghlService.isConfigured()) {
+        return res.json({ success: true, contacts: [], configured: false });
+      }
+      const contacts = await ghlService.getContacts();
+      res.json({ success: true, contacts, configured: true });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Optional: Knowledge Base proxy endpoints (use env-configured URLs)
+  const GHLKnowledgeService = require('../services/ghlKnowledgeService');
+  const kbService = new GHLKnowledgeService(ghlService);
+  console.log('[ghlRoutes] GHLKnowledgeService initialized, isConfigured:', kbService.isConfigured());
+  // Simple test endpoint to verify router wiring under /api/ghl/kb/test
+  router.get('/kb/test', (req, res) => {
+    console.log('[ghlRoutes] /kb/test hit');
+    res.json({ success: true, message: 'kb test ok' });
+  });
+  // Debug KB adapter config
+  router.get('/kb/debug', (req, res) => {
+    res.json({
+      success: true,
+      kbSearchUrl: kbService.kbSearchUrl,
+      kbListUrl: kbService.kbListUrl,
+      isConfigured: kbService.isConfigured()
+    });
+  });
+  // Search KB
+  router.post('/kb/search', async (req, res) => {
+    console.log('[ghlRoutes] /kb/search mounted');
+    try {
+      console.log('[ghlRoutes] KB config (search):', {
+        kbSearchUrl: kbService.kbSearchUrl,
+        kbListUrl: kbService.kbListUrl,
+        configured: kbService.isConfigured()
+      });
+      const query = String(req.body?.query || '').trim();
+      if (!query) return res.status(400).json({ success: false, error: 'Query required' });
+      if (!kbService.kbSearchUrl) return res.status(400).json({ success: false, error: 'KB search URL not configured' });
+      const items = await kbService.search(query, { locationId: req.body?.locationId || process.env.GHL_LOCATION_ID });
+      res.json({ success: true, count: items.length, items });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+  // List KB items
+  router.get('/kb/list', async (req, res) => {
+    console.log('[ghlRoutes] /kb/list mounted');
+    try {
+      console.log('[ghlRoutes] KB config (list):', {
+        kbSearchUrl: kbService.kbSearchUrl,
+        kbListUrl: kbService.kbListUrl,
+        configured: kbService.isConfigured()
+      });
+      if (!kbService.kbListUrl) return res.status(400).json({ success: false, error: 'KB list URL not configured' });
+      const items = await kbService.list({ locationId: req.query?.locationId || process.env.GHL_LOCATION_ID });
+      res.json({ success: true, count: Array.isArray(items) ? items.length : 0, items });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Upload website into KB (GHL endpoint if configured, else local fallback)
+  router.post('/kb/website', async (req, res) => {
+    console.log('[ghlRoutes] /kb/website mounted');
+    try {
+      const url = String(req.body?.url || req.body?.websiteUrl || '').trim();
+      const maxDepth = req.body?.maxDepth;
+      const category = req.body?.category || 'website';
+      const tags = req.body?.tags || [];
+      const locationId = req.body?.locationId || process.env.GHL_LOCATION_ID;
+
+      if (!url) return res.status(400).json({ success: false, error: 'URL required' });
+
+      const result = await kbService.uploadWebsite(url, { maxDepth, category, tags, locationId });
+      if (!result.success) {
+        return res.status(500).json({ success: false, error: result.error || 'Upload failed' });
+      }
+      res.json({ success: true, result });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Upload PDF into KB (by URL) — uses GHL endpoint if configured, else local fallback
+  router.post('/kb/pdf', async (req, res) => {
+    console.log('[ghlRoutes] /kb/pdf mounted');
+    try {
+      const url = String(req.body?.url || req.body?.pdfUrl || '').trim();
+      const category = req.body?.category || 'documents';
+      const tags = req.body?.tags || [];
+      const description = req.body?.description || '';
+      const locationId = req.body?.locationId || process.env.GHL_LOCATION_ID;
+
+      if (!url) return res.status(400).json({ success: false, error: 'PDF URL required' });
+
+      const result = await kbService.uploadPdf(url, { category, tags, description, locationId });
+      if (!result.success) {
+        return res.status(500).json({ success: false, error: result.error || 'PDF upload failed' });
+      }
+      res.json({ success: true, result });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   });
 
   return router;
