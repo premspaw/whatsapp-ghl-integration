@@ -242,8 +242,11 @@
                 <p class="text-muted">Manage multiple WhatsApp connections for different GoHighLevel sub-accounts</p>
         </div>
             <div>
-                <button class="btn btn-outline-primary" onclick="location.reload()">
+                <button class="btn btn-outline-primary me-2" onclick="location.reload()">
                     <i class="fas fa-sync"></i> Refresh
+                </button>
+                <button class="btn btn-outline-success" onclick="window.location.href='/ai-management-dashboard.html'">
+                    <i class="fas fa-robot"></i> AI Dashboard
                 </button>
                 </div>
             </div>
@@ -326,13 +329,20 @@
                 }
             } catch (error) {
                 console.error('Error loading integrations:', error);
-                // Show default/mock data if no integrations exist yet
+                // Ensure integrations is an array before rendering
+                integrations = [];
                 renderIntegrations();
             }
         }
 
         function renderIntegrations() {
             const container = document.getElementById('integrationsList');
+            
+            // Ensure integrations is an array
+            if (!Array.isArray(integrations)) {
+                console.error('Integrations is not an array:', integrations);
+                integrations = [];
+            }
             
             if (integrations.length === 0) {
                 container.innerHTML = `

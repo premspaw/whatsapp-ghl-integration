@@ -10,6 +10,9 @@
  * 8123133382 -> +918123133382 (adds country code)
  */
 
+// Track incomplete phone warnings to avoid repeated noise
+const _loggedIncompleteWarnings = new Set();
+
 class PhoneNormalizer {
   constructor() {
     // Common country codes and their patterns
@@ -49,7 +52,11 @@ class PhoneNormalizer {
 
     // Check for incomplete phone numbers (just country codes)
     if (this.isIncompletePhoneNumber(phone)) {
-      console.warn(`Incomplete phone number detected (just country code): ${phone}`);
+      const key = String(phone).replace(/\s+/g, '');
+      if (!_loggedIncompleteWarnings.has(key)) {
+        console.warn(`Incomplete phone number detected (just country code): ${phone}`);
+        _loggedIncompleteWarnings.add(key);
+      }
       return null;
     }
 

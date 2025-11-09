@@ -1,0 +1,115 @@
+{
+  "products": [
+    {
+      "id": "ai-chatbot-basic",
+      "name": "AI Chatbot - Basic Package",
+      "category": "AI Solutions",
+      "price": "$2,500",
+      "description": "Entry-level AI chatbot solution perfect for small businesses. Includes basic natural language processing, FAQ automation, and simple conversation flows.",
+      "features": [
+        "Up to 1,000 conversations per month",
+        "Basic NLP capabilities",
+        "FAQ automation",
+        "Email support",
+        "Simple analytics dashboard"
+      ],
+      "setup_time": "2-3 weeks",
+      "monthly_fee": "$99"
+    },
+    {
+      "id": "ai-chatbot-pro",
+      "name": "AI Chatbot - Professional Package",
+      "category": "AI Solutions",
+      "price": "$7,500",
+      "description": "Advanced AI chatbot with sophisticated conversation handling, CRM integration, and multi-channel support including WhatsApp, Facebook Messenger, and web chat.",
+      "features": [
+        "Up to 10,000 conversations per month",
+        "Advanced NLP and sentiment analysis",
+        "CRM integration (Salesforce, HubSpot, GoHighLevel)",
+        "Multi-channel support",
+        "Custom conversation flows",
+        "Priority phone support",
+        "Advanced analytics and reporting"
+      ],
+      "setup_time": "4-6 weeks",
+      "monthly_fee": "$299"
+    },
+    {
+      "id": "whatsapp-business-setup",
+      "name": "WhatsApp Business API Setup",
+      "category": "Communication Solutions",
+      "price": "$1,500",
+      "description": "Complete WhatsApp Business API setup and integration service. Includes account verification, API configuration, and basic automation setup.",
+      "features": [
+        "WhatsApp Business account setup",
+        "API integration",
+        "Message template creation",
+        "Basic automation rules",
+        "Staff training (2 hours)",
+        "30-day support included"
+      ],
+      "setup_time": "1-2 weeks",
+      "monthly_fee": "$149"
+    },
+    {
+      "id": "crm-optimization",
+      "name": "CRM System Optimization",
+      "category": "Digital Transformation",
+      "price": "$5,000",
+      "description": "Comprehensive CRM system optimization including workflow automation, custom field setup, and integration with communication channels.",
+      "features": [
+        "CRM audit and analysis",
+        "Workflow automation setup",
+        "Custom field configuration",
+        "Integration with communication tools",
+        "Staff training (8 hours)",
+        "Performance monitoring setup",
+        "90-day optimization support"
+      ],
+      "setup_time": "3-4 weeks",
+      "monthly_fee": "$199"
+    },
+    {
+      "id": "ai-consultation",
+      "name": "AI Strategy Consultation",
+      "category": "Consulting Services",
+      "price": "$500/hour",
+      "description": "Expert consultation on AI implementation strategy, technology selection, and roadmap development for your business.",
+      "features": [
+        "Current state assessment",
+        "AI opportunity identification",
+        "Technology recommendation",
+        "Implementation roadmap",
+        "ROI projections",
+        "Risk assessment",
+        "Follow-up session included"
+      ],
+      "minimum_engagement": "4 hours",
+      "deliverables": "Comprehensive AI strategy report"
+    }
+  ],
+  "support_packages": [
+    {
+      "name": "Basic Support",
+      "price": "$99/month",
+      "features": [
+        "Email support (48-hour response)",
+        "Monthly system health check",
+        "Basic troubleshooting",
+        "Software updates included"
+      ]
+    },
+    {
+      "name": "Premium Support",
+      "price": "$299/month",
+      "features": [
+        "Priority phone and email support (4-hour response)",
+        "Weekly system monitoring",
+        "Advanced troubleshooting",
+        "Custom reporting",
+        "Quarterly strategy review",
+        "Emergency support hotline"
+      ]
+    }
+  ]
+}

@@ -339,9 +339,18 @@ I'm here to help you with any questions or support you might need. To provide yo
       const knowledgeData = JSON.parse(data);
       
       this.knowledgeBase.clear();
-      knowledgeData.forEach(item => {
-        this.knowledgeBase.set(item.id, item);
-      });
+      
+      // Handle both object and array formats
+      if (Array.isArray(knowledgeData)) {
+        knowledgeData.forEach(item => {
+          this.knowledgeBase.set(item.id, item);
+        });
+      } else if (typeof knowledgeData === 'object' && knowledgeData !== null) {
+        // Handle object format (key-value pairs)
+        Object.values(knowledgeData).forEach(item => {
+          this.knowledgeBase.set(item.id, item);
+        });
+      }
       
       console.log(`📚 Loaded ${this.knowledgeBase.size} knowledge base items`);
     } catch (error) {

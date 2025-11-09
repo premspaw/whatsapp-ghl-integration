@@ -497,6 +497,8 @@
     </div>
 
     <script>
+        // Route API calls to the main server to avoid HTML responses
+        const API_BASE = window.API_BASE_URL || 'http://localhost:3000';
         let templates = [];
         let automationRules = [];
         let stats = {};
@@ -532,7 +534,7 @@
         // Load overview data
         async function loadOverview() {
             try {
-                const response = await fetch('/api/enhanced-ai/status');
+                const response = await fetch(`${API_BASE}/api/enhanced-ai/status`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -569,7 +571,7 @@
         // Template management
         async function loadTemplates() {
             try {
-                const response = await fetch('/api/templates');
+                const response = await fetch(`${API_BASE}/api/templates`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -605,7 +607,7 @@
         // Automation management
         async function loadAutomationRules() {
             try {
-                const response = await fetch('/api/automation/rules');
+                const response = await fetch(`${API_BASE}/api/automation/rules`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -642,7 +644,7 @@
         // Memory management
         async function loadMemoryStats() {
             try {
-                const response = await fetch('/api/enhanced-ai/status');
+                const response = await fetch(`${API_BASE}/api/enhanced-ai/status`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -714,13 +716,13 @@
             };
             
             try {
-                const response = await fetch('/api/templates', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(templateData)
-                });
+            const response = await fetch(`${API_BASE}/api/templates`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(templateData)
+            });
                 
                 const data = await response.json();
                 
@@ -762,13 +764,13 @@
             };
             
             try {
-                const response = await fetch('/api/automation/rules', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(ruleData)
-                });
+            const response = await fetch(`${API_BASE}/api/automation/rules`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ruleData)
+            });
                 
                 const data = await response.json();
                 

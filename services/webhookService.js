@@ -70,7 +70,7 @@ class WebhookService {
   }
 
   // Process incoming webhook from GHL
-  async processGHLWebhook(webhookData) {
+  async processGHLWebhook(webhookData, tenantId = null) {
     try {
       const { event, data } = webhookData;
       
@@ -99,14 +99,14 @@ class WebhookService {
   }
 
   // Handle new message created in GHL
-  async handleMessageCreated(messageData) {
+  async handleMessageCreated(messageData, tenantId = null) {
     try {
       console.log('📨 New message in GHL:', messageData.message);
       
       // Check if this is an outbound message that needs to be sent via WhatsApp
       if (messageData.direction === 'outbound' && messageData.type === 'SMS') {
         // Trigger WhatsApp message sending
-        await this.triggerWhatsAppMessage(messageData);
+        await this.triggerWhatsAppMessage({ ...messageData, tenantId });
       }
     } catch (error) {
       console.error('Error handling message created:', error);
@@ -114,7 +114,7 @@ class WebhookService {
   }
 
   // Handle message updated in GHL
-  async handleMessageUpdated(messageData) {
+  async handleMessageUpdated(messageData, tenantId = null) {
     try {
       console.log('📝 Message updated in GHL:', messageData.message);
       // Add any specific logic for message updates

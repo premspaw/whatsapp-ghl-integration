@@ -1,0 +1,108 @@
+# GHL-First Integration Rules
+
+Purpose: Make GHL the authoritative source for contacts, conversations, and knowledge. Use OAuth 2.0 for marketplace apps; fall back to direct API key only for private sub-accounts.
+
+Reference: GoHighLevel Developer Marketplace OAuth guide — https://marketplace.gohighlevel.com/docs/oauth/GettingStarted/index.html
+
+## Core Principles
+
+1. GHL-First Knowledge
+   - Prefer GHL Knowledge Base (KB) for RAG answers.
+   - Show KB sources in responses where possible.
+   - Only use local templates when KB confidence is low or no match.
+
+2. Conversations as Source of Truth
+   - Sync all WhatsApp messages to GHL Conversations.
+   - Use GHL conversation history for short-term memory.
+   - Respect message direction (inbound/outbound) for analytics.
+
+3. OAuth 2.0 for Marketplace Apps
+   - Use `client_id`, `client_secret`, `redirect_uri`, and `scopes`.
+   - Store and refresh tokens securely per sub-account (location).
+   - Avoid hardcoding access tokens; rotate via refresh token.
+
+4. Multi-Tenant Safety
+   - Map tokens to `locationId` and tenant/agency/account.
+   - Enforce per-tenant rate limits and isolation.
+   - Never mix conversations or KB across tenants.
+
+5. Brand-Safe Fallbacks
+   - If KB retrieval fails, answer with brand-safe generic helper text.
+   - Do not use unrelated templates; remove legacy gym/fitness content.
+
+## Required Configuration (Environment)
+
+```env
+# OAuth (Marketplace App)
+GHL_OAUTH_CLIENT_ID=
+GHL_OAUTH_CLIENT_SECRET=
+GHL_OAUTH_REDIRECT_URI=
+GHL_OAUTH_SCOPES="contacts.read conversations.write knowledgebase.read knowledgebase.write"
+
+# Direct API (Private Sub-Account)
+GHL_API_KEY=
+GHL_LOCATION_ID=
+GHL_BASE_URL=https://services.leadconnectorhq.com
+```
+
+## OAuth Flow Rules
+
+- Authorization URL: Build with `client_id`, `redirect_uri`, and `scopes`.
+- Callback: Exchange `code` for `access_token` and `refresh_token`.
+- Storage: Persist tokens per `locationId` in `data/ghl-oauth.json`.
+- Refresh: Automatically refresh when `401` or token expiry is detected.
+- Protection: Redact tokens in logs; never expose in client-side responses.
+
+## Module Coverage Targets
+
+Implement and use GHL endpoints for:
+
+- Contacts: list, create/update, tag, custom fields v2.
+- Conversations: create/search, messages add/list, direction handling.
+- Knowledge Base: KB list, KB items (docs/FAQ), crawler jobs.
+- Webhooks: inbound (GHL → us) and outbound triggers.
+- Objects & Associations: link contacts to conversations/opportunities.
+- Campaigns/Workflows: optional triggers (read-only unless required).
+
+## RAG & AI Answering Rules
+
+- Retrieval: Pull GHL KB content first; include titles/links for traceability.
+- Context: Use recent conversation snippets from GHL for personalization.
+- Intent: For "services/pricing/products/automation/WhatsApp/CRM", force KB.
+- Safety: If KB lacks coverage, respond with a helpful redirect and collect info.
+
+## Rate Limiting & Resilience
+
+- Backoff: Retry with exponential backoff on transient 429/5xx.
+- Circuit Breaker: Temporarily halt external calls on repeated failures.
+- Caching: Use short-lived caches for contact/conversation lookups.
+
+## Auditing & Logging
+
+- Log: Request IDs, tenant/location, endpoint, status, duration.
+- Redact: Tokens and PII fields; avoid sensitive payloads in logs.
+- Trace: Emit minimal metadata to analytics for monitoring.
+
+## Security & Compliance
+
+- Data Privacy: Handle PII under applicable regulations.
+- Scope Minimization: Request only needed scopes; document them.
+- Secret Management: Load via env; never commit secrets.
+
+## UX Rules for Dashboards
+
+- Source Toggles: GHL-only, Hybrid (GHL + local), Local-only.
+- Status Panels: OAuth status, KB sync health, webhook state, rate-limit notices.
+- Error Surfacing: Show meaningful error messages and retry options.
+
+## Implementation Milestones
+
+1. OAuth endpoints: authorize URL, callback, refresh, status.
+2. Token persistence: `data/ghl-oauth.json` keyed by `locationId`.
+3. KB retriever: adapters for KB list/items and search.
+4. AI wiring: prefer GHL KB in `enhancedAIService` with confidence gating.
+5. Dashboards: KB status panel and source toggle.
+
+## Citation
+
+Refer to HighLevel Developer Marketplace OAuth documentation for app onboarding and OAuth setup: https://marketplace.gohighlevel.com/docs/oauth/GettingStarted/index.html

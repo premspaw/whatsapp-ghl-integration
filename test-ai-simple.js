@@ -1,39 +1,55 @@
-const fetch = require('node-fetch');
+#!/usr/bin/env node
 
-async function testSimpleAI() {
-  try {
-    console.log('🧪 Testing Simple AI Reply...');
+require('dotenv').config();
+const AIService = require('./services/aiService');
+
+async function testAISimple() {
+    console.log('🔍 Testing AI Service Directly');
+    console.log('=' .repeat(40));
     
-    // Test the simple AI function directly
-    const testMessage = "Hello, I need help";
-    const contactName = "Test User";
-    
-    // Simulate the simple AI logic
-    const responses = [
-      `Hello ${contactName}! Thanks for reaching out. How can I help you today?`,
-      `Hi ${contactName}! I'm here to assist you. What do you need help with?`,
-      `Hello! Thanks for your message. I'm ready to help you with any questions you have.`,
-      `Hi there! How can I make your day better today?`,
-      `Hello! I'm here to provide excellent customer service. What can I do for you?`
-    ];
-    
-    const lowerMessage = testMessage.toLowerCase();
-    let aiReply;
-    
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      aiReply = `Hello ${contactName}! How can I help you today?`;
-    } else if (lowerMessage.includes('help')) {
-      aiReply = `I'm here to help you, ${contactName}! What specific assistance do you need?`;
-    } else {
-      aiReply = responses[Math.floor(Math.random() * responses.length)];
+    try {
+        const aiService = new AIService();
+        
+        console.log('📋 Configuration:');
+        console.log(`   API Key: ${process.env.OPENROUTER_API_KEY ? 'SET' : 'NOT SET'}`);
+        console.log(`   Model: ${process.env.OPENROUTER_MODEL || 'DEFAULT'}`);
+        console.log('');
+        
+        // Test basic generateReply
+        console.log('1️⃣ Testing generateReply...');
+        const basicReply = await aiService.generateReply("Hello, how are you?");
+        console.log(`   Result: ${basicReply || 'NULL'}`);
+        console.log('');
+        
+        // Test generateCustomReply
+        console.log('2️⃣ Testing generateCustomReply...');
+        const customPrompt = "You are a helpful assistant. Respond to the user's message in a friendly way.";
+        const customReply = await aiService.generateCustomReply("Hi, I need help", customPrompt);
+        console.log(`   Result: ${customReply || 'NULL'}`);
+        console.log('');
+        
+        // Test with context
+        console.log('3️⃣ Testing with context...');
+        const contextReply = await aiService.generateCustomReply(
+            "What services do you offer?",
+            "You are a customer service representative. Help the customer with their inquiry.",
+            {
+                messages: [
+                    { from: 'user', body: 'Hello' },
+                    { from: 'ai', body: 'Hi there! How can I help you today?' }
+                ]
+            }
+        );
+        console.log(`   Result: ${contextReply || 'NULL'}`);
+        
+    } catch (error) {
+        console.error('❌ Test failed:', error.message);
+        console.error('Stack trace:', error.stack);
     }
-    
-    console.log('✅ Simple AI Reply:', aiReply);
-    console.log('🎉 Simple AI is working correctly!');
-    
-  } catch (error) {
-    console.error('❌ Test failed:', error.message);
-  }
 }
 
-testSimpleAI();
+// Run the test
+testAISimple().catch(error => {
+    console.error('❌ Test failed:', error);
+    process.exit(1);
+});

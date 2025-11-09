@@ -1,0 +1,65 @@
+Title: GHL-First Integration Rules (OAuth 2.0 + Module Coverage)
+
+Purpose
+- Make GHL the source of truth for contacts, conversations, and knowledge.
+- Use OAuth 2.0 for marketplace apps; fall back to API key for private sub-accounts.
+- Ensure WhatsApp → AI → GHL sync behaves consistently, with brand-safe fallbacks.
+
+Core Principles
+- GHL-First Knowledge: Prefer GHL KB over local docs when available.
+- Conversations are Canonical: All messages mirrored to GHL Conversations.
+- OAuth Everywhere: Use OAuth tokens for Marketplace API; cache tokens per location.
+- Multi-tenant Safety: Resolve tenant by locationId or phone; isolate data.
+- Brand-Safe Fallback: If no KB, avoid placeholders; answer minimally and invite human.
+
+Environment & Config
+- OAuth: `GHL_OAUTH_CLIENT_ID`, `GHL_OAUTH_CLIENT_SECRET`, `GHL_OAUTH_REDIRECT_URI`, `GHL_OAUTH_SCOPES`, `GHL_OAUTH_AUTH_BASE`, `GHL_OAUTH_TOKEN_URL`.
+- API Key (private use): `GHL_API_KEY`, `GHL_LOCATION_ID`, `GHL_BASE_URL`.
+- Mode toggles: `GHL_KB_FIRST=true|false`, `USE_MOCK_WHATSAPP=true|false`.
+
+OAuth Flow Rules
+- Auth URL: GET `/api/ghl/oauth/authorize` returns `authorizeUrl`.
+- Callback: GET `/api/ghl/oauth/callback?code=...` exchanges code for tokens.
+- Token Store: Persist per `locationId` in `data/ghl-oauth.json`.
+- Refresh: POST `/api/ghl/oauth/refresh` with `locationId` refreshes tokens.
+- Status: GET `/api/ghl/oauth/status` lists configured apps and token states.
+
+Module Coverage Targets (incremental)
+- Contacts: list/get/findByPhone, create/update tags and custom fields.
+- Conversations: list, get messages, add inbound/outbound messages.
+- Knowledge Base: list/search KB items, attach sources to AI responses.
+- Calendars: list calendars, availability, booking links.
+- Campaigns & Workflows: minimal read, trigger by tag/action.
+- Opportunities & Pipelines: list stages, create/update opportunities.
+- Media Storage: upload/download assets for KB or messaging.
+- Webhooks: inbound/outbound processing for automation.
+
+RAG & AI Answering Rules
+- Retrieval order: GHL KB → Embeddings → Local KB → Deterministic FAQ → Personality fallback.
+- Confidence gating: If retrieval confidence low, use brand-safe fallback.
+- Citations: Append top 1–3 sources when `citationMode=auto|always`.
+- Tenant Context: Prefer tenant-specific KB; include `locationId` hints when resolving.
+
+Rate Limits & Resilience
+- Cache GET endpoints for 60–300s; exponential backoff on 429/5xx.
+- Fall back to local KB when OAuth token missing/expired.
+- Avoid per-message token refresh; refresh proactively on 401.
+
+Security & Audit
+- Never log secrets; mask IDs (show last 4 chars).
+- Store tokens only server-side in `data/ghl-oauth.json`.
+- Include minimal request correlation IDs in logs.
+
+Dashboards UX
+- Show “Connect GHL” (OAuth) and token status per location.
+- Knowledge Source toggle: GHL-only, Hybrid, Local-only.
+- Display source badges for AI replies when KB used.
+
+Milestones
+- M1: OAuth endpoints + token storage (DONE).
+- M2: GHL KB adapter + EnhancedAIService wiring (NEXT).
+- M3: Conversation sync hardening and source citations.
+- M4: Dashboard controls for source selection and OAuth status.
+
+References
+- GHL OAuth: https://marketplace.gohighlevel.com/docs/oauth/GettingStarted/index.html

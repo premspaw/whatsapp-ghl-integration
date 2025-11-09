@@ -12,29 +12,6 @@
     "not helpful",
     "stop ai"
   ],
-  "thresholds": {
-    "negative_sentiment_score": 0.7,
-    "confusion_detection_score": 0.8,
-    "consecutive_questions": 3
-  },
-  "business_hours": {
-    "enabled": true,
-    "auto_handoff_outside_hours": true,
-    "timezone": "Asia/Kolkata",
-    "schedule": {
-      "monday": {"start": "09:00", "end": "18:00"},
-      "tuesday": {"start": "09:00", "end": "18:00"},
-      "wednesday": {"start": "09:00", "end": "18:00"},
-      "thursday": {"start": "09:00", "end": "18:00"},
-      "friday": {"start": "09:00", "end": "18:00"},
-      "saturday": {"start": "10:00", "end": "14:00"},
-      "sunday": {"start": null, "end": null}
-    }
-  },
-  "priority_contacts": {
-    "enabled": true,
-    "ghl_tags": ["VIP", "Priority", "Premium"]
-  },
   "auto_handoff_topics": [
     "payment",
     "refund",
@@ -42,5 +19,18 @@
     "complaint",
     "urgent",
     "emergency"
-  ]
+  ],
+  "business_hours": {
+    "enabled": true,
+    "timezone": "Asia/Kolkata",
+    "auto_handoff_outside_hours": false
+  },
+  "priority_contacts": {
+    "enabled": true,
+    "ghl_tags": [
+      "VIP",
+      "Priority",
+      "Premium"
+    ]
+  }
 }

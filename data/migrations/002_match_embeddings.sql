@@ -11,7 +11,7 @@ returns table (
   source_type text,
   source_id text,
   text text,
-  distance float4,
+  similarity float4,
   chunk_meta jsonb,
   created_at timestamptz
 ) language sql stable as $$
@@ -20,7 +20,7 @@ returns table (
          e.source_type,
          e.source_id,
          e.text,
-         (e.embedding <=> query_embedding) as distance,
+         (1 - (e.embedding <=> query_embedding)) as similarity,
          e.chunk_meta,
          e.created_at
   from public.ai_embeddings e

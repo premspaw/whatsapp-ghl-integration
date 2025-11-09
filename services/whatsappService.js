@@ -25,7 +25,7 @@ class WhatsAppService extends EventEmitter {
           '--disable-accelerated-2d-canvas',
           '--no-first-run',
           '--no-zygote',
-          '--single-process',
+          // Removed '--single-process' to prevent Chromium crashes on Windows
           '--disable-gpu'
         ]
       }

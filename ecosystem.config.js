@@ -7,6 +7,8 @@ module.exports = {
       watch: false,
       env: {
         NODE_ENV: "production",
+        // Enable knowledge-aware citations in replies
+        REPLY_CITATIONS: "auto",
       },
       max_memory_restart: "300M",
       restart_delay: 3000,

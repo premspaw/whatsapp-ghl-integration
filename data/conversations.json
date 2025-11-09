@@ -1,827 +1,4 @@
 {
-  "+91": {
-    "id": "+91",
-    "name": "Unknown Contact",
-    "contactName": "Unknown Contact",
-    "type": "whatsapp",
-    "channel": "whatsapp_private",
-    "messages": [
-      {
-        "id": "msg_1761937361570",
-        "from": "user",
-        "direction": "inbound",
-        "timestamp": 1761937361570,
-        "type": "text"
-      }
-    ],
-    "aiEnabled": true,
-    "syncToGHL": true,
-    "lastSyncedMessageId": 0,
-    "isRead": true,
-    "unreadCount": 0,
-    "createdAt": 1761937361570,
-    "updatedAt": 1761938283530,
-    "context": {
-      "type": "default",
-      "messages": [
-        {
-          "id": "msg_1761937361570",
-          "from": "user",
-          "direction": "inbound",
-          "timestamp": 1761937361570,
-          "type": "text"
-        }
-      ]
-    },
-    "phone": "+91",
-    "phoneNumber": "+91"
-  },
-  "+918123133382": {
-    "id": "+918123133382",
-    "phone": "+918123133382",
-    "contactName": "prem",
-    "messages": [
-      {
-        "id": "false_918123133382@c.us_3ADA17FB195BE57C2E16",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760705556,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A8D1D7363514224797D",
-        "from": "user",
-        "body": "Why what happen",
-        "timestamp": 1760705634,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A2525A254BE9CDD7F5A",
-        "from": "user",
-        "body": "Hi what up",
-        "timestamp": 1760706498,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A937AD6A03E5BE4AD74",
-        "from": "user",
-        "body": "Bro need help",
-        "timestamp": 1760706573,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AF6D3EE85F6D4B18DED",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760706885,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AEA657EC188195BA842",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760707644,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A6785C5E56F501986A3",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760708002,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A741175011B589C105C",
-        "from": "user",
-        "body": "Need a help",
-        "timestamp": 1760708027,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A23DF6FFDC657A8939E",
-        "from": "user",
-        "body": "I need a help",
-        "timestamp": 1760708057,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AF88C83B7212412FAD7",
-        "from": "user",
-        "body": "So what all services you officer",
-        "timestamp": 1760708091,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AE867A7145EAA1DA1EB",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760708568,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A1B683BDE17BA6622A5",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760709673,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A880E42FF5A61871610",
-        "from": "user",
-        "body": "Bro",
-        "timestamp": 1760710555,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A9CFDEBFC6046764C7A",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760720870,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AF31C650AE8F77A023D",
-        "from": "user",
-        "body": "Can you help with content creation",
-        "timestamp": 1760720957,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A9A073DF7280EAA79CB",
-        "from": "user",
-        "body": "For  I need to make reels",
-        "timestamp": 1760721054,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A59A50BA1A511A5D2FD",
-        "from": "user",
-        "body": "I need help make a video",
-        "timestamp": 1760721214,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A7D50734FC6101A031A",
-        "from": "user",
-        "body": "Hello",
-        "timestamp": 1760721990,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A7EC88E77E915C03AF6",
-        "from": "user",
-        "body": "Hey how are you",
-        "timestamp": 1760722556,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A325331DC120B5682A5",
-        "from": "user",
-        "body": "I need help in content creation",
-        "timestamp": 1760722643,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A4AE5748CFC0D239F1E",
-        "from": "user",
-        "body": "Hi  I am gym woner",
-        "timestamp": 1760723277,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A9F462FE562C14A14D4",
-        "from": "user",
-        "body": "Hi what up",
-        "timestamp": 1760730027,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A898A177963D949EFE9",
-        "from": "user",
-        "body": "Hi Prem",
-        "timestamp": 1760893988,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A0C7EC7C32572368BBF",
-        "from": "user",
-        "body": "What are the tags add in my name in GHL account",
-        "timestamp": 1760894025,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A65CB17D818B1907FA7",
-        "from": "user",
-        "body": "What are the tags add in my name in GHL account",
-        "timestamp": 1760894047,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A263B8D3CA2F1C2835C",
-        "from": "user",
-        "body": "Hi",
-        "timestamp": 1760944166,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AB1444CE51009FB71E0",
-        "from": "user",
-        "body": "What are the tags add in my name in GHL account",
-        "timestamp": 1760944732,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A3903EBC0085ACEB17C",
-        "from": "user",
-        "body": "Hi",
-        "timestamp": 1761047539,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AC58E6ACC5960F3BB46",
-        "from": "user",
-        "body": "Hello this test 5",
-        "timestamp": 1761047595,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A56B7DE45205002F012",
-        "from": "user",
-        "body": "What is my name in GHL account",
-        "timestamp": 1761047658,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3AF4A7BA52D5D3B3149D",
-        "from": "user",
-        "direction": "inbound",
-        "body": "So what is test 20",
-        "timestamp": 1761048890,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A4F83CACDDDE33C6056",
-        "from": "user",
-        "direction": "inbound",
-        "body": "Hello this test 121",
-        "timestamp": 1761052851,
-        "type": "chat"
-      },
-      {
-        "id": "false_9108123133382@c.us_3EB0F89CC053213DB4B0",
-        "from": "user",
-        "direction": "inbound",
-        "body": "",
-        "timestamp": 1761056760,
-        "type": "notification_template"
-      },
-      {
-        "id": "false_918123133382@c.us_3A899953FA09B76BED52",
-        "from": "user",
-        "direction": "inbound",
-        "body": "Bro",
-        "timestamp": 1761061182,
-        "type": "chat"
-      },
-      {
-        "id": "false_918123133382@c.us_3A17CB6D5D99C257FAB0",
-        "from": "user",
-        "direction": "inbound",
-        "body": "Hello test drive",
-        "timestamp": 1761062152,
-        "type": "chat"
-      },
-      {
-        "id": "msg_1760708008992",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760708008992,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760708035668",
-        "from": "ai",
-        "body": "I'm here to help you, prem! What specific assistance do you need?",
-        "timestamp": 1760708035668,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760708066465",
-        "from": "ai",
-        "body": "I'm here to help you, prem! What specific assistance do you need?",
-        "timestamp": 1760708066465,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760708580708",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760708580708,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760709691008",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760709691008,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760710566297",
-        "from": "ai",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1760710566297,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760720906734",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760720906734,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760720981847",
-        "from": "ai",
-        "body": "I'm here to help you, prem! What specific assistance do you need?",
-        "timestamp": 1760720981847,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760721088910",
-        "from": "ai",
-        "body": "I understand you're looking for help, prem. Can you tell me more about what you need assistance with?",
-        "timestamp": 1760721088910,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760721247738",
-        "from": "ai",
-        "body": "I'm here to help you, prem! What specific assistance do you need?",
-        "timestamp": 1760721247738,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760722002397",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760722002397,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760722581035",
-        "from": "ai",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1760722581035,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760722645697",
-        "from": "ai",
-        "body": "I'm here to help you, prem! What specific assistance do you need?",
-        "timestamp": 1760722645697,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760723281796",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760723281796,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760730031242",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760730031242,
-        "type": "text"
-      },
-      {
-        "id": "sent_1760893964863",
-        "from": "ai",
-        "body": "HELLO",
-        "timestamp": 1760893964863,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760893996175",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760893996175,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760894030874",
-        "from": "ai",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1760894030874,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760894052091",
-        "from": "ai",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1760894052091,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760944502776",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1760944502776,
-        "type": "text"
-      },
-      {
-        "id": "msg_1760944746667",
-        "from": "ai",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1760944746667,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761030566799",
-        "from": "ai",
-        "body": "hello",
-        "timestamp": 1761030566799,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761030647604",
-        "from": "ai",
-        "body": "hi this from ngrok",
-        "timestamp": 1761030647604,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761046597813",
-        "from": "ai",
-        "body": "hello",
-        "timestamp": 1761046597813,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761046616784",
-        "from": "ai",
-        "body": "this is 2 second round",
-        "timestamp": 1761046616784,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761047441928",
-        "from": "ai",
-        "body": "hello",
-        "timestamp": 1761047441928,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761047450334",
-        "from": "ai",
-        "body": "test 2",
-        "timestamp": 1761047450334,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761047551534",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1761047551534,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761047599063",
-        "from": "ai",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1761047599063,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761047661869",
-        "from": "ai",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1761047661869,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761047939580",
-        "from": "ai",
-        "body": "so this begians",
-        "timestamp": 1761047939580,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761048202573",
-        "from": "ai",
-        "body": "this test 10 begin",
-        "timestamp": 1761048202573,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761048851993",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "teat 20 begins",
-        "timestamp": 1761048851993,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761048894897",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1761048894896,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761052856669",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1761052856669,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761056760581",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello PREM PAWAR! This is automation check",
-        "timestamp": 1761056760581,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761056762903",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello there! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1761056762901,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761061079724",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello PREM PAWAR! This is automation check",
-        "timestamp": 1761061079724,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761061186818",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-        "timestamp": 1761061186818,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761062158512",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello prem! How can I help you today?",
-        "timestamp": 1761062158512,
-        "type": "text"
-      },
-      {
-        "id": "sent_1761062193729",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hello PREM PAWAR! This is automation check",
-        "timestamp": 1761062193729,
-        "type": "text"
-      },
-      {
-        "id": "msg_1761066018114",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hi  {name}  this new automation working checking",
-        "timestamp": 1761066018114,
-        "type": "template"
-      },
-      {
-        "id": "msg_1761070457550",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hi {first_name},\nthi gym membership reneval",
-        "timestamp": 1761070457549,
-        "type": "template"
-      },
-      {
-        "id": "msg_1761070880866",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hi {first_name},\nthi gym membership reneval",
-        "timestamp": 1761070880865,
-        "type": "template"
-      },
-      {
-        "id": "msg_1761071233213",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hi {first_name},\nthi gym membership reneval",
-        "timestamp": 1761071233212,
-        "type": "template"
-      },
-      {
-        "id": "msg_1761071313249",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hi {first_name},\nthi gym membership reneval",
-        "timestamp": 1761071313249,
-        "type": "template"
-      },
-      {
-        "id": "msg_1761071503747",
-        "from": "ai",
-        "direction": "outbound",
-        "body": "Hi PREM PAWAR,\nthi gym membership reneval",
-        "timestamp": 1761071503747,
-        "type": "template"
-      },
-      {
-        "id": "prov_1761975196482",
-        "from": "user",
-        "direction": "inbound",
-        "body": "Hi, I need help with my order status",
-        "timestamp": 1761975196407,
-        "type": "text"
-      },
-      {
-        "id": "prov_1761977021205",
-        "from": "user",
-        "direction": "inbound",
-        "body": "Hi, I need help with my order status",
-        "timestamp": 1761977021100,
-        "type": "text"
-      }
-    ],
-    "aiEnabled": true,
-    "createdAt": "2025-10-17T13:27:22.920Z",
-    "updatedAt": 1761977021206,
-    "phoneNumber": "+918123133382",
-    "context": {
-      "type": "default",
-      "messages": [
-        {
-          "id": "msg_1761047661869",
-          "from": "ai",
-          "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-          "timestamp": 1761047661869,
-          "type": "text"
-        },
-        {
-          "id": "sent_1761047939580",
-          "from": "ai",
-          "body": "so this begians",
-          "timestamp": 1761047939580,
-          "type": "text"
-        },
-        {
-          "id": "sent_1761048202573",
-          "from": "ai",
-          "body": "this test 10 begin",
-          "timestamp": 1761048202573,
-          "type": "text"
-        },
-        {
-          "id": "sent_1761048851993",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "teat 20 begins",
-          "timestamp": 1761048851993,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761048894897",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-          "timestamp": 1761048894896,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761052856669",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello prem! How can I help you today?",
-          "timestamp": 1761052856669,
-          "type": "text"
-        },
-        {
-          "id": "sent_1761056760581",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello PREM PAWAR! This is automation check",
-          "timestamp": 1761056760581,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761056762903",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello there! Thanks for reaching out. How can I help you today?",
-          "timestamp": 1761056762901,
-          "type": "text"
-        },
-        {
-          "id": "sent_1761061079724",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello PREM PAWAR! This is automation check",
-          "timestamp": 1761061079724,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761061186818",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello prem! Thanks for reaching out. How can I help you today?",
-          "timestamp": 1761061186818,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761062158512",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello prem! How can I help you today?",
-          "timestamp": 1761062158512,
-          "type": "text"
-        },
-        {
-          "id": "sent_1761062193729",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello PREM PAWAR! This is automation check",
-          "timestamp": 1761062193729,
-          "type": "text"
-        },
-        {
-          "id": "msg_1761066018114",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hi  {name}  this new automation working checking",
-          "timestamp": 1761066018114,
-          "type": "template"
-        },
-        {
-          "id": "msg_1761070457550",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hi {first_name},\nthi gym membership reneval",
-          "timestamp": 1761070457549,
-          "type": "template"
-        },
-        {
-          "id": "msg_1761070880866",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hi {first_name},\nthi gym membership reneval",
-          "timestamp": 1761070880865,
-          "type": "template"
-        },
-        {
-          "id": "msg_1761071233213",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hi {first_name},\nthi gym membership reneval",
-          "timestamp": 1761071233212,
-          "type": "template"
-        },
-        {
-          "id": "msg_1761071313249",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hi {first_name},\nthi gym membership reneval",
-          "timestamp": 1761071313249,
-          "type": "template"
-        },
-        {
-          "id": "msg_1761071503747",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hi PREM PAWAR,\nthi gym membership reneval",
-          "timestamp": 1761071503747,
-          "type": "template"
-        },
-        {
-          "id": "prov_1761975196482",
-          "from": "user",
-          "direction": "inbound",
-          "body": "Hi, I need help with my order status",
-          "timestamp": 1761975196407,
-          "type": "text"
-        },
-        {
-          "id": "prov_1761977021205",
-          "from": "user",
-          "direction": "inbound",
-          "body": "Hi, I need help with my order status",
-          "timestamp": 1761977021100,
-          "type": "text"
-        }
-      ]
-    },
-    "unreadCount": 2,
-    "lastSyncedMessageId": 78,
-    "isRead": false
-  },
   "+1234567890": {
     "id": "+1234567890",
     "phone": "+1234567890",
@@ -952,6 +129,581 @@
           "direction": "inbound",
           "body": "Hello, I need help with your premium services and pricing information",
           "timestamp": 1761936228842,
+          "type": "text"
+        }
+      ]
+    }
+  },
+  "+918123133382": {
+    "id": "+918123133382",
+    "phone": "+918123133382",
+    "phoneNumber": "+918123133382",
+    "name": "prem",
+    "contactName": "prem",
+    "type": "chat",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "false_918123133382@c.us_3A2602A96999F23EDB1D",
+        "from": "user",
+        "direction": "inbound",
+        "body": "I been",
+        "timestamp": 1762021400,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A3D0B116F01FA10EE8C",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762021414,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A836C4D5ABF40E06878",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762021661,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762021670773",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem! 😊 Thank you for reaching out. How can I assist you today? If you have any questions or need help with your membership, feel free to let me know!",
+        "timestamp": 1762021670773,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A54234CF63D0DADE3DF",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What’s your business name",
+        "timestamp": 1762021684,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762021691428",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Our business name is Your Business! We’re dedicated to providing you with the best experience possible. If you have any questions or need assistance with your membership, just let me know—I’m here to help!",
+        "timestamp": 1762021691428,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3AC495FCC40D30153369",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What’s your website",
+        "timestamp": 1762021749,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762021763209",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Our website is www.yourbusiness.com. You can find more information about our services, membership details, and helpful resources there. If you have any specific questions or need assistance navigating the site, just let me know—I’m here to help! 😊",
+        "timestamp": 1762021763209,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A699BA8730B85994A80",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What your name",
+        "timestamp": 1762021851,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762021858637",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem! My name is Sarah, and I’m your Customer Success Manager here at Your Business. I’m here to help you with anything you need regarding your membership or any questions you might have. How can I assist you today? 😊",
+        "timestamp": 1762021858637,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A702698BBCF335EAEF0",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello what your name",
+        "timestamp": 1762022784,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762022794444",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hello Prem! I'm TEJAL, your Customer Success Manager here at My Amazing Business. How can I assist you today?",
+        "timestamp": 1762022794444,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3AC8FD61AEA7D0977FBF",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What your website",
+        "timestamp": 1762022807,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762022814316",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Our website is My Amazing Business, where you can find a range of resources and tools to help you with your needs. If you need specific information or assistance, feel free to ask! I'm here to help.",
+        "timestamp": 1762022814316,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A316FA8CCB66989766B",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762069207,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3A0A64F9621DE4017870",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Yes test got successful",
+        "timestamp": 1762069913,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AC34147D3B46D9AFE99",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello are you there",
+        "timestamp": 1762069968,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AB768738AA4A3388D97",
+        "from": "user",
+        "direction": "inbound",
+        "body": "So what plan",
+        "timestamp": 1762070002,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AA0F8E80CF289E8822E",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762070355,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762070366754",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem! 😊 Thanks for reaching out. How can I assist you today? If you have any questions or need support regarding your membership, feel free to let me know!",
+        "timestamp": 1762070366754,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A9F04040B3AC1CE3F0D",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What your company name",
+        "timestamp": 1762070389,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762070396033",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Our company name is SYNTHCORE! If you have any questions about our services or your membership, I'm here to help. 😊",
+        "timestamp": 1762070396033,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A4DEA34DF4C763E3F35",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What and service you provide",
+        "timestamp": 1762070422,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762070431593",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "At SYNTHCORE, we provide a range of services designed to enhance your experience and support your needs. Our offerings include:\n\n1. **Membership Services**: As a member, you have access to exclusive content, resources, and tools that can help you make the most of your experience with us.\n\n2. **Support and Consultation**: We offer personalized support and consultation to help you navigate our services and get the best results for your needs.\n\n3. **Training and Resources**: We provide training materials, tutorials, and resources to help you maximize the benefits of your membership.\n\n4. **Community Access**: You can connect with other members through our community platforms for networking and collaboration.\n\nIf there’s anything specific you’re looking for or if you have any questions about these services, just let me know! 😊",
+        "timestamp": 1762070431593,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3AF13F664F4011A25F64",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What’s you. Website",
+        "timestamp": 1762070471,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762070489082",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Our website is www.yourbusiness.com! You can find more information about our services, membership options, and resources there. If you have any specific questions or need assistance navigating the site, feel free to ask! 😊",
+        "timestamp": 1762070489082,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A1D5209B985D0367178",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762071830,
+        "type": "chat"
+      },
+      {
+        "id": "false_918123133382@c.us_3AD1AB83C412F3DDF468",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762071856,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762071862868",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem! 😊 Welcome back! How can I assist you today? If you have any questions or need support, just let me know!",
+        "timestamp": 1762071862868,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3AE0C3C5E0D2DC2021CE",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What service do you provide",
+        "timestamp": 1762071886,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762071894034",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "At SYNTHCORE, we offer a variety of services designed to support and enhance your experience. Here’s a quick overview:\n\n1. **Membership Services**: As a member, you enjoy exclusive benefits, including access to unique content and resources tailored to your needs.\n\n2. **Personalized Support**: We provide dedicated support to help you navigate our offerings and make the most of your membership.\n\n3. **Training and Resources**: We offer a range of training materials and resources to help you maximize your experience and achieve your goals.\n\n4. **Community Engagement**: You can connect with other members, share ideas, and collaborate through our community platforms.\n\nIf you have any specific questions about these services or need further assistance, feel free to ask! 😊",
+        "timestamp": 1762071894034,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3AB2758FFD2A2B83C118",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Give me your website",
+        "timestamp": 1762071929,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762071942814",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Sure! Our website is www.yourbusiness.com. You can find all the information about our services, membership options, and resources there. If you have any questions or need help with anything specific, just let me know! 😊",
+        "timestamp": 1762071942814,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A6CBCF9BC408EA52D21",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762087515,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762087525255",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hello Prem! How can I assist you today? If you have any questions or need help with your membership, feel free to ask!",
+        "timestamp": 1762087525255,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A248E4E269F68FF75A3",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What’ and service your company provides",
+        "timestamp": 1762087570,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762087572449",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Our company name is SYNTHCORE!",
+        "timestamp": 1762087572448,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A7AAE60FE2AB2C96761",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What services to you provide",
+        "timestamp": 1762087805,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762087818272",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem! Thank you for reaching out. At SYNTHCORE, we offer a range of services designed to help you get the most out of your membership. Our primary services include:\n\n1. **Personalized Support**: We provide dedicated assistance to help you navigate our offerings and ensure you're utilizing them effectively.\n\n2. **Exclusive Content**: As a member, you have access to a wealth of resources, including tutorials, guides, and industry insights tailored for your growth.\n\n3. **Community Engagement**: You can connect with other members, share experiences, and learn from each other through our community forums.\n\n4. **Workshops and Webinars**: We regularly host events that focus on skill development and industry trends, providing you with the tools to stay ahead.\n\n5. **Updates and Enhancements**: We continually work on improving our services and keep you informed about any new features or updates that can benefit your experience.\n\nIf there's anything specific you're looking for or if you have any questions,",
+        "timestamp": 1762087818272,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A4D5C840C5F47D87FE8",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Can you do seo and  what app automation",
+        "timestamp": 1762087855,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762087864208",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem! Great questions! \n\nWhile we don't provide direct SEO services, we do offer resources and insights that can help you improve your SEO strategies as part of our exclusive content. You’ll find tutorials and guides tailored to enhance your understanding of SEO and how to implement effective techniques.\n\nAs for app automation, we focus on providing information and resources that can assist you in automating various aspects of your workflow. This might include integrations with popular tools and platforms that can streamline your processes.\n\nIf you have specific apps in mind or particular areas of automation you’re interested in, feel free to share, and I’ll do my best to help you get the information you need!",
+        "timestamp": 1762087864208,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A5EE681303FEC3B4A11",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello what are serives you provide",
+        "timestamp": 1762089655,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762089666649",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem! Thanks for reaching out again. At SYNTHCORE, we provide a variety of services designed to enhance your experience and support your growth. Here’s a quick overview of what we offer:\n\n1. **Personalized Support**: Dedicated assistance to guide you through our offerings and help you maximize your membership.\n\n2. **Exclusive Content**: Access to a wealth of resources, including tutorials, guides, and industry insights tailored to your needs.\n\n3. **Community Engagement**: Connect with other members, share experiences, and learn from each other through our community forums.\n\n4. **Workshops and Webinars**: Regular events focused on skill development and industry trends to keep you updated and ahead of the curve.\n\n5. **Updates and Enhancements**: We continuously improve our services and keep you informed about new features or updates that can enhance your experience.\n\nIf you have any specific interests or questions about our services, feel free to let me know! I'm here to help.",
+        "timestamp": 1762089666649,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A8EBA3CF08269B6763E",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1762091370,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762091380140",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hey Prem! 😊 Thanks for reaching out to SYNTHCORE. How can I help you today?",
+        "timestamp": 1762091380140,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3ADA048764FDA4BA42DC",
+        "from": "user",
+        "direction": "inbound",
+        "body": "What are services you company offers",
+        "timestamp": 1762091503,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1762091511953",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "At SYNTHCORE, we offer a variety of services including:\n\n1. **Personal Training** - Customized workout plans tailored to your fitness goals.\n2. **Nutrition Counseling** - Guidance on meal planning and healthy eating habits.\n3. **Group Classes** - Engaging classes for all fitness levels, from yoga to high-intensity workouts.\n4. **Wellness Programs** - Comprehensive programs to enhance your overall well-being.\n\nIf you have any specific service in mind or need more details, feel free to ask! 😊",
+        "timestamp": 1762091511953,
+        "type": "text"
+      },
+      {
+        "id": "prov_1762102392265",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hi, I need help with my order status",
+        "timestamp": 1762102392026,
+        "type": "text"
+      },
+      {
+        "id": "prov_1762103800446",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hi, I need help with my order status",
+        "timestamp": 1762103800303,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": true,
+    "syncToGHL": true,
+    "lastSyncedMessageId": 46,
+    "isRead": true,
+    "unreadCount": 0,
+    "createdAt": 1762021400196,
+    "updatedAt": 1762191769847,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "false_918123133382@c.us_3AE0C3C5E0D2DC2021CE",
+          "from": "user",
+          "direction": "inbound",
+          "body": "What service do you provide",
+          "timestamp": 1762071886,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762071894034",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "At SYNTHCORE, we offer a variety of services designed to support and enhance your experience. Here’s a quick overview:\n\n1. **Membership Services**: As a member, you enjoy exclusive benefits, including access to unique content and resources tailored to your needs.\n\n2. **Personalized Support**: We provide dedicated support to help you navigate our offerings and make the most of your membership.\n\n3. **Training and Resources**: We offer a range of training materials and resources to help you maximize your experience and achieve your goals.\n\n4. **Community Engagement**: You can connect with other members, share ideas, and collaborate through our community platforms.\n\nIf you have any specific questions about these services or need further assistance, feel free to ask! 😊",
+          "timestamp": 1762071894034,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3AB2758FFD2A2B83C118",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Give me your website",
+          "timestamp": 1762071929,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762071942814",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Sure! Our website is www.yourbusiness.com. You can find all the information about our services, membership options, and resources there. If you have any questions or need help with anything specific, just let me know! 😊",
+          "timestamp": 1762071942814,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A6CBCF9BC408EA52D21",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello",
+          "timestamp": 1762087515,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762087525255",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hello Prem! How can I assist you today? If you have any questions or need help with your membership, feel free to ask!",
+          "timestamp": 1762087525255,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A248E4E269F68FF75A3",
+          "from": "user",
+          "direction": "inbound",
+          "body": "What’ and service your company provides",
+          "timestamp": 1762087570,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762087572449",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Our company name is SYNTHCORE!",
+          "timestamp": 1762087572448,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A7AAE60FE2AB2C96761",
+          "from": "user",
+          "direction": "inbound",
+          "body": "What services to you provide",
+          "timestamp": 1762087805,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762087818272",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hi Prem! Thank you for reaching out. At SYNTHCORE, we offer a range of services designed to help you get the most out of your membership. Our primary services include:\n\n1. **Personalized Support**: We provide dedicated assistance to help you navigate our offerings and ensure you're utilizing them effectively.\n\n2. **Exclusive Content**: As a member, you have access to a wealth of resources, including tutorials, guides, and industry insights tailored for your growth.\n\n3. **Community Engagement**: You can connect with other members, share experiences, and learn from each other through our community forums.\n\n4. **Workshops and Webinars**: We regularly host events that focus on skill development and industry trends, providing you with the tools to stay ahead.\n\n5. **Updates and Enhancements**: We continually work on improving our services and keep you informed about any new features or updates that can benefit your experience.\n\nIf there's anything specific you're looking for or if you have any questions,",
+          "timestamp": 1762087818272,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A4D5C840C5F47D87FE8",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Can you do seo and  what app automation",
+          "timestamp": 1762087855,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762087864208",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hi Prem! Great questions! \n\nWhile we don't provide direct SEO services, we do offer resources and insights that can help you improve your SEO strategies as part of our exclusive content. You’ll find tutorials and guides tailored to enhance your understanding of SEO and how to implement effective techniques.\n\nAs for app automation, we focus on providing information and resources that can assist you in automating various aspects of your workflow. This might include integrations with popular tools and platforms that can streamline your processes.\n\nIf you have specific apps in mind or particular areas of automation you’re interested in, feel free to share, and I’ll do my best to help you get the information you need!",
+          "timestamp": 1762087864208,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A5EE681303FEC3B4A11",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello what are serives you provide",
+          "timestamp": 1762089655,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762089666649",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hi Prem! Thanks for reaching out again. At SYNTHCORE, we provide a variety of services designed to enhance your experience and support your growth. Here’s a quick overview of what we offer:\n\n1. **Personalized Support**: Dedicated assistance to guide you through our offerings and help you maximize your membership.\n\n2. **Exclusive Content**: Access to a wealth of resources, including tutorials, guides, and industry insights tailored to your needs.\n\n3. **Community Engagement**: Connect with other members, share experiences, and learn from each other through our community forums.\n\n4. **Workshops and Webinars**: Regular events focused on skill development and industry trends to keep you updated and ahead of the curve.\n\n5. **Updates and Enhancements**: We continuously improve our services and keep you informed about new features or updates that can enhance your experience.\n\nIf you have any specific interests or questions about our services, feel free to let me know! I'm here to help.",
+          "timestamp": 1762089666649,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A8EBA3CF08269B6763E",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello",
+          "timestamp": 1762091370,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762091380140",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hey Prem! 😊 Thanks for reaching out to SYNTHCORE. How can I help you today?",
+          "timestamp": 1762091380140,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3ADA048764FDA4BA42DC",
+          "from": "user",
+          "direction": "inbound",
+          "body": "What are services you company offers",
+          "timestamp": 1762091503,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1762091511953",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "At SYNTHCORE, we offer a variety of services including:\n\n1. **Personal Training** - Customized workout plans tailored to your fitness goals.\n2. **Nutrition Counseling** - Guidance on meal planning and healthy eating habits.\n3. **Group Classes** - Engaging classes for all fitness levels, from yoga to high-intensity workouts.\n4. **Wellness Programs** - Comprehensive programs to enhance your overall well-being.\n\nIf you have any specific service in mind or need more details, feel free to ask! 😊",
+          "timestamp": 1762091511953,
+          "type": "text"
+        },
+        {
+          "id": "prov_1762102392265",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hi, I need help with my order status",
+          "timestamp": 1762102392026,
+          "type": "text"
+        },
+        {
+          "id": "prov_1762103800446",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hi, I need help with my order status",
+          "timestamp": 1762103800303,
           "type": "text"
         }
       ]

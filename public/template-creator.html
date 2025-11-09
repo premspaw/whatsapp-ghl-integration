@@ -707,7 +707,7 @@
             }
             
             const config = `Method: POST
-URL: https://kathi-sensational-rosalyn.ngrok-free.dev/api/whatsapp/send-template
+URL: http://localhost:3000/api/whatsapp/send-template
 
 Headers:
 Content-Type: application/json
@@ -718,11 +718,15 @@ Custom Data:
 ├──────────────┼────────────────────────────────────────┤
 │ templateName │ ${templateName}                        │
 ├──────────────┼────────────────────────────────────────┤
-│ variables    │ {"name":"{{contact.first_name}}"}      │
+│ variables    │ {"first_name":"{{contact.first_name}}"} │
 └──────────────┴────────────────────────────────────────┘
 
-GHL Variable Mapping Examples:
-- "name": "{{contact.first_name}}"
+Template Variables:
+- Use placeholders in content like {first_name}, {email}, {phone}
+- For custom fields, use {cf.amount} or {cf_amount}
+
+GHL Mapping Examples:
+- "first_name": "{{contact.first_name}}"
 - "email": "{{contact.email}}"
 - "phone": "{{contact.phone}}"
 - "company": "{{contact.company_name}}"

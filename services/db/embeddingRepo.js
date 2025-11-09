@@ -1,6 +1,6 @@
 const { getSupabase } = require('./supabaseClient');
 
-async function insertEmbedding({ conversationId = null, sourceType, sourceId, text, embedding, chunkMeta = {} }) {
+async function insertEmbedding({ conversationId = null, sourceType, sourceId, text, embedding, chunkMeta = {}, tenantId = null }) {
   const supabase = getSupabase();
   if (!supabase) return null;
   const payload = {
@@ -9,7 +9,8 @@ async function insertEmbedding({ conversationId = null, sourceType, sourceId, te
     source_id: sourceId,
     text,
     embedding,
-    chunk_meta: chunkMeta
+    chunk_meta: chunkMeta,
+    tenant_id: tenantId
   };
   const { data, error } = await supabase
     .from('ai_embeddings')
@@ -20,14 +21,15 @@ async function insertEmbedding({ conversationId = null, sourceType, sourceId, te
   return data;
 }
 
-async function matchEmbeddings({ queryEmbedding, matchCount = 5, conversationId = null }) {
+async function matchEmbeddings({ queryEmbedding, matchCount = 5, conversationId = null, tenantId = null }) {
   const supabase = getSupabase();
   if (!supabase) return [];
   const { data, error } = await supabase
     .rpc('match_embeddings', {
       query_embedding: queryEmbedding,
       match_count: matchCount,
-      filter_conversation: conversationId
+      filter_conversation: conversationId,
+      filter_tenant: tenantId
     });
   if (error) throw new Error(error.message);
   return data || [];

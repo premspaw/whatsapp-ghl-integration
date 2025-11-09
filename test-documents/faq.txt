@@ -1,0 +1,31 @@
+FREQUENTLY ASKED QUESTIONS
+
+Q: What is the typical timeline for an AI integration project?
+A: Most AI integration projects take between 3-6 months, depending on complexity. Simple chatbot implementations can be completed in 4-6 weeks, while complex machine learning solutions may take 6-12 months.
+
+Q: Do you provide ongoing support after project completion?
+A: Yes, we offer comprehensive support packages including 24/7 monitoring, regular updates, and technical assistance. Our standard support package includes monthly health checks and priority response times.
+
+Q: What industries do you specialize in?
+A: We work across various industries including healthcare, finance, e-commerce, manufacturing, and professional services. Our team has specific expertise in regulatory compliance for healthcare and financial sectors.
+
+Q: Can you integrate with our existing CRM system?
+A: Absolutely! We have experience integrating with major CRM platforms including Salesforce, HubSpot, Pipedrive, and GoHighLevel. We can also work with custom CRM solutions through API integrations.
+
+Q: What is your pricing model?
+A: Our pricing varies based on project scope and complexity. We offer both fixed-price project contracts and ongoing monthly retainer agreements. Contact us for a customized quote based on your specific needs.
+
+Q: Do you offer training for our team?
+A: Yes, we provide comprehensive training programs for your team members. This includes technical training for IT staff and user training for end-users. Training can be conducted on-site or remotely.
+
+Q: How do you ensure data security and privacy?
+A: We follow industry-standard security practices including encryption, secure API connections, and compliance with GDPR, HIPAA, and other relevant regulations. All data is processed securely and we can sign NDAs as needed.
+
+Q: Can you help with WhatsApp Business API setup?
+A: Yes, we are certified WhatsApp Business Solution Providers. We can help with account setup, verification, integration with your existing systems, and ongoing management of your WhatsApp business communications.
+
+Q: What happens if we need changes after the project is completed?
+A: We offer flexible change management through our support packages. Minor updates and bug fixes are typically included in our support agreements, while major feature additions are handled through separate project agreements.
+
+Q: Do you provide emergency support?
+A: Yes, our premium support packages include 24/7 emergency support with guaranteed response times. Emergency support is available for critical system failures and urgent technical issues.

@@ -4,6 +4,7 @@ const path = require('path');
 const EmbeddingsService = require('./embeddingsService');
 const UserContextService = require('./userContextService');
 const AIService = require('./aiService');
+const GHLKnowledgeService = require('./ghlKnowledgeService');
 
 class EnhancedAIService extends EventEmitter {
   constructor(ghlService) {
@@ -27,19 +28,31 @@ class EnhancedAIService extends EventEmitter {
     // Initialize User Context Service for RAG
     this.userContextService = new UserContextService(ghlService);
     
+    // Initialize with default personality (will be overridden by loadPersonality)
     this.aiPersonality = {
       name: "Sarah",
       role: "Customer Success Manager", 
       company: "Your Business",
+      website: "www.yourbusiness.com",
       tone: "friendly and professional",
       traits: ["helpful", "empathetic", "solution-oriented", "knowledgeable"]
     };
+    
+    this.personalityPath = path.join(__dirname, '..', 'data', 'ai-personality.json');
     
     this.loadKnowledgeBase();
     this.loadTemplates();
     this.loadAutomationRules();
     this.loadHandoffRules();
+    this.loadPersonality(); // Load personality from file
     this.embeddings = new EmbeddingsService();
+    // Optional: prefer GHL KB results before local RAG
+    this.ghlKBFirst = String(process.env.GHL_KB_FIRST || 'true').toLowerCase() === 'true';
+    this.ghlKnowledge = new GHLKnowledgeService(ghlService);
+    // Track whether personality has been loaded to avoid placeholder leakage
+    this._personalityLoaded = false;
+    // Optional citations in replies: 'off' | 'auto' | 'always' (default off)
+    this.citationMode = (process.env.REPLY_CITATIONS || 'off').toLowerCase();
   }
 
   // Memory Management
@@ -75,15 +88,37 @@ class EnhancedAIService extends EventEmitter {
   }
 
   // Enhanced AI Reply with Memory
-  async generateContextualReply(message, phoneNumber, conversationId) {
+  async generateContextualReply(message, phoneNumber, conversationId, tenantId = null) {
     try {
       console.log('🧠 Enhanced AI generating contextual reply for', phoneNumber);
+      // Ensure personality is loaded before generating any reply to avoid placeholder defaults
+      await this.ensurePersonalityLoaded();
 
-      // Load conversation memory
-      const memory = await this.loadConversationMemory(phoneNumber);
-      
-      // Get user profile from GHL
-      const userProfile = await this.getUserProfileFromGHL(phoneNumber);
+      // Deterministic handling for company/website queries
+      // Do NOT short-circuit here; blend with RAG to avoid placeholder leakage
+      let identitySnippet = null;
+      const deterministic = this._getDeterministicIdentityAnswer(message);
+      if (deterministic) {
+        // Skip if looks like a placeholder (e.g., yourbusiness.com or "Your Business")
+        const looksPlaceholder = /yourbusiness\.com|example\.com/i.test(deterministic) || /Your Business/i.test(deterministic);
+        if (!looksPlaceholder) {
+          identitySnippet = deterministic;
+        }
+      }
+
+      // Deterministic handling for brand FAQs (email, address, support, phone, hours)
+      const faqDeterministic = this._getDeterministicBrandFAQAnswer(message);
+      // Blend deterministic FAQ with RAG matches instead of returning early
+      let deterministicSnippet = null;
+      if (faqDeterministic) {
+        deterministicSnippet = faqDeterministic;
+      }
+
+      // Load conversation memory and user profile concurrently for speed
+      const [memory, userProfile] = await Promise.all([
+        this.loadConversationMemory(phoneNumber),
+        this.getUserProfileFromGHL(phoneNumber)
+      ]);
 
       // Human handoff: check with profile + rules before generating reply
       if (this.isHandoffRequested(message, userProfile)) {
@@ -91,14 +126,60 @@ class EnhancedAIService extends EventEmitter {
         return null;
       }
       
-      // Retrieve vector matches (RAG)
-      const vectorMatches = await this.safeRetrieveEmbeddings(message, conversationId);
-      const relevantKnowledge = vectorMatches.length > 0
-        ? vectorMatches.map(m => ({ title: m.source_type || 'doc', content: m.text }))
-        : this.searchKnowledgeBase(message);
+      // Detect intent to tune RAG retrieval
+      const intent = this._detectQueryIntent(message);
+      const ragMin = intent.requiresKnowledge ? 0.15 : 0.3;
+      const ragTopK = intent.requiresKnowledge ? 10 : 8;
+
+      // Try GHL Knowledge Base first (if configured)
+      let relevantKnowledge = [];
+      if (this.ghlKBFirst && this.ghlKnowledge && this.ghlKnowledge.isConfigured()) {
+        try {
+          const kbResults = await this.ghlKnowledge.search(message, { locationId: this.ghlService?.locationId });
+          if (Array.isArray(kbResults) && kbResults.length) {
+            relevantKnowledge = kbResults;
+            console.log(`📚 GHL KB results used: ${kbResults.length}`);
+          }
+        } catch (e) {}
+      }
+
+      // Retrieve vector matches (RAG) if KB is empty
+      if (!relevantKnowledge || relevantKnowledge.length === 0) {
+        const vectorMatches = await this.safeRetrieveEmbeddings(message, conversationId, null, ragMin, tenantId, ragTopK);
+        console.log(`🔍 Intent: ${intent.category} | Retrieved ${vectorMatches.length} chunks (minSim=${ragMin}, topK=${ragTopK})`);
+        relevantKnowledge = vectorMatches.length > 0
+          ? vectorMatches.map(m => ({ 
+              title: m.chunk_meta?.title || m.source_type || 'doc', 
+              content: m.text, 
+              source: m.chunk_meta?.url || m.chunk_meta?.filename || m.source_id 
+            }))
+          : this.searchKnowledgeBase(message);
+      }
+      // If RAG found nothing and intent requires knowledge, broaden the keyword search
+      if ((!relevantKnowledge || relevantKnowledge.length === 0) && intent.requiresKnowledge) {
+        relevantKnowledge = this.searchKnowledgeBase(`${message} services pricing products automation whatsapp seo`);
+      }
+      // Prepend deterministic FAQ answer (if any) for hybrid responses
+      if (deterministicSnippet) {
+        const faqItem = { title: 'FAQ', content: deterministicSnippet };
+        relevantKnowledge = Array.isArray(relevantKnowledge)
+          ? [faqItem, ...relevantKnowledge]
+          : [faqItem];
+      }
+
+      // Prepend identity snippet (website/company) if present and non-placeholder
+      if (identitySnippet) {
+        const idItem = { title: 'Identity', content: identitySnippet };
+        relevantKnowledge = Array.isArray(relevantKnowledge)
+          ? [idItem, ...relevantKnowledge]
+          : [idItem];
+      }
       
+      // Prefer entries matching user's GHL tags/location
+      relevantKnowledge = this._prioritizeKnowledgeByProfile(relevantKnowledge, userProfile);
+
       // Generate contextual reply
-      const reply = await this.generateEnhancedReply(message, userProfile, memory, relevantKnowledge);
+      const reply = await this.generateEnhancedReply(message, userProfile, memory, relevantKnowledge, null);
       
       // Store this conversation in memory
       await this.storeConversation(phoneNumber, message, reply);
@@ -110,10 +191,61 @@ class EnhancedAIService extends EventEmitter {
     }
   }
 
-  async safeRetrieveEmbeddings(query, conversationId, userContext = null) {
+  // Reorder knowledge items to prioritize matches with user's tags/location
+  _prioritizeKnowledgeByProfile(items, userProfile) {
+    try {
+      const list = Array.isArray(items) ? items.slice() : [];
+      if (!list.length) return list;
+      const tags = Array.isArray(userProfile?.tags) ? userProfile.tags.map(t => String(t).toLowerCase()) : [];
+      if (!tags.length) return list;
+      const locationTag = tags.find(t => t.startsWith('location:')) || null;
+      const tagWords = tags
+        .map(t => t.replace(/^location:/, '').trim())
+        .filter(Boolean);
+
+      const scoreItem = (it) => {
+        const textBlob = `${String(it.title||'').toLowerCase()}\n${String(it.content||'').toLowerCase()}\n${String(it.source||'').toLowerCase()}`;
+        let score = 0;
+        for (const w of tagWords) {
+          if (!w) continue;
+          if (textBlob.includes(w.toLowerCase())) score += 1.0;
+        }
+        if (locationTag) {
+          const locVal = locationTag.split(':').slice(1).join(':').trim().toLowerCase();
+          if (locVal && textBlob.includes(locVal)) score += 0.5;
+        }
+        return score;
+      };
+
+      return list
+        .map(it => ({ it, score: scoreItem(it) }))
+        .sort((a, b) => b.score - a.score)
+        .map(({ it }) => it);
+    } catch (_) {
+      return Array.isArray(items) ? items : [];
+    }
+  }
+
+  // Simple intent detector to steer RAG thresholds
+  _detectQueryIntent(message) {
+    const m = (message || '').toLowerCase();
+    const intents = [
+      { category: 'services', requiresKnowledge: true, patterns: ['service', 'services', 'offer', 'provide', 'solution', 'solutions'] },
+      { category: 'pricing', requiresKnowledge: true, patterns: ['price', 'pricing', 'cost', 'fee', 'charges', 'plans'] },
+      { category: 'automation', requiresKnowledge: true, patterns: ['automation', 'automate', 'workflow', 'whatsapp', 'zapier', 'integration'] },
+      { category: 'identity', requiresKnowledge: false, patterns: ['company', 'website', 'about', 'who are you', 'what is your company'] },
+      { category: 'support', requiresKnowledge: true, patterns: ['support', 'contact', 'email', 'help', 'address', 'phone', 'hours'] }
+    ];
+    for (const intent of intents) {
+      if (intent.patterns.some(p => m.includes(p))) return intent;
+    }
+    return { category: 'general', requiresKnowledge: false };
+  }
+
+  async safeRetrieveEmbeddings(query, conversationId, userContext = null, minSimilarity = 0.2, tenantId = null, topK = 8) {
     try {
       if (!this.embeddings) return [];
-      const results = await this.embeddings.retrieve({ query, topK: 5, conversationId: null, userContext });
+      const results = await this.embeddings.retrieve({ query, topK, conversationId: null, userContext, minSimilarity, tenantId });
       return Array.isArray(results) ? results : [];
     } catch (e) {
       return [];
@@ -208,6 +340,10 @@ class EnhancedAIService extends EventEmitter {
   // Get user profile from GHL
   async getUserProfileFromGHL(phoneNumber) {
     try {
+      // Guard against missing or partially initialized GHL service
+      if (!this.ghlService || typeof this.ghlService.normalizePhoneNumber !== 'function' || typeof this.ghlService.findContactByPhone !== 'function') {
+        return null;
+      }
       const normalizedPhone = this.ghlService.normalizePhoneNumber(phoneNumber);
       if (!normalizedPhone) return null;
       
@@ -249,6 +385,9 @@ class EnhancedAIService extends EventEmitter {
       // Ensure memory is an array
       const memoryArray = Array.isArray(memory) ? memory : [];
       
+      // Ensure relevantKnowledge is an array
+      const knowledgeArray = Array.isArray(relevantKnowledge) ? relevantKnowledge : [];
+      
       // Build context from memory - use more context (up to this.conversationContextWindow)
       const contextMessages = memoryArray.slice(-this.conversationContextWindow).map(m => 
         `User: ${m.user}\nAI: ${m.ai}`
@@ -258,8 +397,12 @@ class EnhancedAIService extends EventEmitter {
       let contextString = this.buildComprehensiveUserContext(userProfile, userContext);
       
       // Build knowledge context with more complete information
-      const knowledgeContext = relevantKnowledge.length > 0 ?
-        `Relevant Information:\n${relevantKnowledge.map(k => `- ${k.title}: ${k.content.substring(0, 200)}...`).join('\n\n')}` :
+      const knowledgeContext = knowledgeArray.length > 0 ?
+        `Relevant Information:\n${knowledgeArray.map(k => {
+          const preview = (k.content || '').substring(0, 300);
+          const src = k.source ? ` (source: ${k.source})` : '';
+          return `- ${k.title}: ${preview}...${src}`;
+        }).join('\n\n')}` :
         '';
       
       // Generate contextual prompt with enhanced context
@@ -275,7 +418,34 @@ class EnhancedAIService extends EventEmitter {
         knowledgeContext
       };
       
-      return await this.aiService.generateCustomReply(message, prompt, context);
+      const aiResponse = await this.aiService.generateCustomReply(message, prompt, context);
+      console.log('🤖 AI Service response:', aiResponse ? 'Generated' : 'NULL');
+      
+      // If AI service returns null (e.g., API key issues), use fallback
+      if (!aiResponse) {
+        console.log('🔄 AI service returned null, using fallback response');
+        return this.getFallbackResponse(message);
+      }
+      
+      // Optionally append minimal source hints if enabled
+      let finalResponse = aiResponse;
+      try {
+        const mode = this.citationMode;
+        const knowledgeArray = Array.isArray(relevantKnowledge) ? relevantKnowledge : [];
+        const knowledgeUsed = knowledgeArray.length > 0;
+        if (finalResponse && knowledgeUsed && (mode === 'always' || mode === 'auto')) {
+          const sources = [...new Set(knowledgeArray
+            .map(k => (k.source || k.url || '')
+              .replace(/^https?:\/\//, '')
+              .replace(/\/$/, ''))
+            .filter(Boolean))].slice(0, 3);
+          if (sources.length) {
+            finalResponse += `\n\nSources: ${sources.join(', ')}`;
+          }
+        }
+      } catch (_) {}
+
+      return finalResponse;
       
     } catch (error) {
       console.error('Error generating enhanced reply:', error);
@@ -392,8 +562,8 @@ Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFie
     return contextString;
   }
 
-  // Generate contextual reply using comprehensive user data
-  generateContextualReply(message, userProfile, memory, relevantKnowledge, userContext) {
+  // Generate personalized response using comprehensive user data
+  generatePersonalizedResponse(message, userProfile, memory, relevantKnowledge, userContext) {
     const userName = userContext?.basic?.name || userProfile?.name || 'there';
     const lowerMessage = message.toLowerCase();
     
@@ -542,7 +712,16 @@ Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFie
       } else {
         return `I understand you're looking for help, ${userName}. Can you tell me more about what you need assistance with?`;
       }
-    } 
+    }
+    
+    // Business information questions
+    else if (lowerMessage.includes('business name') || lowerMessage.includes('company name') || lowerMessage.includes('what\'s your business') || lowerMessage.includes('your business name')) {
+      return `Our business name is ${this.aiPersonality.company}! We're dedicated to providing you with the best experience possible. If you have any questions or need assistance, just let me know—I'm here to help! 😊`;
+    }
+    
+    else if (lowerMessage.includes('website') || lowerMessage.includes('your website') || lowerMessage.includes('web site')) {
+      return `Our website is ${this.aiPersonality.website}. You can find more information about our services and helpful resources there. If you have any specific questions or need assistance navigating the site, just let me know—I'm here to help! 😊`;
+    }
     
     // Check for topic-specific responses based on interests
     else if (interests.length > 0) {
@@ -581,8 +760,18 @@ Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFie
 
   // Build enhanced context prompt
   buildEnhancedContextPrompt(message, userContext, contextMessages, knowledgeContext) {
+    // Avoid leaking placeholder identity values into the prompt
+    const isPlaceholderCompany = this._isPlaceholderIdentity(this.aiPersonality.company, 'company');
+    const isPlaceholderWebsite = this._isPlaceholderIdentity(this.aiPersonality.website, 'website');
+    const companyPart = isPlaceholderCompany ? '' : this.aiPersonality.company;
+    const websitePart = isPlaceholderWebsite ? '' : this.aiPersonality.website;
+
+    const identityLine = companyPart || websitePart
+      ? `You are ${this.aiPersonality.name}, a ${this.aiPersonality.role}${companyPart ? ` at ${companyPart}` : ''}${websitePart ? ` (${websitePart})` : ''}.`
+      : `You are ${this.aiPersonality.name}, a ${this.aiPersonality.role}.`;
+
     return `
-You are ${this.aiPersonality.name}, a ${this.aiPersonality.role} at ${this.aiPersonality.company}.
+${identityLine}
 Your personality: ${this.aiPersonality.tone} and ${this.aiPersonality.traits.join(', ')}.
 
 ${userContext}
@@ -593,8 +782,28 @@ ${knowledgeContext}
 
 Current message: ${message}
 
+Instructions:
+- Prefer the "Relevant Information" above as the primary source of truth.
+- If knowledge includes company name, website, services, pricing, or policies, answer using that content.
+- Do not use placeholders or defaults (e.g., "www.yourbusiness.com"); use specific facts from knowledge when available.
+- If knowledge is empty, fall back to personality and general service guidance.
+
 Respond as ${this.aiPersonality.name} would, using the context and knowledge above to provide a helpful, personalized response.
     `.trim();
+  }
+
+  // Detect placeholder identity values
+  _isPlaceholderIdentity(value, type = 'company') {
+    if (!value) return true;
+    const v = String(value).trim();
+    if (!v) return true;
+    if (type === 'company') {
+      return /^(Your Business|Company|Business)$/i.test(v);
+    }
+    if (type === 'website') {
+      return /yourbusiness\.com|example\.com/i.test(v);
+    }
+    return false;
   }
 
   // Template Management
@@ -762,6 +971,17 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
       let result = String(templateText ?? '');
       const profile = userProfile || {};
 
+      // Optional: apply arbitrary variables first (e.g., {key} without cf.)
+      const vars = variables || profile.variables || null;
+      if (vars && typeof vars === 'object') {
+        try {
+          for (const [key, val] of Object.entries(vars)) {
+            const re = new RegExp(`\\{${key}\\}`, 'g');
+            result = result.replace(re, String(val ?? ''));
+          }
+        } catch (_) {}
+      }
+
       // Basic fields
       const baseVars = {
         name: profile.name || 'there',
@@ -824,7 +1044,7 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
     }
   }
 
-  async addKnowledgeItem(id, title, content, category = 'general') {
+  async addKnowledgeItem(id, title, content, category = 'general', tenantId = null) {
     this.knowledgeBase.set(id, {
       id,
       title,
@@ -842,22 +1062,267 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
         sourceType: 'manual_note',
         sourceId: id,
         text: content,
-        chunkMeta: { title, category }
+        chunkMeta: { title, category, tenantId: tenantId || undefined, tenant_tags: tenantId ? [tenantId] : undefined },
+        tenantId
       });
     } catch (e) {}
   }
 
   // Fallback response
   getFallbackResponse(message) {
-    const responses = [
-      "Hello! Thanks for reaching out. How can I help you today?",
-      "Hi there! I'm here to assist you. What do you need help with?",
-      "Hello! Thanks for your message. I'm ready to help you with any questions you have.",
-      "Hi! How can I make your day better today?",
-      "Hello! I'm here to provide excellent customer service. What can I do for you?"
+    // Explicit offline notice to meet fallback requirements
+    return "Hey! 👋 Our assistant is currently offline. Please try again in a moment or leave your message — our team will get back to you shortly.";
+  }
+
+  // Normalize website to include scheme
+  _normalizeWebsite(url) {
+    try {
+      if (!url || typeof url !== 'string') return '';
+      const trimmed = url.trim();
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+      return `https://${trimmed.replace(/^\/*/, '')}`;
+    } catch (_) {
+      return String(url || '');
+    }
+  }
+
+  // Deterministic answers for identity queries (website/company)
+  _getDeterministicIdentityAnswer(message) {
+    if (!message || typeof message !== 'string') return null;
+    const m = message.toLowerCase();
+
+    const websitePatterns = [
+      'website', 'web site', 'site', 'url', 'link', 'homepage', 'home page'
     ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
+    const companyPatterns = [
+      'business name', 'company name', 'your company', 'your business', 'who are you', 'what is your company', 'what is your business'
+    ];
+
+    const matchesAny = (patterns) => patterns.some(p => m.includes(p));
+
+    if (matchesAny(websitePatterns)) {
+      const website = this._normalizeWebsite(this.aiPersonality.website || '');
+      if (website) {
+        return `Our website is ${website}`;
+      }
+    }
+
+    if (matchesAny(companyPatterns)) {
+      const company = (this.aiPersonality.company || '').trim();
+      if (company) {
+        return `Our company name is ${company}!`;
+      }
+    }
+
+    return null;
+  }
+
+  // Placeholder detection helpers to avoid leaking defaults
+  _isPlaceholderWebsite(url) {
+    const u = String(url || '').toLowerCase();
+    return !u || u.includes('yourbusiness');
+  }
+
+  _isPlaceholderCompany(name) {
+    const n = String(name || '').toLowerCase();
+    return !n || n === 'your business' || n === 'your company';
+  }
+
+  // Deterministic answers for common brand FAQs using personality or knowledge base
+  _getDeterministicBrandFAQAnswer(message) {
+    if (!message || typeof message !== 'string') return null;
+    const m = message.toLowerCase();
+
+    // Extract details from personality if present
+    const personalityEmail = (this.aiPersonality.supportEmail || this.aiPersonality.email || '').trim();
+    const personalityAddress = (this.aiPersonality.address || '').trim();
+    const personalitySupportLink = (this.aiPersonality.supportLink || this.aiPersonality.contactLink || '').trim();
+    const personalityPhone = (this.aiPersonality.supportPhone || this.aiPersonality.phone || '').trim();
+    const personalityHours = (this.aiPersonality.businessHours || this.aiPersonality.hours || '').trim();
+
+    // Helper to mine contact details from loaded knowledge base content
+    const kbDetails = this._extractBrandContactDetails();
+
+    // Patterns
+    const emailPatterns = ['email', 'support email', 'contact email', 'mail id', 'mail'];
+    const addressPatterns = ['address', 'location', 'office address', 'headquarters', 'hq'];
+    const supportPatterns = ['support', 'help center', 'helpdesk', 'contact page', 'contact link'];
+    const phonePatterns = ['phone', 'contact number', 'whatsapp', 'mobile', 'call'];
+    const hoursPatterns = ['business hours', 'working hours', 'hours of operation', 'timing', 'time'];
+
+    const matchesAny = (patterns) => patterns.some(p => m.includes(p));
+
+    // Email
+    if (matchesAny(emailPatterns)) {
+      const email = personalityEmail || kbDetails.email;
+      if (email) return `You can reach us at ${email}`;
+    }
+
+    // Address
+    if (matchesAny(addressPatterns)) {
+      const address = personalityAddress || kbDetails.address;
+      if (address) return `Our address is ${address}`;
+    }
+
+    // Support link
+    if (matchesAny(supportPatterns)) {
+      const link = personalitySupportLink || kbDetails.supportLink || this._normalizeWebsite(this.aiPersonality.website || '');
+      if (link) return `For support, visit ${link}`;
+    }
+
+    // Phone
+    if (matchesAny(phonePatterns)) {
+      const phone = personalityPhone || kbDetails.phone;
+      if (phone) return `You can call or WhatsApp us at ${phone}`;
+    }
+
+    // Business hours
+    if (matchesAny(hoursPatterns)) {
+      const hours = personalityHours || kbDetails.hours;
+      if (hours) return `Our business hours are ${hours}`;
+    }
+
+    return null;
+  }
+
+  // Mine contact details from raw knowledge base items (no embeddings/API)
+  _extractBrandContactDetails() {
+    try {
+      const details = { email: null, supportLink: null, phone: null, address: null, hours: null };
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      const urlRegex = /(https?:\/\/[^\s)]+)|((www\.)[^\s)]+)/g;
+      const phoneRegex = /\+?\d[\d\s-]{6,}\d/g; // simple international pattern
+      const addressKeywords = ['address', 'location', 'office', 'hq', 'headquarters'];
+      const hoursKeywords = ['hours', 'timing', 'business hours', 'working hours'];
+
+      for (const [, item] of this.knowledgeBase) {
+        const content = String(item.content || '');
+        const lower = content.toLowerCase();
+
+        // Email
+        if (!details.email) {
+          const emails = content.match(emailRegex);
+          if (emails && emails.length) details.email = emails[0];
+        }
+
+        // URL (support/contact)
+        if (!details.supportLink) {
+          const urls = content.match(urlRegex);
+          if (urls && urls.length) {
+            // Prefer links that look like contact or support pages
+            const preferred = urls.find(u => String(u).toLowerCase().includes('contact') || String(u).toLowerCase().includes('support') || String(u).toLowerCase().includes('help'));
+            details.supportLink = this._normalizeWebsite(preferred || urls[0]);
+          }
+        }
+
+        // Phone
+        if (!details.phone) {
+          const phones = content.match(phoneRegex);
+          if (phones && phones.length) details.phone = phones[0].replace(/\s+/g, '').replace(/-+/g, '');
+        }
+
+        // Address (take the sentence/line containing keyword, limit snippet length)
+        if (!details.address) {
+          const lines = content.split(/\r?\n|\.\s+/);
+          const matchLine = lines.find(l => addressKeywords.some(k => String(l).toLowerCase().includes(k)));
+          if (matchLine) {
+            const snippet = matchLine.trim();
+            details.address = snippet.length > 200 ? snippet.substring(0, 200) + '…' : snippet;
+          }
+        }
+
+        // Hours (limit snippet length)
+        if (!details.hours) {
+          const lines = content.split(/\r?\n|\.\s+/);
+          const matchLine = lines.find(l => hoursKeywords.some(k => String(l).toLowerCase().includes(k)));
+          if (matchLine) {
+            const snippet = matchLine.trim();
+            details.hours = snippet.length > 160 ? snippet.substring(0, 160) + '…' : snippet;
+          }
+        }
+
+        // Early exit if we found enough
+        if (details.email && details.supportLink && details.phone) break;
+      }
+
+      return details;
+    } catch (_) {
+      return { email: null, supportLink: null, phone: null, address: null, hours: null };
+    }
+  }
+
+  // Derive a primary website from knowledge base content
+  _extractPrimaryWebsiteFromKnowledge() {
+    try {
+      const urlRegex = /(https?:\/\/[^\s)]+)|((www\.)[^\s)]+)/g;
+      const candidates = [];
+      for (const [, item] of this.knowledgeBase) {
+        const content = String(item.content || '');
+        const urls = content.match(urlRegex);
+        if (urls && urls.length) {
+          for (const raw of urls) {
+            const normalized = this._normalizeWebsite(raw);
+            candidates.push(normalized);
+          }
+        }
+      }
+      if (!candidates.length) return '';
+      // Prefer brand-looking domains first (e.g., synthcore)
+      const preferred = candidates.find(u => u.toLowerCase().includes('synthcore')) || candidates[0];
+      return preferred;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  // Hydrate personality from integrations and knowledge base details
+  async _hydratePersonalityFromIntegrationsAndKnowledge() {
+    try {
+      // 1) Integrations mapping (business name)
+      try {
+        const integrationsPath = path.join(__dirname, '..', 'data', 'integrations.json');
+        const raw = await fs.readFile(integrationsPath, 'utf8');
+        const parsed = JSON.parse(raw);
+        const list = Array.isArray(parsed.integrations) ? parsed.integrations : [];
+        if (list.length) {
+          const locId = (this.ghlService && this.ghlService.locationId) || process.env.GHL_LOCATION_ID || '';
+          const integ = list.find(i => i.ghlLocationId === locId) || list[0];
+          if (integ) {
+            const nameCandidate = integ.businessName || integ.ghlLocationName || '';
+            if (nameCandidate && this._isPlaceholderCompany(this.aiPersonality.company)) {
+              this.aiPersonality.company = nameCandidate;
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 2) Knowledge base derived website and contact info
+      const kbWebsite = this._extractPrimaryWebsiteFromKnowledge();
+      if (kbWebsite && this._isPlaceholderWebsite(this.aiPersonality.website)) {
+        this.aiPersonality.website = kbWebsite;
+      }
+
+      const kbDetails = this._extractBrandContactDetails();
+      if (!this.aiPersonality.supportEmail && kbDetails.email) this.aiPersonality.supportEmail = kbDetails.email;
+      if (!this.aiPersonality.supportPhone && kbDetails.phone) this.aiPersonality.supportPhone = kbDetails.phone;
+      if (!this.aiPersonality.supportLink && kbDetails.supportLink) this.aiPersonality.supportLink = kbDetails.supportLink;
+      if (!this.aiPersonality.address && kbDetails.address) this.aiPersonality.address = kbDetails.address;
+      if (!this.aiPersonality.businessHours && kbDetails.hours) this.aiPersonality.businessHours = kbDetails.hours;
+
+      // Normalize website and links
+      if (this.aiPersonality.website) this.aiPersonality.website = this._normalizeWebsite(this.aiPersonality.website);
+      if (this.aiPersonality.supportLink) this.aiPersonality.supportLink = this._normalizeWebsite(this.aiPersonality.supportLink);
+    } catch (_) {}
+  }
+
+  // Ensure personality is loaded (idempotent)
+  async ensurePersonalityLoaded() {
+    if (this._personalityLoaded) return;
+    try {
+      await this.loadPersonality();
+    } catch (_) {
+      // keep defaults if load fails
+    }
   }
 
   // Get conversation stats
@@ -882,22 +1347,234 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
     console.log('🧹 Cleared all conversation memory');
   }
 
+  // Load AI personality from file
+  async loadPersonality() {
+    try {
+      const data = await fs.readFile(this.personalityPath, 'utf8');
+      const personality = JSON.parse(data);
+      this.aiPersonality = {
+        name: personality.name || 'AI Assistant',
+        role: personality.role || 'Customer Support Representative',
+        company: personality.company || 'Your Business',
+        website: personality.website || 'www.yourbusiness.com',
+        tone: personality.tone || 'professional and helpful',
+        traits: personality.traits || ['helpful', 'empathetic', 'solution-oriented'],
+        // Optional structured brand fields for deterministic answers
+        supportEmail: personality.supportEmail || personality.email || '',
+        supportLink: personality.supportLink || personality.contactLink || '',
+        address: personality.address || '',
+        businessHours: personality.businessHours || personality.hours || '',
+        supportPhone: personality.supportPhone || personality.phone || ''
+      };
+      // Normalize website to include scheme and prevent placeholder leakage
+      if (this.aiPersonality.website && !/^https?:\/\//i.test(this.aiPersonality.website)) {
+        this.aiPersonality.website = `https://${this.aiPersonality.website}`;
+      }
+      // Normalize links if present
+      if (this.aiPersonality.supportLink && !/^https?:\/\//i.test(this.aiPersonality.supportLink)) {
+        this.aiPersonality.supportLink = `https://${String(this.aiPersonality.supportLink).replace(/^\/*/, '')}`;
+      }
+      // Hydrate from integrations and knowledge base to prioritize real business context
+      await this._hydratePersonalityFromIntegrationsAndKnowledge();
+      this._personalityLoaded = true;
+      console.log('🤖 AI personality loaded from file:', this.aiPersonality);
+    } catch (error) {
+      console.log('⚠️ Could not load AI personality from file, using defaults');
+      // Keep the default personality that was set in constructor
+    }
+  }
+
+  // Update AI personality
+  updatePersonality(newPersonality) {
+    this.aiPersonality = { ...this.aiPersonality, ...newPersonality };
+    console.log('🤖 AI personality updated:', this.aiPersonality);
+  }
+
+  // Get AI personality
+  getPersonality() {
+    return this.aiPersonality;
+  }
+
+  // Add knowledge file (PDF, DOC, TXT, etc.)
+  async addKnowledgeFile(file, category = 'general', description = '', tenantId = null) {
+    try {
+      console.log(`📄 Processing knowledge file: ${file.originalname}`);
+      
+      const fileExtension = path.extname(file.originalname).toLowerCase();
+      const fileName = path.basename(file.originalname, fileExtension);
+      const filePath = file.path;
+      
+      let extractedContent = '';
+      let metadata = {
+        filename: file.originalname,
+        size: file.size,
+        type: file.mimetype,
+        uploadedAt: new Date().toISOString()
+      };
+
+      // Process different file types
+      if (fileExtension === '.pdf') {
+        // Use PDF processing service if available
+        try {
+          const PDFProcessingService = require('./pdfProcessingService');
+          const pdfService = new PDFProcessingService(this.embeddings);
+          const pdfResult = await pdfService.processPDF(filePath);
+          extractedContent = pdfResult.text;
+          metadata = { ...metadata, ...pdfResult.metadata };
+        } catch (pdfError) {
+          console.warn('PDF processing service not available, trying direct pdf-parse:', pdfError.message);
+          // Fallback to direct pdf-parse
+          try {
+            const pdfParse = require('pdf-parse');
+            const fs = require('fs').promises;
+            const pdfBuffer = await fs.readFile(filePath);
+            const pdfData = await pdfParse(pdfBuffer);
+            extractedContent = pdfData.text;
+            metadata = { 
+              ...metadata, 
+              pages: pdfData.numpages,
+              info: pdfData.info
+            };
+          } catch (directPdfError) {
+            console.warn('Direct PDF parsing failed:', directPdfError.message);
+            extractedContent = `PDF document: ${fileName}. Content extraction failed. Please ensure pdf-parse package is properly installed.`;
+          }
+        }
+      } else if (fileExtension === '.doc' || fileExtension === '.docx') {
+        // Process DOC/DOCX files using mammoth
+        try {
+          const mammoth = require('mammoth');
+          const fs = require('fs').promises;
+          const docBuffer = await fs.readFile(filePath);
+          const result = await mammoth.extractRawText({ buffer: docBuffer });
+          extractedContent = result.value;
+          if (result.messages && result.messages.length > 0) {
+            console.log('Document conversion messages:', result.messages);
+          }
+        } catch (docError) {
+          console.warn('DOC/DOCX processing failed:', docError.message);
+          extractedContent = `Document: ${fileName}. Content extraction for ${fileExtension} files failed. Please ensure mammoth package is properly installed or convert to PDF format.`;
+        }
+      } else if (fileExtension === '.txt' || fileExtension === '.md') {
+        // Process text files
+        const fs = require('fs').promises;
+        extractedContent = await fs.readFile(filePath, 'utf8');
+      } else if (fileExtension === '.json') {
+        // Process JSON files
+        const fs = require('fs').promises;
+        const jsonData = JSON.parse(await fs.readFile(filePath, 'utf8'));
+        extractedContent = JSON.stringify(jsonData, null, 2);
+      } else if (fileExtension === '.csv') {
+        // Process CSV files
+        const fs = require('fs').promises;
+        const csvContent = await fs.readFile(filePath, 'utf8');
+        // Convert CSV to readable format
+        const lines = csvContent.split('\n');
+        const headers = lines[0] ? lines[0].split(',') : [];
+        extractedContent = `CSV Data (${lines.length} rows):\n\nHeaders: ${headers.join(', ')}\n\nContent:\n${csvContent.substring(0, 2000)}${csvContent.length > 2000 ? '...' : ''}`;
+      } else {
+        // Fallback for other file types
+        extractedContent = `File: ${fileName}. Unsupported file type ${fileExtension}. Supported formats: PDF, DOC, DOCX, TXT, MD, JSON, CSV.`;
+      }
+
+      // Create knowledge base entry
+      const knowledgeEntry = {
+        id: `file-${Date.now()}`,
+        title: fileName,
+        content: extractedContent,
+        filename: file.originalname,
+        category: category,
+        description: description,
+        metadata: metadata,
+        createdAt: new Date().toISOString(),
+        source: 'file_upload'
+      };
+
+      // Add to knowledge base
+      this.knowledgeBase.set(knowledgeEntry.id, knowledgeEntry);
+      await this.saveKnowledgeBase();
+
+      // Index into embeddings store for RAG
+      try {
+        if (extractedContent && extractedContent.length > 50) {
+          await this.embeddings.indexText({
+            conversationId: null,
+            sourceType: 'document',
+            sourceId: knowledgeEntry.id,
+            text: extractedContent,
+            chunkMeta: { 
+              filename: file.originalname,
+              title: fileName,
+              description: description, 
+              category: category,
+              fileType: fileExtension,
+              uploadedAt: metadata.uploadedAt,
+              tenantId: tenantId || undefined,
+              tenant_tags: tenantId ? [tenantId] : undefined
+            },
+            tenantId
+          });
+          console.log(`📚 Indexed document content into embeddings: ${knowledgeEntry.id}`);
+        }
+      } catch (embeddingError) {
+        console.warn('Failed to index into embeddings:', embeddingError.message);
+      }
+
+      // Clean up uploaded file
+      try {
+        const fs = require('fs').promises;
+        await fs.unlink(filePath);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup uploaded file:', cleanupError.message);
+      }
+
+      console.log(`✅ Knowledge file processing completed: ${file.originalname}`);
+      return {
+        success: true,
+        id: knowledgeEntry.id,
+        filename: file.originalname,
+        title: fileName,
+        content: extractedContent.substring(0, 200) + '...',
+        category: category,
+        contentLength: extractedContent.length,
+        metadata: metadata
+      };
+    } catch (error) {
+      console.error('Error processing knowledge file:', error);
+      return {
+        success: false,
+        error: error.message,
+        filename: file.originalname
+      };
+    }
+  }
+
   // Website training method
-  async trainFromWebsite(url, description = '', category = 'general') {
+  async trainFromWebsite(url, description = '', category = 'general', tenantId = null) {
     try {
       console.log(`🌐 Training AI from website: ${url}`);
       
-      // Extract content from website (simplified version)
-      const websiteContent = await this.extractWebsiteContent(url);
+      // Extract content from website
+      const extractedData = await this.extractWebsiteContent(url);
+      
+      // Check if extraction failed
+      if (extractedData.error) {
+        return {
+          success: false,
+          error: extractedData.content
+        };
+      }
       
       // Create knowledge base entry
       const knowledgeEntry = {
         id: `website-${Date.now()}`,
-        content: websiteContent,
+        title: extractedData.title,
+        content: extractedData.content,
         source: url,
-        description: description,
+        description: description || extractedData.description,
         category: category,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        extractedAt: extractedData.extractedAt
       };
       
       // Add to knowledge base
@@ -910,17 +1587,30 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
           conversationId: null,
           sourceType: 'website',
           sourceId: knowledgeEntry.id,
-          text: websiteContent,
-          chunkMeta: { url, description, category }
+          text: extractedData.content,
+          chunkMeta: { 
+            url, 
+            title: extractedData.title,
+            description: knowledgeEntry.description, 
+            category,
+            tenantId: tenantId || undefined,
+            tenant_tags: tenantId ? [tenantId] : undefined
+          },
+          tenantId
         });
-      } catch (e) {}
+        console.log(`📚 Indexed website content into embeddings: ${knowledgeEntry.id}`);
+      } catch (embeddingError) {
+        console.warn('Failed to index into embeddings:', embeddingError.message);
+      }
       
       console.log(`✅ Website training completed: ${url}`);
       return {
         success: true,
         id: knowledgeEntry.id,
-        content: websiteContent.substring(0, 200) + '...',
-        url: url
+        title: extractedData.title,
+        content: extractedData.content.substring(0, 200) + '...',
+        url: url,
+        contentLength: extractedData.content.length
       };
     } catch (error) {
       console.error('Error training from website:', error);
@@ -934,31 +1624,106 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
   // Extract content from website (simplified)
   async extractWebsiteContent(url) {
     try {
-      // This is a simplified version - in production you'd use a proper web scraper
+      console.log(`🌐 Extracting content from: ${url}`);
+      
+      // Import axios and cheerio
       const axios = require('axios');
       const cheerio = require('cheerio');
       
+      // Configure axios with better settings
       const response = await axios.get(url, {
-        timeout: 10000,
+        timeout: 15000, // 15 seconds timeout
+        maxRedirects: 5,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1'
         }
       });
       
       const $ = cheerio.load(response.data);
       
-      // Remove script and style elements
-      $('script, style').remove();
+      // Remove unwanted elements
+      $('script, style, nav, header, footer, aside, .advertisement, .ads, .social-media, .comments').remove();
       
-      // Extract text content
-      const text = $('body').text()
-        .replace(/\s+/g, ' ')
+      // Extract title
+      const title = $('title').text().trim() || $('h1').first().text().trim() || 'Untitled';
+      
+      // Extract meta description
+      const description = $('meta[name="description"]').attr('content') || 
+                         $('meta[property="og:description"]').attr('content') || '';
+      
+      // Extract main content - prioritize main content areas
+      let content = '';
+      
+      // Try to find main content areas
+      const contentSelectors = [
+        'main', 
+        'article', 
+        '.content', 
+        '.main-content', 
+        '.post-content', 
+        '.entry-content',
+        '#content',
+        '.container'
+      ];
+      
+      for (const selector of contentSelectors) {
+        const element = $(selector);
+        if (element.length > 0) {
+          content = element.text();
+          break;
+        }
+      }
+      
+      // Fallback to body if no main content found
+      if (!content) {
+        content = $('body').text();
+      }
+      
+      // Clean up the text
+      content = content
+        .replace(/\s+/g, ' ') // Replace multiple whitespace with single space
+        .replace(/\n\s*\n/g, '\n') // Remove empty lines
         .trim();
       
-      return text.substring(0, 5000); // Limit to 5000 characters
+      // Limit content length but try to break at sentence boundaries
+      const maxLength = 8000;
+      if (content.length > maxLength) {
+        const truncated = content.substring(0, maxLength);
+        const lastSentence = truncated.lastIndexOf('.');
+        if (lastSentence > maxLength * 0.8) {
+          content = truncated.substring(0, lastSentence + 1);
+        } else {
+          content = truncated + '...';
+        }
+      }
+      
+      console.log(`✅ Extracted ${content.length} characters from ${url}`);
+      
+      return {
+        title,
+        description,
+        content,
+        url,
+        extractedAt: new Date().toISOString()
+      };
+      
     } catch (error) {
       console.error('Error extracting website content:', error);
-      return `Content from ${url} (extraction failed: ${error.message})`;
+      
+      // Return a more informative error response
+      return {
+        title: `Content from ${url}`,
+        description: `Failed to extract content: ${error.message}`,
+        content: `Unable to extract content from ${url}. Error: ${error.message}. Please check if the URL is accessible and try again.`,
+        url,
+        extractedAt: new Date().toISOString(),
+        error: true
+      };
     }
   }
 
@@ -991,6 +1756,96 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
     } catch (error) {
       console.error('Error deleting training record:', error);
       return false;
+    }
+  }
+
+  // Get all knowledge base items
+  getKnowledgeBase() {
+    try {
+      const items = [];
+      for (const [id, entry] of this.knowledgeBase) {
+        const meta = entry.metadata || {};
+        const uploadedAt = meta.uploadedAt || entry.createdAt || new Date().toISOString();
+        const sizeBytes = typeof meta.size === 'number' ? meta.size : (entry.content ? Buffer.byteLength(entry.content, 'utf8') : 0);
+        const processed = !!(entry.content && entry.content.length > 0);
+
+        items.push({
+          id: entry.id || id,
+          filename: entry.filename || entry.title || 'Untitled',
+          category: entry.category || 'general',
+          uploadedAt,
+          size: sizeBytes,
+          processed,
+          description: entry.description || ''
+        });
+      }
+      return items.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+    } catch (error) {
+      console.error('Error getting knowledge base:', error);
+      return [];
+    }
+  }
+
+  // Get specific knowledge base item
+  getKnowledgeItem(id) {
+    try {
+      return this.knowledgeBase.get(id) || null;
+    } catch (error) {
+      console.error('Error getting knowledge item:', error);
+      return null;
+    }
+  }
+
+  // Delete knowledge base item
+  async deleteKnowledgeItem(id) {
+    try {
+      const deleted = this.knowledgeBase.delete(id);
+      if (deleted) {
+        await this.saveKnowledgeBase();
+        console.log(`🗑️ Deleted knowledge item: ${id}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleting knowledge item:', error);
+      return false;
+    }
+  }
+
+  // Get knowledge base statistics
+  getKnowledgeBaseStats() {
+    try {
+      const totalEntries = this.knowledgeBase.size;
+      const categories = new Map();
+      const sources = new Map();
+      
+      for (const [id, entry] of this.knowledgeBase) {
+        // Count by category
+        const category = entry.category || 'uncategorized';
+        categories.set(category, (categories.get(category) || 0) + 1);
+        
+        // Count by source type
+        const sourceType = entry.source ? 
+          (entry.source.startsWith('http') ? 'website' : 'document') : 
+          'manual';
+        sources.set(sourceType, (sources.get(sourceType) || 0) + 1);
+      }
+      
+      return {
+        totalEntries,
+        categories: Object.fromEntries(categories),
+        sources: Object.fromEntries(sources),
+        lastUpdated: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error getting knowledge base stats:', error);
+      return {
+        totalEntries: 0,
+        categories: {},
+        sources: {},
+        lastUpdated: new Date().toISOString(),
+        error: error.message
+      };
     }
   }
 }

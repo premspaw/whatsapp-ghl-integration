@@ -978,6 +978,9 @@
                 <button class="header-btn" id="openSettingsBtn" title="Settings">
                     ⚙️
                 </button>
+                <button class="header-btn" id="openAIDashboardBtn" title="AI Dashboard" onclick="window.location.href='/ai-management-dashboard.html'">
+                    🤖
+                </button>
                 <button class="header-btn" id="openTrainingBtn" title="AI Training" onclick="window.location.href='/ai-training.html'">
                     🧠
                 </button>
@@ -1226,6 +1229,11 @@
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
+        // Derive API base to avoid mismatched ports (e.g., page on 3001, API on 3000)
+        const API_BASE = (window.location.hostname === 'localhost' && window.location.port && window.location.port !== '3000')
+            ? 'http://localhost:3000'
+            : '';
+        const apiUrl = (path) => API_BASE ? `${API_BASE}${path}` : path;
         let conversations = [];
         let selectedConversation = null;
         let filteredConversations = [];
@@ -1235,7 +1243,7 @@
         // Load conversations from the server
         async function loadConversations() {
             try {
-                const response = await fetch('/api/whatsapp/conversations');
+                const response = await fetch(apiUrl('/api/whatsapp/conversations'));
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1363,7 +1371,7 @@
                 // Mark conversation as read when selected
                 if (!selectedConversation.isRead) {
                     try {
-                        await fetch(`/api/conversations/${conversationId}/mark-read`, {
+                        await fetch(apiUrl(`/api/conversations/${conversationId}/mark-read`), {
                             method: 'POST'
                         });
                         selectedConversation.isRead = true;
@@ -1565,7 +1573,7 @@
 
         // Initialize Socket.IO connection
         function initializeSocket() {
-            socket = io();
+            socket = API_BASE ? io(API_BASE) : io();
             
             socket.on('connect', () => {
                 console.log('Connected to server');
@@ -1696,7 +1704,7 @@
             document.getElementById('sendButton').disabled = true;
             
             try {
-                const response = await fetch('/api/whatsapp/send', {
+                const response = await fetch(apiUrl('/api/whatsapp/send'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1724,7 +1732,7 @@
                     // Sync to GHL immediately after sending
                     try {
                         console.log('🔄 Syncing sent message to GHL...');
-                        const syncResponse = await fetch(`/api/conversations/${selectedConversation.id}/sync-ghl`, {
+                        const syncResponse = await fetch(apiUrl(`/api/conversations/${selectedConversation.id}/sync-ghl`), {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1792,7 +1800,7 @@
         // Sync contact names with GHL
         async function syncContactNames() {
             try {
-                const response = await fetch('/api/ghl/sync-contacts');
+                const response = await fetch(apiUrl('/api/ghl/sync-contacts'));
                 if (response.ok) {
                     console.log('✅ Contact names synced with GHL');
                     loadConversations(); // Reload conversations with updated names
@@ -1873,7 +1881,7 @@
 
         async function checkWhatsAppStatus() {
             try {
-                const response = await fetch('/api/whatsapp/status');
+                const response = await fetch(apiUrl('/api/whatsapp/status'));
                 const data = await response.json();
                 updateConnectionUI(data.status, data.message);
             } catch (error) {
@@ -1953,7 +1961,7 @@
         async function connectWhatsApp() {
             try {
                 updateConnectionUI('connecting');
-                const response = await fetch('/api/whatsapp/reconnect', { method: 'POST' });
+                const response = await fetch(apiUrl('/api/whatsapp/reconnect'), { method: 'POST' });
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1970,7 +1978,7 @@
 
         async function disconnectWhatsApp() {
             try {
-                const response = await fetch('/api/whatsapp/disconnect', { method: 'POST' });
+                const response = await fetch(apiUrl('/api/whatsapp/disconnect'), { method: 'POST' });
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1997,7 +2005,7 @@
                 qrImage.style.display = 'none';
                 qrLoading.style.display = 'flex';
                 
-                const response = await fetch('/api/whatsapp/qr-code');
+                const response = await fetch(apiUrl('/api/whatsapp/qr-code'));
                 const data = await response.json();
                 
                 if (data.success && data.qrCode) {
@@ -2079,7 +2087,7 @@
         // Templates
         async function loadTemplates() {
             try {
-                const res = await fetch('/api/templates');
+                const res = await fetch(apiUrl('/api/templates'));
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || 'Failed');
                 const list = document.getElementById('templates_list');
@@ -2173,7 +2181,7 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch(`/api/conversations/${selectedConversation.id}/sync-ghl`, {
+                const response = await fetch(apiUrl(`/api/conversations/${selectedConversation.id}/sync-ghl`), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -2202,7 +2210,7 @@
         // Automations
         async function loadAutomationRules() {
             try {
-                const res = await fetch('/api/automation/rules');
+                const res = await fetch(apiUrl('/api/automation/rules'));
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || 'Failed');
                 const rules = data.rules || [];
@@ -2224,7 +2232,7 @@
             if (!name || keywords.length === 0 || !templateId) { alert('Fill name, keywords and template'); return; }
             const id = `rule_${Date.now()}`;
             const payload = { id, name, trigger: 'keyword', templateId, conditions: { keywords } };
-            const res = await fetch('/api/automation/rules', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            const res = await fetch(apiUrl('/api/automation/rules'), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
             const data = await res.json();
             if (!data.success) { alert('Failed: ' + (data.error||'Unknown')); return; }
             document.getElementById('auto_name').value = '';
@@ -2238,7 +2246,7 @@
                 const locationId = preset || (prompt('Enter GHL Location ID', '')||'').trim();
                 if (!locationId) { alert('Location ID required'); return; }
 
-                const res = await fetch('/api/automation/setup', {
+                const res = await fetch(apiUrl('/api/automation/setup'), {
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
                     body: JSON.stringify({ locationId })
@@ -2260,7 +2268,7 @@
 
         async function testAutomation() {
             try {
-                const res = await fetch('/api/automation/test', { method:'POST' });
+                const res = await fetch(apiUrl('/api/automation/test'), { method:'POST' });
                 const data = await res.json();
                 alert(data.success ? 'Automation test sent' : ('Failed: '+(data.error||'Unknown')));
             } catch (e) { alert('Failed: ' + e.message); }

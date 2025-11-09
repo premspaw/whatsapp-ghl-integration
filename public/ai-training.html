@@ -3,50 +3,150 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Training & Handoff Rules</title>
+  <title>AI Management</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #334155; margin:0; }
-    header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #fff; padding: 1rem 1.5rem; display:flex; justify-content:space-between; align-items:center; }
-    h1 { font-size: 1.25rem; margin:0; }
-    main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
-    .section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; margin-bottom:1rem; }
-    .section h2 { font-size:1.1rem; margin-bottom:0.75rem; }
-    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-row { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
-    label { width: 180px; font-weight:600; }
-    input, select, textarea { flex:1; padding:0.5rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; }
-    textarea { min-height: 80px; }
-    .btn { background:#334155; color:#fff; border:none; padding:0.5rem 0.9rem; border-radius:8px; cursor:pointer; }
-    .btn:hover { background:#1e293b; }
-    .btn.secondary { background:#64748b; }
-    .list { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem; }
-    .chip { background:#e2e8f0; border-radius:16px; padding:0.25rem 0.6rem; font-size:0.85rem; }
-    .alert { padding:0.6rem 0.8rem; margin-top:0.75rem; border-radius:8px; }
-    .alert.info { background:#eff6ff; border:1px solid #bfdbfe; }
-    .alert.success { background:#ecfdf5; border:1px solid #a7f3d0; }
-    .alert.error { background:#fef2f2; border:1px solid #fecaca; }
-    .flex { display:flex; gap:0.5rem; align-items:center; }
-    .small { font-size:0.85rem; color:#64748b; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f8fafc; 
+      color: #334155; 
+      margin: 0; 
+    }
+    header { 
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+      color: #fff; 
+      padding: 1rem 1.5rem; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+    }
+    h1 { font-size: 1.25rem; margin: 0; }
+    main { max-width: 800px; margin: 1.5rem auto; padding: 0 1rem; }
+    .section { 
+      background: #fff; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 12px; 
+      padding: 1.5rem; 
+      margin-bottom: 1.5rem; 
+    }
+    .section h2 { 
+      font-size: 1.1rem; 
+      margin-bottom: 1rem; 
+      color: #1e293b;
+    }
+    .form-row { 
+      display: flex; 
+      gap: 0.5rem; 
+      align-items: center; 
+      margin-bottom: 1rem; 
+    }
+    label { 
+      width: 180px; 
+      font-weight: 600; 
+      color: #475569;
+    }
+    input, select, textarea { 
+      flex: 1; 
+      padding: 0.75rem; 
+      border: 1px solid #d1d5db; 
+      border-radius: 8px; 
+      font-size: 0.95rem; 
+    }
+    .btn { 
+      background: #334155; 
+      color: #fff; 
+      border: none; 
+      padding: 0.75rem 1.25rem; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-weight: 600;
+    }
+    .btn:hover { background: #1e293b; }
+    .btn.secondary { background: #64748b; }
+    .btn.success { background: #059669; }
+    .btn.danger { background: #dc2626; }
+    .alert { 
+      padding: 0.75rem 1rem; 
+      margin-top: 1rem; 
+      border-radius: 8px; 
+      font-weight: 500;
+    }
+    .alert.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .alert.success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+    .alert.error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+    .flex { display: flex; gap: 0.75rem; align-items: center; }
+    .toggle-container { 
+      display: flex; 
+      align-items: center; 
+      gap: 1rem; 
+      padding: 1rem; 
+      background: #f1f5f9; 
+      border-radius: 8px; 
+      margin-bottom: 1rem;
+    }
+    .toggle { 
+      position: relative; 
+      width: 60px; 
+      height: 30px; 
+      background: #cbd5e1; 
+      border-radius: 15px; 
+      cursor: pointer; 
+      transition: background 0.3s;
+    }
+    .toggle.active { background: #059669; }
+    .toggle-slider { 
+      position: absolute; 
+      top: 3px; 
+      left: 3px; 
+      width: 24px; 
+      height: 24px; 
+      background: white; 
+      border-radius: 50%; 
+      transition: transform 0.3s;
+    }
+    .toggle.active .toggle-slider { transform: translateX(30px); }
+    .status-text { 
+      font-weight: 600; 
+      font-size: 1.1rem;
+    }
+    .status-text.active { color: #059669; }
+    .status-text.inactive { color: #dc2626; }
   </style>
 </head>
 <body>
   <header>
-    <h1>AI Training & Handoff Rules</h1>
+    <h1>🤖 AI Management</h1>
     <div class="flex">
       <a href="/ghl-whatsapp-tab.html" class="btn secondary">Back to GHL Tab</a>
     </div>
   </header>
+  
   <main>
+    <!-- AI Toggle Section -->
+    <div class="section">
+      <h2>🔧 AI Control</h2>
+      <div class="toggle-container">
+        <div class="toggle" id="aiToggle" onclick="toggleAI()">
+          <div class="toggle-slider"></div>
+        </div>
+        <div class="status-text" id="aiStatus">AI is Active</div>
+      </div>
+      <div id="aiToggleStatus" class="alert info" style="display:none"></div>
+    </div>
+
+    <!-- Handoff Rules Section -->
     <div class="section">
       <h2>🤝 Handoff Rules</h2>
+      
       <div class="form-row">
-        <label>Keywords</label>
-        <input id="keywordsInput" placeholder="e.g. human, agent, support" />
+        <label>Keywords for Human Handoff</label>
+        <input id="keywordsInput" placeholder="e.g. human, agent, support, manager" />
       </div>
+      
       <div class="form-row">
         <label>Auto Handoff Topics</label>
-        <input id="topicsInput" placeholder="e.g. billing, refund, escalate" />
+        <input id="topicsInput" placeholder="e.g. billing, refund, escalate, complaint" />
       </div>
+      
       <div class="form-row">
         <label>Business Hours Enabled</label>
         <select id="bhEnabled">
@@ -54,53 +154,91 @@
           <option value="false">Disabled</option>
         </select>
       </div>
-      <div class="grid">
-        <div>
-          <div class="form-row"><label>Monday</label><input id="bh-mon-start" placeholder="09:00" /><input id="bh-mon-end" placeholder="18:00" /></div>
-          <div class="form-row"><label>Tuesday</label><input id="bh-tue-start" placeholder="09:00" /><input id="bh-tue-end" placeholder="18:00" /></div>
-          <div class="form-row"><label>Wednesday</label><input id="bh-wed-start" placeholder="09:00" /><input id="bh-wed-end" placeholder="18:00" /></div>
-          <div class="form-row"><label>Thursday</label><input id="bh-thu-start" placeholder="09:00" /><input id="bh-thu-end" placeholder="18:00" /></div>
-        </div>
-        <div>
-          <div class="form-row"><label>Friday</label><input id="bh-fri-start" placeholder="09:00" /><input id="bh-fri-end" placeholder="18:00" /></div>
-          <div class="form-row"><label>Saturday</label><input id="bh-sat-start" placeholder="10:00" /><input id="bh-sat-end" placeholder="14:00" /></div>
-          <div class="form-row"><label>Sunday</label><input id="bh-sun-start" placeholder="00:00" /><input id="bh-sun-end" placeholder="00:00" /></div>
-          <div class="form-row"><label>Auto Handoff Outside Hours</label><select id="bhAuto"><option value="true">Yes</option><option value="false">No</option></select></div>
-        </div>
+      
+      <div class="form-row">
+        <label>Auto Handoff Outside Hours</label>
+        <select id="bhAuto">
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
       </div>
+      
       <div class="form-row">
         <label>Priority GHL Tags</label>
         <input id="priorityTagsInput" placeholder="e.g. VIP, Priority, HighValue" />
       </div>
+      
       <div class="flex">
         <button class="btn" onclick="saveHandoffRules()">Save Rules</button>
-        <button class="btn secondary" onclick="loadHandoffRules()">Reload</button>
+        <button class="btn secondary" onclick="loadHandoffRules()">Reload Rules</button>
       </div>
+      
       <div id="handoffStatus" class="alert info" style="display:none"></div>
-      <div class="section" style="margin-top:0.75rem">
-        <h2>🧪 Handoff Simulator</h2>
-        <div class="form-row"><label>Sample Message</label><input id="simMessage" placeholder="Type a user message here..." /></div>
-        <div class="form-row"><label>Contact Tags</label><input id="simTags" placeholder="e.g. VIP, Customer" /></div>
-        <div class="flex"><button class="btn" onclick="simulateHandoff()">Simulate</button><span id="simResult" class="small"></span></div>
-      </div>
     </div>
 
+    <!-- Test Section -->
     <div class="section">
-      <h2>📚 Train from Website</h2>
-      <div class="form-row"><label>Website URL</label><input id="siteUrl" placeholder="https://example.com/docs" /></div>
-      <div class="form-row"><label>Max Depth</label><input id="siteDepth" type="number" value="2" /></div>
-      <div class="form-row"><label>Category</label><input id="siteCategory" placeholder="website" /></div>
-      <div class="form-row"><label>Tags (comma)</label><input id="siteTags" placeholder="help, docs" /></div>
-      <div class="flex">
-        <button class="btn" onclick="trainWebsite()">Train</button>
-        <button class="btn secondary" onclick="loadStats()">Refresh Stats</button>
+      <h2>🧪 Test Handoff Rules</h2>
+      <div class="form-row">
+        <label>Sample Message</label>
+        <input id="simMessage" placeholder="Type a user message here..." />
       </div>
-      <div id="trainStatus" class="alert info" style="display:none"></div>
-      <div id="stats" class="alert info" style="display:none"></div>
+      <div class="form-row">
+        <label>Contact Tags</label>
+        <input id="simTags" placeholder="e.g. VIP, Customer" />
+      </div>
+      <div class="flex">
+        <button class="btn" onclick="simulateHandoff()">Test Message</button>
+        <span id="simResult" style="font-weight: 600; margin-left: 1rem;"></span>
+      </div>
     </div>
   </main>
 
   <script>
+    let aiEnabled = true;
+
+    // AI Toggle Functions
+    function toggleAI() {
+      aiEnabled = !aiEnabled;
+      updateAIToggleUI();
+      saveAIState();
+    }
+
+    function updateAIToggleUI() {
+      const toggle = document.getElementById('aiToggle');
+      const status = document.getElementById('aiStatus');
+      
+      if (aiEnabled) {
+        toggle.classList.add('active');
+        status.textContent = 'AI is Active';
+        status.className = 'status-text active';
+      } else {
+        toggle.classList.remove('active');
+        status.textContent = 'AI is Disabled';
+        status.className = 'status-text inactive';
+      }
+    }
+
+    async function saveAIState() {
+      try {
+        const response = await fetch('/api/ai/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: aiEnabled })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          setStatus('aiToggleStatus', `AI ${aiEnabled ? 'enabled' : 'disabled'} successfully`, 'success');
+        } else {
+          setStatus('aiToggleStatus', 'Error saving AI state', 'error');
+        }
+      } catch (error) {
+        setStatus('aiToggleStatus', 'Error saving AI state', 'error');
+      }
+    }
+
+    // Handoff Rules Functions
     const toList = (str) => (str || '').split(',').map(s => s.trim()).filter(Boolean);
     const listToStr = (arr) => (Array.isArray(arr) ? arr.join(', ') : '');
 
@@ -109,49 +247,31 @@
         const res = await fetch('/api/handoff-rules');
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed to load rules');
+        
         const rules = data.rules || {};
         document.getElementById('keywordsInput').value = listToStr(rules.keywords || []);
         document.getElementById('topicsInput').value = listToStr(rules.auto_handoff_topics || []);
-        const bh = rules.business_hours || { enabled:false, schedule:{} , auto_handoff_outside_hours:true };
+        
+        const bh = rules.business_hours || { enabled: false, auto_handoff_outside_hours: true };
         document.getElementById('bhEnabled').value = String(!!bh.enabled);
         document.getElementById('bhAuto').value = String(!!bh.auto_handoff_outside_hours);
-        const setDay = (day, startId, endId) => {
-          const s = (bh.schedule && bh.schedule[day] && bh.schedule[day].start) || '';
-          const e = (bh.schedule && bh.schedule[day] && bh.schedule[day].end) || '';
-          document.getElementById(startId).value = s; document.getElementById(endId).value = e;
-        };
-        setDay('monday','bh-mon-start','bh-mon-end');
-        setDay('tuesday','bh-tue-start','bh-tue-end');
-        setDay('wednesday','bh-wed-start','bh-wed-end');
-        setDay('thursday','bh-thu-start','bh-thu-end');
-        setDay('friday','bh-fri-start','bh-fri-end');
-        setDay('saturday','bh-sat-start','bh-sat-end');
-        setDay('sunday','bh-sun-start','bh-sun-end');
+        
         document.getElementById('priorityTagsInput').value = listToStr((rules.priority_contacts && rules.priority_contacts.ghl_tags) || []);
-        setStatus('handoffStatus','Loaded handoff rules','info');
+        
+        setStatus('handoffStatus', 'Handoff rules loaded successfully', 'success');
       } catch (e) {
-        setStatus('handoffStatus','Error: '+ e.message,'error');
+        setStatus('handoffStatus', 'Error: ' + e.message, 'error');
       }
     }
 
     async function saveHandoffRules() {
       try {
-        const schedule = {
-          monday: { start: val('bh-mon-start'), end: val('bh-mon-end') },
-          tuesday: { start: val('bh-tue-start'), end: val('bh-tue-end') },
-          wednesday: { start: val('bh-wed-start'), end: val('bh-wed-end') },
-          thursday: { start: val('bh-thu-start'), end: val('bh-thu-end') },
-          friday: { start: val('bh-fri-start'), end: val('bh-fri-end') },
-          saturday: { start: val('bh-sat-start'), end: val('bh-sat-end') },
-          sunday: { start: val('bh-sun-start'), end: val('bh-sun-end') }
-        };
         const payload = {
           keywords: toList(val('keywordsInput')),
           auto_handoff_topics: toList(val('topicsInput')),
           business_hours: {
             enabled: val('bhEnabled') === 'true',
             timezone: 'Asia/Kolkata',
-            schedule,
             auto_handoff_outside_hours: val('bhAuto') === 'true'
           },
           priority_contacts: {
@@ -159,88 +279,66 @@
             ghl_tags: toList(val('priorityTagsInput'))
           }
         };
-        const res = await fetch('/api/handoff-rules', { method:'PUT', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+        
+        const res = await fetch('/api/handoff-rules', { 
+          method: 'PUT', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify(payload) 
+        });
+        
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed to save rules');
-        setStatus('handoffStatus','Rules saved successfully','success');
+        
+        setStatus('handoffStatus', 'Handoff rules saved successfully', 'success');
       } catch (e) {
-        setStatus('handoffStatus','Error: '+ e.message,'error');
+        setStatus('handoffStatus', 'Error: ' + e.message, 'error');
       }
     }
 
     function simulateHandoff() {
-      // Client-side simulation based on current form values
       const msg = val('simMessage').toLowerCase();
       const tags = toList(val('simTags')).map(t => t.toLowerCase());
       const keywords = toList(val('keywordsInput')).map(s => s.toLowerCase());
       const topics = toList(val('topicsInput')).map(s => s.toLowerCase());
       const priorityTags = toList(val('priorityTagsInput')).map(s => s.toLowerCase());
-      const outsideHours = val('bhAuto') === 'true' && val('bhEnabled') === 'true' && isOutsideHours();
-
+      
       const kwHit = keywords.some(k => msg.includes(k));
       const topicHit = topics.some(t => msg.includes(t));
       const tagHit = tags.some(t => priorityTags.includes(t));
+      const outsideHours = val('bhAuto') === 'true' && val('bhEnabled') === 'true';
+      
       const result = kwHit || topicHit || tagHit || outsideHours;
-      document.getElementById('simResult').textContent = result ? 'Would handoff to human' : 'AI would respond';
+      const resultEl = document.getElementById('simResult');
+      
+      if (result) {
+        resultEl.textContent = '→ Would handoff to human';
+        resultEl.style.color = '#dc2626';
+      } else {
+        resultEl.textContent = '→ AI would respond';
+        resultEl.style.color = '#059669';
+      }
     }
 
-    function isOutsideHours() {
-      const minutes = (new Date()).getHours()*60 + (new Date()).getMinutes();
-      const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-      const idsMap = {
-        monday: ['bh-mon-start','bh-mon-end'],
-        tuesday: ['bh-tue-start','bh-tue-end'],
-        wednesday: ['bh-wed-start','bh-wed-end'],
-        thursday: ['bh-thu-start','bh-thu-end'],
-        friday: ['bh-fri-start','bh-fri-end'],
-        saturday: ['bh-sat-start','bh-sat-end'],
-        sunday: ['bh-sun-start','bh-sun-end']
-      };
-      const day = dayNames[(new Date()).getDay()];
-      const [sid,eid] = idsMap[day];
-      const [sh,sm] = (val(sid) || '00:00').split(':').map(Number);
-      const [eh,em] = (val(eid) || '00:00').split(':').map(Number);
-      const start = sh*60 + sm; const end = eh*60 + em;
-      return minutes < start || minutes > end;
-    }
-
-    async function trainWebsite() {
-      try {
-        const payload = {
-          url: val('siteUrl'),
-          maxDepth: val('siteDepth'),
-          category: val('siteCategory'),
-          tags: val('siteTags')
-        };
-        if (!payload.url) { setStatus('trainStatus','Please enter a website URL','error'); return; }
-        const res = await fetch('/api/knowledge/website', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Failed to train');
-        setStatus('trainStatus', `Processed ${data.pagesProcessed} pages, ${data.chunks} chunks`, 'success');
-        loadStats();
-      } catch (e) { setStatus('trainStatus','Error: '+e.message,'error'); }
-    }
-
-    async function loadStats() {
-      try {
-        const res = await fetch('/api/knowledge/stats');
-        const data = await res.json();
-        document.getElementById('stats').style.display='block';
-        document.getElementById('stats').textContent = `Docs: ${data.totalDocuments}, Websites: ${data.totalWebsites}, Embeddings: ${data.totalEmbeddings}`;
-      } catch { /* ignore */ }
-    }
-
+    // Utility Functions
     function setStatus(id, msg, type) {
       const el = document.getElementById(id);
-      el.style.display='block';
+      el.style.display = 'block';
       el.className = `alert ${type}`;
       el.textContent = msg;
+      
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 3000);
     }
-    function val(id) { return document.getElementById(id).value; }
 
-    // Init
+    function val(id) { 
+      return document.getElementById(id).value; 
+    }
+
+    // Initialize
+    updateAIToggleUI();
     loadHandoffRules();
-    loadStats();
   </script>
 </body>
 </html>

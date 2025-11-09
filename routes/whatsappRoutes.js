@@ -76,12 +76,30 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
   router.get('/status', (req, res) => {
     const isReady = whatsappService ? whatsappService.isReady : false;
     const actualStatus = isReady ? 'connected' : (currentQRCode ? 'connecting' : 'disconnected');
+    const sessionName = process.env.WHATSAPP_SESSION_NAME || 'Mywhatsapp';
+    const clientInfo = whatsappService && whatsappService.client && whatsappService.client.info
+      ? whatsappService.client.info
+      : null;
+    const accountNumber = clientInfo && clientInfo.wid && clientInfo.wid.user
+      ? clientInfo.wid.user
+      : null;
+    const displayName = clientInfo && (clientInfo.pushname || clientInfo.me && clientInfo.me.name)
+      ? (clientInfo.pushname || clientInfo.me.name)
+      : null;
     
     res.json({
       success: true,
       status: actualStatus,
       isReady: isReady,
       hasQRCode: !!currentQRCode,
+      sessionName,
+      accountNumber,
+      displayName,
+      client: clientInfo ? {
+        platform: clientInfo.platform,
+        pushname: clientInfo.pushname,
+        wid: clientInfo.wid
+      } : null,
       message: isReady ? 'WhatsApp is connected and ready' : 
                currentQRCode ? 'Waiting for QR code scan' : 
                'WhatsApp is not connected'

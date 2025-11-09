@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG System Dashboard - AI Knowledge Management</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .status-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .status-online { background: linear-gradient(135deg, #4CAF50, #45a049); }
+        .status-warning { background: linear-gradient(135deg, #FF9800, #f57c00); }
+        .status-error { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        .status-info { background: linear-gradient(135deg, #2196F3, #1976d2); }
+
+        .status-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-subtitle {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .status-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 10px;
+            color: #667eea;
+        }
+
+        .chat-interface {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message-meta {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+
+        .chat-input button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            background: #5a6fd8;
+        }
+
+        .knowledge-search {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .knowledge-item {
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .knowledge-item:hover {
+            background: #f8f9fa;
+        }
+
+        .knowledge-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .knowledge-content {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .similarity-score {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1><i class="fas fa-brain"></i> RAG System Dashboard</h1>
+            <p>AI-Powered Knowledge Management & Retrieval System</p>
+            <div style="margin-top:12px; display:flex; gap:10px; justify-content:center; align-items:center;">
+              <label style="color:#fff; opacity:0.9;">Tenant:</label>
+              <select id="tenant-select" style="padding:8px; border-radius:6px; min-width:220px;">
+                <option value="">All (no tenant filter)</option>
+              </select>
+              <button class="btn btn-secondary" onclick="refreshStatus()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+        </div>
+
+        <!-- System Status Grid -->
+        <div class="status-grid">
+            <div class="status-card">
+                <div class="status-header">
+                    <div class="status-icon status-online">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div>
+                        <div class="status-title">Embeddings Service</div>
+                        <div class="status-subtitle">Vector Database</div>
+                    </div>
+                </div>
+                <div class="status-metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="embeddings-count">0</div>
+                        <div class="metric-label">Total Embeddings</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="similarity-threshold">0.5</div>
+                        <div class="metric-label">Similarity Threshold</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="status-header">
+                    <div class="status-icon status-online">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div>
+                        <div class="status-title">AI Service</div>
+                        <div class="status-subtitle">OpenRouter Integration</div>
+                    </div>
+                </div>
+                <div class="status-metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="ai-responses">0</div>
+                        <div class="metric-label">Responses Generated</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="api-status">Active</div>
+                        <div class="metric-label">API Status</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="status-header">
+                    <div class="status-icon status-online">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div>
+                        <div class="status-title">Knowledge Base</div>
+                        <div class="status-subtitle">Content Repository</div>
+                    </div>
+                </div>
+                <div class="status-metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="knowledge-items">0</div>
+                        <div class="metric-label">Knowledge Items</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="last-updated">Never</div>
+                        <div class="metric-label">Last Updated</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="status-header">
+                    <div class="status-icon status-online">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div>
+                        <div class="status-title">GHL Integration</div>
+                        <div class="status-subtitle">CRM Connection</div>
+                    </div>
+                </div>
+                <div class="status-metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="ghl-contacts">0</div>
+                        <div class="metric-label">Contacts Synced</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="ghl-status">Connected</div>
+                        <div class="metric-label">Connection Status</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- AI Chat Interface -->
+            <div class="content-section">
+                <div class="section-title">
+                    <i class="fas fa-comments"></i>
+                    AI Chat with RAG
+                </div>
+                <div class="chat-interface">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message ai">
+                            <div>Hello! I'm your AI assistant powered by RAG (Retrieval-Augmented Generation). Ask me anything about your business or knowledge base!</div>
+                            <div class="message-meta">System ready • Knowledge base loaded</div>
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="chat-input" placeholder="Ask me anything..." onkeypress="handleChatKeyPress(event)">
+                        <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+                <div class="loading" id="chat-loading">
+                    <div class="spinner"></div>
+                    Processing with RAG retrieval...
+                </div>
+            </div>
+
+            <!-- Knowledge Search -->
+            <div class="content-section">
+                <div class="section-title">
+                    <i class="fas fa-search"></i>
+                    Knowledge Base Search
+                </div>
+                <div class="knowledge-search">
+                    <input type="text" class="search-input" id="knowledge-search" placeholder="Search knowledge base..." onkeyup="searchKnowledge()">
+                    <div class="search-results" id="search-results">
+                        <div class="knowledge-item">
+                            <div class="knowledge-title">Welcome to Knowledge Search</div>
+                            <div class="knowledge-content">Type above to search through your knowledge base using semantic similarity matching.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="content-section full-width">
+            <div class="section-title">
+                <i class="fas fa-cogs"></i>
+                System Management
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="testRAGSystem()">
+                    <i class="fas fa-play"></i>
+                    Test RAG System
+                </button>
+                <button class="btn btn-success" onclick="uploadKnowledge()">
+                    <i class="fas fa-upload"></i>
+                    Upload Knowledge
+                </button>
+                <button class="btn btn-secondary" onclick="viewEmbeddings()">
+                    <i class="fas fa-eye"></i>
+                    View Embeddings
+                </button>
+                <button class="btn btn-primary" onclick="refreshStatus()">
+                    <i class="fas fa-sync"></i>
+                    Refresh Status
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chatHistory = [];
+        let aiResponseCount = 0;
+        let selectedTenantId = '';
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadTenants();
+            refreshStatus();
+            loadKnowledgeBase();
+            const tenantSelect = document.getElementById('tenant-select');
+            tenantSelect.addEventListener('change', () => {
+              selectedTenantId = tenantSelect.value || '';
+              refreshStatus();
+            });
+        });
+
+        async function loadTenants() {
+          try {
+            const resp = await fetch('/rag-dashboard/api/tenants');
+            const data = await resp.json();
+            const list = Array.isArray(data.tenants) ? data.tenants : [];
+            const sel = document.getElementById('tenant-select');
+            list.forEach(t => {
+              const opt = document.createElement('option');
+              opt.value = t.id;
+              opt.textContent = t.name || t.external_id || t.id;
+              sel.appendChild(opt);
+            });
+          } catch (e) {
+            console.warn('Tenant list failed:', e);
+          }
+        }
+
+        // Chat functionality
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessageToChat('user', message);
+            input.value = '';
+
+            // Show loading
+            document.getElementById('chat-loading').classList.add('show');
+
+            try {
+                // Send to AI service
+                const response = await fetch('/rag-dashboard/api/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(selectedTenantId ? { 'x-tenant-id': selectedTenantId } : {})
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        phoneNumber: '+1234567890',
+                        conversationId: 'dashboard-test'
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Add AI response to chat
+                if (data.success && data.response) {
+                    addMessageToChat('ai', data.response, data.metadata);
+                    aiResponseCount++;
+                    document.getElementById('ai-responses').textContent = aiResponseCount;
+                } else {
+                    addMessageToChat('ai', 'Sorry, I encountered an error processing your request.');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessageToChat('ai', 'Sorry, I\'m having trouble connecting to the AI service.');
+            } finally {
+                document.getElementById('chat-loading').classList.remove('show');
+            }
+        }
+
+        function addMessageToChat(sender, message, metadata = null) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let metaInfo = '';
+            if (metadata) {
+                metaInfo = `<div class="message-meta">
+                    ${metadata.retrievedChunks ? `Retrieved ${metadata.retrievedChunks} knowledge chunks` : ''}
+                    ${metadata.similarity ? ` • Similarity: ${metadata.similarity}` : ''}
+                </div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                <div>${message}</div>
+                ${metaInfo}
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Knowledge search
+        let searchTimeout;
+        async function searchKnowledge() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = document.getElementById('knowledge-search').value.trim();
+                if (!query) {
+                    document.getElementById('search-results').innerHTML = `
+                        <div class="knowledge-item">
+                            <div class="knowledge-title">Welcome to Knowledge Search</div>
+                            <div class="knowledge-content">Type above to search through your knowledge base using semantic similarity matching.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/rag-dashboard/api/knowledge/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(selectedTenantId ? { 'x-tenant-id': selectedTenantId } : {})
+                        },
+                        body: JSON.stringify({ query: query, tenantId: selectedTenantId || null })
+                    });
+
+                    const data = await response.json();
+                    displaySearchResults(data.results || []);
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        }
+
+        function displaySearchResults(results) {
+            const resultsContainer = document.getElementById('search-results');
+            
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="knowledge-item">
+                        <div class="knowledge-title">No Results Found</div>
+                        <div class="knowledge-content">Try different keywords or check if your knowledge base has relevant content.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsContainer.innerHTML = results.map(result => `
+                <div class="knowledge-item">
+                    <div class="knowledge-title">${result.source_type || 'Knowledge Item'}</div>
+                    <div class="knowledge-content">${result.text.substring(0, 200)}...</div>
+                    <div class="similarity-score">Similarity: ${(result.similarity * 100).toFixed(1)}%</div>
+                </div>
+            `).join('');
+        }
+
+        // System management functions
+        async function testRAGSystem() {
+            const testQueries = [
+                "What services do you offer?",
+                "Tell me about your business",
+                "Do you offer WhatsApp integration?"
+            ];
+
+            for (const query of testQueries) {
+                addMessageToChat('user', query);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await sendMessage();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        async function refreshStatus() {
+            try {
+                const response = await fetch('/rag-dashboard/api/system/metrics', {
+                  headers: {
+                    ...(selectedTenantId ? { 'x-tenant-id': selectedTenantId } : {})
+                  }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.metrics) {
+                    const m = data.metrics;
+                    updateStatusMetrics({
+                      embeddings: { count: m.embeddingsCount || 0 },
+                      knowledge: { items: m.knowledgeBaseSize || 0, lastUpdated: m.timestamp || 'Unknown' },
+                      ghl: { contacts: m.requestsPerMinute || 0, connected: true }
+                    });
+                }
+            } catch (error) {
+                console.error('Status refresh error:', error);
+            }
+        }
+
+        function updateStatusMetrics(status) {
+            if (status.embeddings) {
+                document.getElementById('embeddings-count').textContent = status.embeddings.count || 0;
+            }
+            if (status.knowledge) {
+                document.getElementById('knowledge-items').textContent = status.knowledge.items || 0;
+                document.getElementById('last-updated').textContent = status.knowledge.lastUpdated || 'Never';
+            }
+            if (status.ghl) {
+                document.getElementById('ghl-contacts').textContent = status.ghl.contacts || 0;
+                document.getElementById('ghl-status').textContent = status.ghl.connected ? 'Connected' : 'Disconnected';
+            }
+        }
+
+        async function loadKnowledgeBase() {
+            try {
+                // Use the RAG dashboard route prefix to avoid mismatched HTML responses
+                const response = await fetch('/rag-dashboard/api/knowledge/list');
+                const data = await response.json();
+                
+                if (data.success && data.items) {
+                    document.getElementById('knowledge-items').textContent = data.items.length;
+                }
+            } catch (error) {
+                console.error('Knowledge base load error:', error);
+            }
+        }
+
+        function uploadKnowledge() {
+            // Redirect to knowledge upload page
+            window.location.href = '/ai-training.html';
+        }
+
+        function viewEmbeddings() {
+            // Open embeddings visualization
+            window.open('/embeddings-viewer.html', '_blank');
+        }
+
+        // Auto-refresh status every 30 seconds
+        setInterval(refreshStatus, 30000);
+    </script>
+</body>
+</html>

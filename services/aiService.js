@@ -90,6 +90,9 @@ class AIService {
       }
 
       const conversationHistory = context.messages || [];
+      const conversationType = context.type || 'default';
+      // Prefer a speed-optimized model for WhatsApp quick replies
+      const selectedModel = this.selectModelForConversation(conversationType, { prioritizeSpeed: true });
       
       const messages = [
         { role: 'system', content: customPrompt }
@@ -108,17 +111,20 @@ class AIService {
       messages.push({ role: 'user', content: message });
 
       const response = await axios.post(`${this.baseURL}/chat/completions`, {
-        model: this.model,
+        model: selectedModel,
         messages: messages,
-        max_tokens: 200,
-        temperature: 0.7
+        max_tokens: 140,
+        temperature: 0.5,
+        presence_penalty: 0.0,
+        frequency_penalty: 0.0
       }, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': process.env.OPENROUTER_REFERER || 'http://localhost:3000',
           'X-Title': 'WhatsApp GHL Integration'
-        }
+        },
+        timeout: parseInt(process.env.OPENROUTER_TIMEOUT || '10000', 10)
       });
 
       return response.data.choices[0].message.content.trim();

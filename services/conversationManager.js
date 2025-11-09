@@ -3,7 +3,7 @@ const path = require('path');
 const { upsertContactByPhone, findByPhone } = require('./db/contactRepo');
 const { upsertConversation, touchLastMessageAt } = require('./db/conversationRepo');
 const { createMessage } = require('./db/messageRepo');
-const { normalize: normalizePhone } = require('../utils/phoneNormalizer');
+const { normalize: normalizePhone, isValidPhoneNumber } = require('../utils/phoneNormalizer');
 
 class ConversationManager {
   constructor() {
@@ -64,8 +64,12 @@ class ConversationManager {
             normalizedConversations.set(normalizedPhone, conversation);
           }
         } else {
-          // If normalization fails, keep original
-          this.conversations.set(id, conversation);
+          // If normalization fails, keep only valid E.164 IDs; skip bad entries like '+91' or '[object Object]'
+          if (typeof id === 'string' && isValidPhoneNumber(id)) {
+            this.conversations.set(id, conversation);
+          } else {
+            console.warn(`Skipping invalid conversation id during load: ${String(id)}`);
+          }
         }
       }
       
@@ -99,6 +103,10 @@ class ConversationManager {
     try {
       // Normalize the phone number/ID to consistent format
       let rawId = conversationId || message.from;
+      // Guard against non-string conversationId (e.g., objects)
+      if (typeof rawId !== 'string') {
+        rawId = String(message.from || '');
+      }
       let phoneNumber = message.from;
       
       // For AI messages, use the conversation ID as the phone number
@@ -110,7 +118,7 @@ class ConversationManager {
       const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
       
       // Use normalized phone as the conversation ID
-      const id = normalizedPhone || rawId;
+      const id = normalizedPhone || (typeof rawId === 'string' ? rawId : String(rawId));
       
       let conversation = this.conversations.get(id);
       
