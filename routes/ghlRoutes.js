@@ -1,6 +1,19 @@
 const express = require('express');
 console.log('[ghlRoutes] module loading');
-const GHLOAuthService = require('../services/ghlOAuthService');
+// Try to load optional services; provide safe fallbacks if missing so server can start
+let GHLOAuthService;
+try {
+  GHLOAuthService = require('../services/ghlOAuthService');
+} catch (e) {
+  console.warn('⚠️ ghlOAuthService not found, using no-op fallback:', e.message);
+  GHLOAuthService = class {
+    isConfigured() { return false; }
+    getAuthorizeUrl() { throw new Error('OAuth not configured'); }
+    exchangeCodeForToken() { throw new Error('OAuth not configured'); }
+    refreshToken() { throw new Error('OAuth not configured'); }
+    getStatus() { return { configured: false, locations: [] }; }
+  };
+}
 
 module.exports = (ghlService) => {
   const router = express.Router();
@@ -79,9 +92,41 @@ module.exports = (ghlService) => {
   });
 
   // Optional: Knowledge Base proxy endpoints (use env-configured URLs)
-  const GHLKnowledgeService = require('../services/ghlKnowledgeService');
-  const kbService = new GHLKnowledgeService(ghlService);
-  console.log('[ghlRoutes] GHLKnowledgeService initialized, isConfigured:', kbService.isConfigured());
+  let GHLKnowledgeService;
+  try {
+    GHLKnowledgeService = require('../services/ghlKnowledgeService');
+    // Normalize different export shapes (CommonJS vs ESM or named export)
+    if (GHLKnowledgeService && typeof GHLKnowledgeService !== 'function') {
+      if (typeof GHLKnowledgeService.default === 'function') {
+        GHLKnowledgeService = GHLKnowledgeService.default;
+      } else if (typeof GHLKnowledgeService.GHLKnowledgeService === 'function') {
+        GHLKnowledgeService = GHLKnowledgeService.GHLKnowledgeService;
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ ghlKnowledgeService not found, using no-op fallback:', e.message);
+    GHLKnowledgeService = class {
+      constructor() { this.kbSearchUrl = null; this.kbListUrl = null; }
+      isConfigured() { return false; }
+      async search() { return []; }
+      async list() { return []; }
+    };
+  }
+  let kbService;
+  try {
+    console.log('[ghlRoutes] typeof GHLKnowledgeService =', typeof GHLKnowledgeService);
+    kbService = new GHLKnowledgeService(ghlService);
+  } catch (err) {
+    console.warn('⚠️ GHLKnowledgeService not constructible, using no-op fallback:', err.message);
+    const FallbackKB = class {
+      constructor() { this.kbSearchUrl = null; this.kbListUrl = null; }
+      isConfigured() { return false; }
+      async search() { return []; }
+      async list() { return []; }
+    };
+    kbService = new FallbackKB();
+  }
+  console.log('[ghlRoutes] GHLKnowledgeService initialized, isConfigured:', typeof kbService.isConfigured === 'function' ? kbService.isConfigured() : false);
   // Simple test endpoint to verify router wiring under /api/ghl/kb/test
   router.get('/kb/test', (req, res) => {
     console.log('[ghlRoutes] /kb/test hit');
