@@ -12,23 +12,31 @@ class WhatsAppService extends EventEmitter {
   initialize() {
     console.log('Initializing WhatsApp client...');
     
+    // Allow configuring Puppeteer executable path via env for VPS stability
+    const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || null;
+    const puppeteerOptions = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        // Removed '--single-process' to prevent Chromium crashes on Windows
+        '--disable-gpu'
+      ]
+    };
+    if (execPath) {
+      puppeteerOptions.executablePath = execPath;
+      console.log(`Puppeteer executablePath set to: ${execPath}`);
+    }
+
     this.client = new Client({
       authStrategy: new LocalAuth({
         clientId: process.env.WHATSAPP_SESSION_NAME || 'Mywhatsapp'
       }),
-      puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          // Removed '--single-process' to prevent Chromium crashes on Windows
-          '--disable-gpu'
-        ]
-      }
+      puppeteer: puppeteerOptions
     });
 
     // Event handlers
