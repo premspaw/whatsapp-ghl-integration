@@ -1281,8 +1281,10 @@ app.get('/api/templates/:id', async (req, res) => {
 
 app.post('/api/templates', async (req, res) => {
   try {
-    const { id, name, category, mediaUrl, mediaType } = req.body || {};
+    const { id, name, category, mediaType } = req.body || {};
     const content = (req.body && (req.body.content || req.body.text)) || '';
+    // Accept both mediaUrl and imageUrl for convenience
+    const mediaUrl = (req.body && (req.body.mediaUrl ?? req.body.imageUrl)) || '';
 
     if (!name || !content) {
       return res.status(400).json({ success: false, error: 'Missing required fields: name, content/text' });

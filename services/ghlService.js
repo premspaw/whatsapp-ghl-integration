@@ -213,6 +213,13 @@ class GHLService {
 
   async addInboundMessage(contactId, messageData, conversationId = null) {
     try {
+      // Skip posting if there is no message content or attachments
+      const hasMessage = !!(messageData && (messageData.message || messageData.body) && String(messageData.message || messageData.body).trim());
+      const hasAttachments = !!(messageData && (messageData.attachments || messageData.files) && (messageData.attachments?.length || messageData.files?.length));
+      if (!hasMessage && !hasAttachments) {
+        console.log('  ℹ️  Skipping inbound GHL post: no message or attachments');
+        return { success: true, skipped: true, reason: 'empty_message' };
+      }
       // For inbound messages from customer, we need to use the contact's phone number
       // GHL determines direction based on the FROM field
       
@@ -270,6 +277,13 @@ class GHLService {
 
   async addOutboundMessage(contactId, messageData, conversationId = null) {
     try {
+      // Skip posting if there is no message content or attachments
+      const hasMessage = !!(messageData && (messageData.message || messageData.body) && String(messageData.message || messageData.body).trim());
+      const hasAttachments = !!(messageData && (messageData.attachments || messageData.files) && (messageData.attachments?.length || messageData.files?.length));
+      if (!hasMessage && !hasAttachments) {
+        console.log('  ℹ️  Skipping outbound GHL post: no message or attachments');
+        return { success: true, skipped: true, reason: 'empty_message' };
+      }
       // For outbound messages (from AI/Agent), we DON'T set FROM field
       // This tells GHL it's from the location/business
       const payload = {

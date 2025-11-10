@@ -76,12 +76,47 @@ class WhatsAppService extends EventEmitter {
       throw new Error('WhatsApp client is not ready');
     }
 
+    // Ensure non-empty text
+    const text = (message !== undefined && message !== null) ? String(message).trim() : '';
+    if (!text) {
+      throw new Error('Message content is empty');
+    }
+
+    // Normalize number → chat id and verify registration
+    let chatId = String(to || '').trim();
+    let rawNumber = chatId;
     try {
-      const result = await this.client.sendMessage(to, message);
-      console.log('Message sent successfully:', result.id._serialized);
+      if (!chatId.includes('@c.us')) {
+        rawNumber = rawNumber.replace(/[^\\d+]/g, '');
+        if (rawNumber.startsWith('+')) rawNumber = rawNumber.substring(1);
+
+        // Prefer using WhatsApp's number lookup to avoid invalid JIDs
+        if (this.client.getNumberId) {
+          const numberId = await this.client.getNumberId(rawNumber);
+          if (!numberId) {
+            throw new Error(`Number ${rawNumber} is not a registered WhatsApp user`);
+          }
+          chatId = numberId._serialized || `${rawNumber}@c.us`;
+        } else {
+          chatId = `${rawNumber}@c.us`;
+        }
+      }
+    } catch (lookupError) {
+      console.error('❌ WhatsApp number lookup failed:', lookupError.message || lookupError);
+      throw lookupError;
+    }
+
+    try {
+      const result = await this.client.sendMessage(chatId, text);
+      console.log('Message sent successfully:', result.id?._serialized || result.id || 'unknown');
       return result;
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error sending message:', {
+        error: error && (error.message || error.toString()),
+        chatId,
+        rawNumber,
+        isReady: this.isReady
+      });
       throw error;
     }
   }
