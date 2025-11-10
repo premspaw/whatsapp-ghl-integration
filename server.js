@@ -703,24 +703,29 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
 
     // Build profile and render text
     const vars = (typeof variables === 'string') ? (() => { try { return JSON.parse(variables); } catch (_) { return {}; } })() : (variables || {});
+    const contact = body.contact || body.data?.contact || body.data?.message?.contact || {};
+    const resolvedFirst = vars.first_name || vars.firstName || contact.first_name || contact.firstName || '';
+    const resolvedLast = vars.last_name || vars.lastName || contact.last_name || contact.lastName || '';
+    const resolvedName = (vars.name || contact.name || `${resolvedFirst} ${resolvedLast}`.trim()).trim();
+    const varsAugmented = { ...vars, name: resolvedName, first_name: resolvedFirst, last_name: resolvedLast };
     const userProfile = {
-      name: vars.name || `${vars.first_name || ''} ${vars.last_name || ''}`.trim(),
-      first_name: vars.first_name || vars.firstName || '',
-      last_name: vars.last_name || vars.lastName || '',
-      email: vars.email || '',
-      phone: vars.phone || to,
-      tags: vars.tags || [],
-      customFields: vars
+      name: varsAugmented.name || 'there',
+      first_name: varsAugmented.first_name || '',
+      last_name: varsAugmented.last_name || '',
+      email: varsAugmented.email || '',
+      phone: varsAugmented.phone || to,
+      tags: varsAugmented.tags || [],
+      customFields: varsAugmented
     };
     let text = String(template.content || '');
     try {
-      for (const [k, v] of Object.entries(vars)) {
+      for (const [k, v] of Object.entries(varsAugmented)) {
         const re = new RegExp(`\\{${k}\\}`, 'g');
         text = text.replace(re, String(v));
       }
     } catch (_) {}
     try {
-      text = enhancedAIService.applyTemplateVariables(text, userProfile, vars);
+      text = enhancedAIService.applyTemplateVariables(text, userProfile, varsAugmented);
     } catch (_) {}
 
     // Format WhatsApp JID
@@ -943,21 +948,26 @@ app.post('/webhooks/ghl-automation', async (req, res) => {
 
         // Build profile and render
         const vars = (typeof _vars === 'string') ? (() => { try { return JSON.parse(_vars); } catch (_) { return {}; } })() : (_vars || {});
+        const contact = d.contact || d.message?.contact || {};
+        const resolvedFirst = vars.first_name || vars.firstName || contact.first_name || contact.firstName || '';
+        const resolvedLast = vars.last_name || vars.lastName || contact.last_name || contact.lastName || '';
+        const resolvedName = (vars.name || contact.name || `${resolvedFirst} ${resolvedLast}`.trim()).trim();
+        const varsAugmented = { ...vars, name: resolvedName, first_name: resolvedFirst, last_name: resolvedLast };
         const userProfile = {
-          name: vars.name || `${vars.first_name || ''} ${vars.last_name || ''}`.trim(),
-          first_name: vars.first_name || vars.firstName || '',
-          last_name: vars.last_name || vars.lastName || '',
-          email: vars.email || '',
-          phone: vars.phone || _to,
-          tags: vars.tags || [],
-          customFields: vars
+          name: varsAugmented.name || 'there',
+          first_name: varsAugmented.first_name || '',
+          last_name: varsAugmented.last_name || '',
+          email: varsAugmented.email || '',
+          phone: varsAugmented.phone || _to,
+          tags: varsAugmented.tags || [],
+          customFields: varsAugmented
         };
         let text = String(template.content || '');
-        for (const [k, v] of Object.entries(vars)) {
+        for (const [k, v] of Object.entries(varsAugmented)) {
           const re = new RegExp(`\\{${k}\\}`, 'g');
           text = text.replace(re, String(v));
         }
-        text = enhancedAIService.applyTemplateVariables(text, userProfile, vars);
+        text = enhancedAIService.applyTemplateVariables(text, userProfile, varsAugmented);
 
         // WhatsApp JID formatting
         let chatId = String(_to);

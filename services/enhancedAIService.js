@@ -39,6 +39,8 @@ class EnhancedAIService extends EventEmitter {
     };
     
     this.personalityPath = path.join(__dirname, '..', 'data', 'ai-personality.json');
+    // Track whether personality has been loaded to avoid placeholder leakage
+    this._personalityLoaded = false;
     
     this.loadKnowledgeBase();
     this.loadTemplates();
@@ -49,8 +51,6 @@ class EnhancedAIService extends EventEmitter {
     // Optional: prefer GHL KB results before local RAG
     this.ghlKBFirst = String(process.env.GHL_KB_FIRST || 'true').toLowerCase() === 'true';
     this.ghlKnowledge = new GHLKnowledgeService(ghlService);
-    // Track whether personality has been loaded to avoid placeholder leakage
-    this._personalityLoaded = false;
     // Optional citations in replies: 'off' | 'auto' | 'always' (default off)
     this.citationMode = (process.env.REPLY_CITATIONS || 'off').toLowerCase();
   }
@@ -811,7 +811,10 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
     try {
       const data = await fs.readFile(this.templatesPath, 'utf8');
       const templates = JSON.parse(data);
+      // Load as Map keyed by id
       this.templates = new Map(Object.entries(templates));
+      // Sanitize and dedupe by name (case-insensitive)
+      this._sanitizeAndDedupeTemplates();
       console.log('📝 Loaded templates:', this.templates.size);
     } catch (error) {
       console.log('No templates file found, starting fresh');
@@ -830,17 +833,34 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
   }
 
   async addTemplate(id, name, content, category = 'general', mediaUrl = '', mediaType = '') {
-    this.templates.set(id, {
-      id,
-      name,
-      content,
-      category,
-      mediaUrl,
-      mediaType,
+    // Generate id if missing
+    let newId = id && String(id).trim() ? String(id).trim() : `tpl_${Date.now()}`;
+    const cleanName = String(name || '').trim();
+    const cleanContent = this._sanitizeContent(String(content || ''));
+    const cleanMediaUrl = this._sanitizeMediaUrl(String(mediaUrl || ''));
+    const cleanCategory = String(category || 'general').trim() || 'general';
+
+    // Upsert by name (case-insensitive): if a template with same name exists, reuse its id
+    const existing = Array.from(this.templates.values()).find(t => String(t.name || '').toLowerCase() === cleanName.toLowerCase());
+    if (existing) {
+      newId = existing.id || newId;
+    }
+
+    const record = {
+      id: newId,
+      name: cleanName,
+      content: cleanContent,
+      category: cleanCategory,
+      mediaUrl: cleanMediaUrl,
+      mediaType: String(mediaType || '').trim(),
       createdAt: Date.now()
-    });
+    };
+
+    this.templates.set(newId, record);
+    // Ensure no duplicates remain by name and sanitize collection
+    this._sanitizeAndDedupeTemplates();
     await this.saveTemplates();
-    console.log(`📝 Added template: ${name}`);
+    console.log(`📝 Added/Updated template: ${cleanName}`);
   }
 
   async getTemplate(id) {
@@ -855,6 +875,55 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
     this.templates.delete(id);
     await this.saveTemplates();
     console.log(`🗑️ Deleted template: ${id}`);
+  }
+
+  // --- Sanitization helpers ---
+  _sanitizeContent(text) {
+    // Trim and normalize whitespace around curly braces
+    const trimmed = String(text || '').trim();
+    return trimmed;
+  }
+
+  _sanitizeMediaUrl(url) {
+    if (!url) return '';
+    let u = String(url).trim();
+    // Strip leading/trailing backticks or quotes
+    u = u.replace(/^\s*[`'\"]+/, '').replace(/[`'\"]+\s*$/, '');
+    // Also remove accidental spaces
+    u = u.trim();
+    return u;
+  }
+
+  _sanitizeAndDedupeTemplates() {
+    // Build a new map keyed by id while enforcing unique names
+    const byName = new Map(); // lower(name) -> record
+    const newMap = new Map();
+    for (const [key, t] of this.templates.entries()) {
+      const id = (t && t.id) ? String(t.id).trim() : (String(key).trim() || `tpl_${Date.now()}`);
+      const name = String(t && t.name ? t.name : '').trim();
+      if (!name) continue; // skip nameless entries
+      const content = this._sanitizeContent(String(t && t.content ? t.content : ''));
+      const category = String(t && t.category ? t.category : 'general').trim() || 'general';
+      const mediaUrl = this._sanitizeMediaUrl(String(t && t.mediaUrl ? t.mediaUrl : ''));
+      const mediaType = String(t && t.mediaType ? t.mediaType : '').trim();
+      const createdAt = Number(t && t.createdAt ? t.createdAt : Date.now());
+
+      const clean = { id, name, content, category, mediaUrl, mediaType, createdAt };
+      const keyName = name.toLowerCase();
+      const existing = byName.get(keyName);
+      if (!existing) {
+        byName.set(keyName, clean);
+      } else {
+        // Keep the one with non-empty mediaUrl, otherwise the latest createdAt
+        const prefer = (existing.mediaUrl && !mediaUrl) ? existing : (!existing.mediaUrl && mediaUrl) ? clean : (createdAt >= existing.createdAt ? clean : existing);
+        byName.set(keyName, prefer);
+      }
+    }
+    // Re-key by id and replace the templates map
+    for (const rec of byName.values()) {
+      newMap.set(rec.id, rec);
+    }
+    this.templates = newMap;
   }
 
   // Automation Rules
