@@ -795,8 +795,8 @@
     </div>
 
     <script>
-        // Route all API calls to the main server to avoid HTML responses
-        const API_BASE = window.API_BASE_URL || 'http://localhost:3000';
+        // Route all API calls to the site origin by default
+        const API_BASE = window.API_BASE_URL || window.location.origin;
         // Tenant & Settings state
         let selectedTenantId = null;
 

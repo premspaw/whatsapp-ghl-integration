@@ -352,6 +352,44 @@ app.use('/rag-dashboard/api/knowledge', (req, res) => {
   res.redirect(307, target);
 });
 
+// === Compatibility aliases for external AI Management dashboard ===
+// Many dashboards expect these root-level paths; map them to existing routes.
+// Tenants list
+app.get('/api/tenants', (req, res) => {
+  const target = '/rag-dashboard/api/tenants' + (req.url || '');
+  res.redirect(307, target);
+});
+
+// AI personality
+app.get('/api/personality', (req, res) => {
+  const target = '/api/ai/personality';
+  res.redirect(307, target);
+});
+
+// Knowledge base list
+app.get('/api/knowledge', (req, res) => {
+  const target = '/api/knowledge/list';
+  res.redirect(307, target);
+});
+
+// Knowledge search (GET) – reuse RAG dashboard implementation
+app.get('/api/knowledge/search', (req, res) => {
+  const target = '/rag-dashboard/api/knowledge/search' + (req.url || '');
+  res.redirect(307, target);
+});
+
+// System status
+app.get('/api/system/status', (req, res) => {
+  const target = '/rag-dashboard/api/system/status' + (req.url || '');
+  res.redirect(307, target);
+});
+
+// Training history/logs
+app.get('/api/training/history', (req, res) => {
+  const target = '/rag-dashboard/api/system/logs' + (req.url || '');
+  res.redirect(307, target);
+});
+
 app.use('/rag-dashboard', require('./routes/ragDashboard')); // RAG Dashboard routes
 
 // Conversation utilities used by the WhatsApp tab
