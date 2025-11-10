@@ -409,10 +409,16 @@ app.post('/api/conversations/:id/mark-read', async (req, res) => {
 // Send a WhatsApp template with variables (for GHL webhook or direct use)
 app.post('/api/whatsapp/send-template', async (req, res) => {
   try {
-    const { to, templateName, templateId, variables, mediaUrl, mediaType } = req.body || {};
+    const body = req.body || {};
+    const to = body.to || body.phone || body.contact?.phone;
+    const templateName = body.templateName || body.template || body.name;
+    const templateId = body.templateId;
+    const variables = body.variables || {};
+    const mediaUrl = body.mediaUrl || body.imageUrl || '';
+    const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
 
     if (!to || (!templateName && !templateId)) {
-      return res.status(400).json({ success: false, error: 'Required: to and templateName or templateId' });
+      return res.status(400).json({ success: false, error: 'Required: phone/to and templateName or templateId' });
     }
 
     if (!whatsappService || typeof whatsappService.sendMessage !== 'function') {
@@ -662,6 +668,94 @@ app.post('/webhooks/ghl', async (req, res) => {
   } catch (error) {
     console.error('GHL Webhook Error:', error.message);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Alias webhook for template send (for simple testing payloads)
+app.post('/webhook/ghl/template-send', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const to = body.to || body.contact?.phone || body.phone;
+    const templateName = body.templateName || body.template || body.name;
+    const templateId = body.templateId || null;
+    const variables = body.variables || body.data?.variables || {};
+    const mediaUrl = body.imageUrl || body.mediaUrl || null;
+    const mediaType = body.mediaType || (mediaUrl ? 'image' : null);
+
+    // Delegate to existing handler logic by constructing request shape
+    if (!to || (!templateName && !templateId)) {
+      return res.status(400).json({ success: false, error: 'Required: to and templateName or templateId' });
+    }
+
+    // Resolve template
+    let template = null;
+    if (templateId && enhancedAIService?.getTemplate) {
+      template = await enhancedAIService.getTemplate(templateId);
+    }
+    if (!template && templateName && enhancedAIService?.getAllTemplates) {
+      const all = await enhancedAIService.getAllTemplates();
+      const nameLower = String(templateName).toLowerCase();
+      template = (all || []).find(t => String(t.name || '').toLowerCase() === nameLower);
+    }
+    if (!template) {
+      return res.status(404).json({ success: false, error: `Template not found: ${templateName || templateId}` });
+    }
+
+    // Build profile and render text
+    const vars = (typeof variables === 'string') ? (() => { try { return JSON.parse(variables); } catch (_) { return {}; } })() : (variables || {});
+    const userProfile = {
+      name: vars.name || `${vars.first_name || ''} ${vars.last_name || ''}`.trim(),
+      first_name: vars.first_name || vars.firstName || '',
+      last_name: vars.last_name || vars.lastName || '',
+      email: vars.email || '',
+      phone: vars.phone || to,
+      tags: vars.tags || [],
+      customFields: vars
+    };
+    let text = String(template.content || '');
+    try {
+      for (const [k, v] of Object.entries(vars)) {
+        const re = new RegExp(`\\{${k}\\}`, 'g');
+        text = text.replace(re, String(v));
+      }
+    } catch (_) {}
+    try {
+      text = enhancedAIService.applyTemplateVariables(text, userProfile, vars);
+    } catch (_) {}
+
+    // Format WhatsApp JID
+    let chatId = String(to);
+    if (!chatId.includes('@c.us')) {
+      chatId = chatId.replace(/[^\d+]/g, '');
+      if (chatId.startsWith('+')) chatId = chatId.substring(1);
+      chatId = chatId + '@c.us';
+    }
+
+    // Send with optional media
+    let result;
+    const finalMediaUrl = mediaUrl || template.mediaUrl;
+    const finalMediaType = mediaType || template.mediaType || 'image';
+    if (finalMediaUrl && whatsappService?.sendMediaFromUrl) {
+      result = await whatsappService.sendMediaFromUrl(chatId, finalMediaUrl, text, finalMediaType);
+    } else {
+      result = await whatsappService.sendMessage(chatId, text);
+    }
+
+    // Optional GHL sync
+    try {
+      if (ghlService && typeof ghlService.addOutboundMessage === 'function') {
+        const normalized = ghlService.normalizePhoneNumber(to);
+        const contact = await ghlService.findContactByPhone(normalized);
+        if (contact) {
+          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'text', direction: 'outbound' });
+        }
+      }
+    } catch (_) {}
+
+    return res.json({ success: true, message: 'Template sent', sentMessage: { to, template: template.name || template.id, content: text, id: result?.id?._serialized } });
+  } catch (error) {
+    console.error('❌ Template webhook error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -1177,7 +1271,13 @@ app.get('/api/templates/:id', async (req, res) => {
 
 app.post('/api/templates', async (req, res) => {
   try {
-    const { id, name, content, category, mediaUrl, mediaType } = req.body;
+    const { id, name, category, mediaUrl, mediaType } = req.body || {};
+    const content = (req.body && (req.body.content || req.body.text)) || '';
+
+    if (!name || !content) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: name, content/text' });
+    }
+
     await enhancedAIService.addTemplate(id, name, content, category, mediaUrl, mediaType);
     res.json({ success: true, message: 'Template added successfully' });
   } catch (error) {

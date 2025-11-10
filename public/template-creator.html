@@ -414,10 +414,19 @@
                 <button class="button" id="saveButton" onclick="saveTemplate()">
                     ✨ Create Template
                 </button>
-                
+
                 <button class="button" id="cancelButton" onclick="cancelEdit()" style="display: none; background: #6c757d; margin-top: 10px;">
                     ❌ Cancel
                 </button>
+
+                <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <h3 style="color: #333; margin-bottom: 10px; font-size: 16px;">🧪 Send Test</h3>
+                    <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="testPhone" placeholder="Enter test phone (e.g., +9198XXXXXXXX)" style="flex: 2;">
+                        <button class="button" style="flex: 1;" onclick="sendTestTemplate()">📤 Send Test</button>
+                    </div>
+                    <div class="help-text">Uses POST /api/whatsapp/send-template with your current message and image.</div>
+                </div>
                 
                 <div class="success-message" id="successMessage"></div>
                 <div class="error-message" id="errorMessage"></div>
@@ -567,6 +576,47 @@
                 }
             } catch (error) {
                 showError('Error: ' + error.message);
+            }
+        }
+
+        // Send test template to a specific phone
+        async function sendTestTemplate() {
+            try {
+                const to = document.getElementById('testPhone').value.trim();
+                const name = document.getElementById('templateName').value.trim();
+                const content = document.getElementById('templateContent').value.trim();
+                const imageUrl = document.getElementById('imageUrl').value.trim();
+
+                if (!to) {
+                    showError('Please enter a test phone number');
+                    return;
+                }
+                if (!name || !content) {
+                    showError('Please fill in template name and content');
+                    return;
+                }
+
+                const payload = {
+                    to,
+                    templateName: name,
+                    variables: { first_name: 'Prem', name: 'Prem' },
+                    mediaUrl: imageUrl || undefined,
+                    mediaType: imageUrl ? 'image' : undefined
+                };
+
+                const resp = await fetch('/api/whatsapp/send-template', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showSuccess('Test message sent successfully!');
+                } else {
+                    showError(data.error || 'Failed to send test message');
+                }
+            } catch (err) {
+                showError('Error: ' + err.message);
             }
         }
         

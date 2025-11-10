@@ -966,7 +966,7 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
     }
   }
 
-  applyTemplateVariables(templateText, userProfile) {
+  applyTemplateVariables(templateText, userProfile, variables = {}) {
     try {
       let result = String(templateText ?? '');
       const profile = userProfile || {};
