@@ -55,6 +55,16 @@ const migrations = [
     file: 'data/migrations/003_handoff.sql',
     name: 'Human Handoff System',
     description: 'Creates: handoffs table and functions'
+  },
+  {
+    file: 'data/migrations/004_multi_tenant.sql',
+    name: 'Multi-tenant Support',
+    description: 'Creates: tenants table and adds tenant_id to core tables'
+  },
+  {
+    file: 'data/migrations/005_tenants_metadata.sql',
+    name: 'Tenants Schema Alignment',
+    description: 'Adds external_id, metadata, and indexes used by the application'
   }
 ];
 
