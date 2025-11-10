@@ -107,7 +107,20 @@ router.post('/api/knowledge/search', async (req, res) => {
         console.log(`[RAG Dashboard] Searching knowledge base: "${query}"`);
 
         // Search using embeddings
-        const results = await embeddingsService.retrieve({ query, topK: limit, minSimilarity, tenantId });
+        let results = await embeddingsService.retrieve({ query, topK: limit, minSimilarity, tenantId });
+
+        // Fallback to keyword search if embeddings are empty
+        const embCount = await embeddingsService.getEmbeddingsCount(tenantId);
+        if ((!results || results.length === 0) || (embCount === 0)) {
+            const keywordMatches = enhancedAIService.searchKnowledgeBase(query) || [];
+            results = keywordMatches.map(k => ({
+                id: k.id,
+                title: k.title,
+                content: k.content,
+                similarity: 1.0,
+                sourceType: 'knowledge'
+            })).slice(0, limit);
+        }
 
         console.log(`[RAG Dashboard] Found ${results ? results.length : 0} knowledge items`);
 
@@ -120,6 +133,57 @@ router.post('/api/knowledge/search', async (req, res) => {
 
     } catch (error) {
         console.error('[RAG Dashboard] Knowledge search error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Search failed',
+            message: error.message
+        });
+    }
+});
+
+// Knowledge search (GET alias) to support query-string based calls
+router.get('/api/knowledge/search', async (req, res) => {
+    try {
+        const query = req.query.q || req.query.query;
+        const limit = parseInt(req.query.limit || '5', 10);
+        const minSimilarity = parseFloat(req.query.minSimilarity || '0.3');
+        const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || null;
+
+        if (!query) {
+            return res.status(400).json({
+                success: false,
+                error: 'Query is required'
+            });
+        }
+
+        console.log(`[RAG Dashboard] (GET) Searching knowledge base: "${query}"`);
+
+        // Search using embeddings (same implementation as POST)
+        let results = await embeddingsService.retrieve({ query, topK: limit, minSimilarity, tenantId });
+
+        // Fallback to keyword search if embeddings are empty
+        const embCount = await embeddingsService.getEmbeddingsCount(tenantId);
+        if ((!results || results.length === 0) || (embCount === 0)) {
+            const keywordMatches = enhancedAIService.searchKnowledgeBase(query) || [];
+            results = keywordMatches.map(k => ({
+                id: k.id,
+                title: k.title,
+                content: k.content,
+                similarity: 1.0,
+                sourceType: 'knowledge'
+            })).slice(0, limit);
+        }
+
+        console.log(`[RAG Dashboard] (GET) Found ${results ? results.length : 0} knowledge items`);
+
+        res.json({
+            success: true,
+            results: results || [],
+            query,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('[RAG Dashboard] (GET) Knowledge search error:', error);
         res.status(500).json({
             success: false,
             error: 'Search failed',
@@ -313,22 +377,21 @@ router.post('/api/knowledge/upload', async (req, res) => {
             });
         }
 
-        console.log(`[RAG Dashboard] Uploading knowledge: ${content.substring(0, 100)}...`);
+        console.log(`[RAG Dashboard] Uploading knowledge (manual): ${content.substring(0, 100)}...`);
 
-        // Mock file upload for demo
-        const mockFile = {
-            originalname: 'dashboard-upload.txt',
-            buffer: Buffer.from(content)
-        };
+        // For manual content, add directly as a knowledge item and index embeddings
+        const id = `dashboard-${Date.now()}`;
+        const title = source || 'Dashboard Upload';
+        const category = type || 'general';
 
-        const result = await enhancedAIService.addKnowledgeFile(mockFile, type, source || 'dashboard-upload', tenantId);
+        await enhancedAIService.addKnowledgeItem(id, title, content, category, tenantId);
 
-        console.log('[RAG Dashboard] Knowledge uploaded and embedded successfully');
+        console.log('[RAG Dashboard] Knowledge item added and indexed successfully');
 
         res.json({
             success: true,
             message: 'Knowledge uploaded successfully',
-            data: result,
+            data: { id, title, category },
             timestamp: new Date().toISOString()
         });
 
@@ -346,35 +409,15 @@ router.post('/api/knowledge/upload', async (req, res) => {
 router.get('/api/embeddings/list', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 100;
-        
-        // Get sample embeddings data
-        const embeddings = await embeddingsService.getAllEmbeddings(limit);
-        
-        // If no real embeddings, provide mock data for demonstration
-        if (!embeddings || embeddings.length === 0) {
-            const mockEmbeddings = Array.from({ length: 20 }, (_, i) => ({
-                id: `mock_${i}`,
-                content: `Sample content ${i + 1}`,
-                metadata: {
-                    type: ['knowledge', 'conversation', 'document'][i % 3],
-                    timestamp: new Date(Date.now() - Math.random() * 86400000 * 30).toISOString()
-                },
-                similarity: Math.random() * 0.4 + 0.6 // 0.6 to 1.0
-            }));
-            
-            return res.json({
-                success: true,
-                embeddings: mockEmbeddings,
-                total: mockEmbeddings.length,
-                mock: true
-            });
-        }
-        
+        const count = await embeddingsService.getEmbeddingsCount();
+        // This server does not expose raw embedding vectors; return summary only
         res.json({
             success: true,
-            embeddings,
-            total: embeddings.length,
-            mock: false
+            embeddings: [],
+            total: 0,
+            count,
+            mock: count === 0,
+            message: 'Listing raw embeddings is not supported; use /api/system/status for counts.'
         });
     } catch (error) {
         console.error('Error getting embeddings list:', error);

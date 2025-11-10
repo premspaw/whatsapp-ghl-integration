@@ -345,6 +345,13 @@ app.get('/api/health', (req, res) => {
   });
 app.use('/api/handoff-rules', require('./routes/handoffRulesRoutes')(enhancedAIService));
 app.use('/api/integrations', require('./routes/integrationsRoutes')());
+// Alias: allow front-end to call /rag-dashboard/api/knowledge/* and reuse /api/knowledge/*
+app.use('/rag-dashboard/api/knowledge', (req, res) => {
+  const target = '/api/knowledge' + (req.url || '');
+  // Preserve method and body with 307 redirect
+  res.redirect(307, target);
+});
+
 app.use('/rag-dashboard', require('./routes/ragDashboard')); // RAG Dashboard routes
 
 // Conversation utilities used by the WhatsApp tab
