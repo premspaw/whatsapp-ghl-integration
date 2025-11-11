@@ -390,7 +390,7 @@ app.get('/api/training/history', (req, res) => {
   res.redirect(307, target);
 });
 
-app.use('/rag-dashboard', require('./routes/ragDashboard')); // RAG Dashboard routes
+app.use('/rag-dashboard', require('./routes/ragDashboard')(enhancedAIService)); // RAG Dashboard routes (use existing EnhancedAIService)
 
 // Conversation utilities used by the WhatsApp tab
 app.post('/api/conversations/:id/mark-read', async (req, res) => {
@@ -1205,6 +1205,27 @@ app.post('/api/ai/test-chat', async (req, res) => {
     );
 
     if (aiReply) {
+      // Persist test chat to conversations so analytics reflect test flows
+      try {
+        const now = Date.now();
+        // Store inbound user message
+        await conversationManager.addMessage({
+          from: testConversationId,
+          body: message,
+          timestamp: now,
+          type: 'text'
+        }, testConversationId, 'Test Chat');
+        // Store outbound AI reply
+        await conversationManager.addMessage({
+          from: 'ai',
+          body: aiReply,
+          timestamp: Date.now(),
+          type: 'text'
+        }, testConversationId, 'Test Chat');
+        console.log(`🧪 Persisted test chat for ${testConversationId}`);
+      } catch (persistErr) {
+        console.warn('Test-chat persistence warning:', persistErr.message);
+      }
       console.log(`✅ AI generated reply: ${aiReply.substring(0, 100)}...`);
       res.json({
         success: true,
@@ -1254,6 +1275,25 @@ app.get('/api/enhanced-ai/status', async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// Lightweight webview click tracker to avoid frontend timeouts
+app.post('/api/webviewClick', (req, res) => {
+  try {
+    const { page, element, ts } = req.body || {};
+    // Log minimal info without blocking
+    if (page || element) {
+      console.log('🖱️ WebviewClick', { page, element, ts });
+    }
+    res.json({ success: true });
+  } catch (_) {
+    // Always return quickly to prevent timeouts
+    res.json({ success: true });
+  }
+});
+
+app.get('/api/webviewClick', (req, res) => {
+  res.json({ success: true });
 });
 
 // Templates management endpoints
