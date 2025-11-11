@@ -133,65 +133,7 @@
       <div id="aiToggleStatus" class="alert info" style="display:none"></div>
     </div>
 
-    <!-- Handoff Rules Section -->
-    <div class="section">
-      <h2>🤝 Handoff Rules</h2>
-      
-      <div class="form-row">
-        <label>Keywords for Human Handoff</label>
-        <input id="keywordsInput" placeholder="e.g. human, agent, support, manager" />
-      </div>
-      
-      <div class="form-row">
-        <label>Auto Handoff Topics</label>
-        <input id="topicsInput" placeholder="e.g. billing, refund, escalate, complaint" />
-      </div>
-      
-      <div class="form-row">
-        <label>Business Hours Enabled</label>
-        <select id="bhEnabled">
-          <option value="true">Enabled</option>
-          <option value="false">Disabled</option>
-        </select>
-      </div>
-      
-      <div class="form-row">
-        <label>Auto Handoff Outside Hours</label>
-        <select id="bhAuto">
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
-      </div>
-      
-      <div class="form-row">
-        <label>Priority GHL Tags</label>
-        <input id="priorityTagsInput" placeholder="e.g. VIP, Priority, HighValue" />
-      </div>
-      
-      <div class="flex">
-        <button class="btn" onclick="saveHandoffRules()">Save Rules</button>
-        <button class="btn secondary" onclick="loadHandoffRules()">Reload Rules</button>
-      </div>
-      
-      <div id="handoffStatus" class="alert info" style="display:none"></div>
-    </div>
-
-    <!-- Test Section -->
-    <div class="section">
-      <h2>🧪 Test Handoff Rules</h2>
-      <div class="form-row">
-        <label>Sample Message</label>
-        <input id="simMessage" placeholder="Type a user message here..." />
-      </div>
-      <div class="form-row">
-        <label>Contact Tags</label>
-        <input id="simTags" placeholder="e.g. VIP, Customer" />
-      </div>
-      <div class="flex">
-        <button class="btn" onclick="simulateHandoff()">Test Message</button>
-        <span id="simResult" style="font-weight: 600; margin-left: 1rem;"></span>
-      </div>
-    </div>
+    <!-- Handoff and Business Hours removed per configuration -->
   </main>
 
   <script>
@@ -238,86 +180,7 @@
       }
     }
 
-    // Handoff Rules Functions
-    const toList = (str) => (str || '').split(',').map(s => s.trim()).filter(Boolean);
-    const listToStr = (arr) => (Array.isArray(arr) ? arr.join(', ') : '');
-
-    async function loadHandoffRules() {
-      try {
-        const res = await fetch('/api/handoff-rules');
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Failed to load rules');
-        
-        const rules = data.rules || {};
-        document.getElementById('keywordsInput').value = listToStr(rules.keywords || []);
-        document.getElementById('topicsInput').value = listToStr(rules.auto_handoff_topics || []);
-        
-        const bh = rules.business_hours || { enabled: false, auto_handoff_outside_hours: true };
-        document.getElementById('bhEnabled').value = String(!!bh.enabled);
-        document.getElementById('bhAuto').value = String(!!bh.auto_handoff_outside_hours);
-        
-        document.getElementById('priorityTagsInput').value = listToStr((rules.priority_contacts && rules.priority_contacts.ghl_tags) || []);
-        
-        setStatus('handoffStatus', 'Handoff rules loaded successfully', 'success');
-      } catch (e) {
-        setStatus('handoffStatus', 'Error: ' + e.message, 'error');
-      }
-    }
-
-    async function saveHandoffRules() {
-      try {
-        const payload = {
-          keywords: toList(val('keywordsInput')),
-          auto_handoff_topics: toList(val('topicsInput')),
-          business_hours: {
-            enabled: val('bhEnabled') === 'true',
-            timezone: 'Asia/Kolkata',
-            auto_handoff_outside_hours: val('bhAuto') === 'true'
-          },
-          priority_contacts: {
-            enabled: true,
-            ghl_tags: toList(val('priorityTagsInput'))
-          }
-        };
-        
-        const res = await fetch('/api/handoff-rules', { 
-          method: 'PUT', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify(payload) 
-        });
-        
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Failed to save rules');
-        
-        setStatus('handoffStatus', 'Handoff rules saved successfully', 'success');
-      } catch (e) {
-        setStatus('handoffStatus', 'Error: ' + e.message, 'error');
-      }
-    }
-
-    function simulateHandoff() {
-      const msg = val('simMessage').toLowerCase();
-      const tags = toList(val('simTags')).map(t => t.toLowerCase());
-      const keywords = toList(val('keywordsInput')).map(s => s.toLowerCase());
-      const topics = toList(val('topicsInput')).map(s => s.toLowerCase());
-      const priorityTags = toList(val('priorityTagsInput')).map(s => s.toLowerCase());
-      
-      const kwHit = keywords.some(k => msg.includes(k));
-      const topicHit = topics.some(t => msg.includes(t));
-      const tagHit = tags.some(t => priorityTags.includes(t));
-      const outsideHours = val('bhAuto') === 'true' && val('bhEnabled') === 'true';
-      
-      const result = kwHit || topicHit || tagHit || outsideHours;
-      const resultEl = document.getElementById('simResult');
-      
-      if (result) {
-        resultEl.textContent = '→ Would handoff to human';
-        resultEl.style.color = '#dc2626';
-      } else {
-        resultEl.textContent = '→ AI would respond';
-        resultEl.style.color = '#059669';
-      }
-    }
+    // Handoff/Business Hours UI and logic removed
 
     // Utility Functions
     function setStatus(id, msg, type) {
@@ -336,9 +199,22 @@
       return document.getElementById(id).value; 
     }
 
+    async function loadPersonality() {
+      try {
+        const res = await fetch('/api/ai/personality');
+        const data = await res.json();
+        if (data && data.success && data.personality) {
+          aiEnabled = !!data.personality.aiEnabled;
+          updateAIToggleUI();
+        }
+      } catch (_) {
+        // keep defaults
+        updateAIToggleUI();
+      }
+    }
+
     // Initialize
-    updateAIToggleUI();
-    loadHandoffRules();
+    loadPersonality();
   </script>
 </body>
 </html>

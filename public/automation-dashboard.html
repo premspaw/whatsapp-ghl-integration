@@ -317,6 +317,22 @@
     </style>
 </head>
 <body>
+    <script>
+        // Redirect this legacy page to the dedicated Template Creator
+        (function(){
+            var target = '/template-creator.html?return=ghl-whatsapp-tab.html';
+            try {
+                window.location.replace(target);
+            } catch (_) {
+                window.location.href = target;
+            }
+        })();
+    </script>
+    <noscript>
+        <div style="padding:16px;">
+            This page has moved. Please open <a href="/template-creator.html?return=ghl-whatsapp-tab.html">Template Creator</a>.
+        </div>
+    </noscript>
     <div class="container">
         <div class="header">
             <h1>🤖 AI Automation Dashboard</h1>

@@ -94,6 +94,13 @@ class EnhancedAIService extends EventEmitter {
       // Ensure personality is loaded before generating any reply to avoid placeholder defaults
       await this.ensurePersonalityLoaded();
 
+      // Global toggle: disable AI replies if personality sets aiEnabled=false
+      if (this.aiPersonality && this.aiPersonality.aiEnabled === false) {
+        const disabledMsg = 'Thanks for your message. A human agent will respond shortly.';
+        await this.storeConversation(phoneNumber, message, disabledMsg);
+        return disabledMsg;
+      }
+
       // Deterministic handling for company/website queries
       // Do NOT short-circuit here; blend with RAG to avoid placeholder leakage
       let identitySnippet = null;
@@ -159,20 +166,22 @@ class EnhancedAIService extends EventEmitter {
       if ((!relevantKnowledge || relevantKnowledge.length === 0) && intent.requiresKnowledge) {
         relevantKnowledge = this.searchKnowledgeBase(`${message} services pricing products automation whatsapp seo`);
       }
-      // Prepend deterministic FAQ answer (if any) for hybrid responses
-      if (deterministicSnippet) {
-        const faqItem = { title: 'FAQ', content: deterministicSnippet };
-        relevantKnowledge = Array.isArray(relevantKnowledge)
-          ? [faqItem, ...relevantKnowledge]
-          : [faqItem];
-      }
-
-      // Prepend identity snippet (website/company) if present and non-placeholder
-      if (identitySnippet) {
-        const idItem = { title: 'Identity', content: identitySnippet };
-        relevantKnowledge = Array.isArray(relevantKnowledge)
-          ? [idItem, ...relevantKnowledge]
-          : [idItem];
+      // RAG-first: if we have knowledge items, do not lead with personality-based snippets
+      // Append deterministic snippets only when RAG/KB is empty, otherwise skip to keep replies grounded
+      const hasKnowledge = Array.isArray(relevantKnowledge) && relevantKnowledge.length > 0;
+      if (!hasKnowledge) {
+        if (deterministicSnippet) {
+          const faqItem = { title: 'FAQ', content: deterministicSnippet };
+          relevantKnowledge = Array.isArray(relevantKnowledge)
+            ? [faqItem, ...relevantKnowledge]
+            : [faqItem];
+        }
+        if (identitySnippet) {
+          const idItem = { title: 'Identity', content: identitySnippet };
+          relevantKnowledge = Array.isArray(relevantKnowledge)
+            ? [idItem, ...relevantKnowledge]
+            : [idItem];
+        }
       }
       
       // Prefer entries matching user's GHL tags/location
@@ -246,8 +255,37 @@ class EnhancedAIService extends EventEmitter {
     try {
       if (!this.embeddings) return [];
       const results = await this.embeddings.retrieve({ query, topK, conversationId: null, userContext, minSimilarity, tenantId });
-      return Array.isArray(results) ? results : [];
+      if (Array.isArray(results) && results.length > 0) {
+        return results;
+      }
+      // Fallback: keyword search when vector retrieval returns empty
+      const keywordMatches = this.searchKnowledgeBase(query) || [];
+      if (keywordMatches.length > 0) {
+        console.log('🔎 Fallback to keyword search for knowledge retrieval');
+        return keywordMatches.slice(0, topK).map(k => ({
+          id: k.id,
+          title: k.title,
+          content: k.content,
+          similarity: 1.0,
+          sourceType: 'knowledge'
+        }));
+      }
+      return [];
     } catch (e) {
+      // When embeddings provider is unavailable (e.g., missing OPENROUTER_API_KEY), use keyword fallback
+      try {
+        const keywordMatches = this.searchKnowledgeBase(query) || [];
+        if (keywordMatches.length > 0) {
+          console.log('🔎 Fallback to keyword search due to embeddings error:', e?.message);
+          return keywordMatches.slice(0, topK).map(k => ({
+            id: k.id,
+            title: k.title,
+            content: k.content,
+            similarity: 1.0,
+            sourceType: 'knowledge'
+          }));
+        }
+      } catch (_) {}
       return [];
     }
   }
@@ -271,8 +309,7 @@ class EnhancedAIService extends EventEmitter {
       // Priority contacts (GHL tags)
       if (userProfile && this.isPriorityContact(userProfile)) return true;
 
-      // Outside business hours
-      if (this.isOutsideBusinessHours()) return !!(this.handoffRules && this.handoffRules.business_hours && this.handoffRules.business_hours.auto_handoff_outside_hours);
+      // Business-hours logic removed per configuration; do not gate by time windows
 
       return false;
     } catch (e) {
@@ -297,28 +334,7 @@ class EnhancedAIService extends EventEmitter {
     }
   }
 
-  // Utility: check business hours from rules
-  isOutsideBusinessHours() {
-    try {
-      if (!this.handoffRules || !this.handoffRules.business_hours || !this.handoffRules.business_hours.enabled) return false;
-      const bh = this.handoffRules.business_hours;
-      const tz = bh.timezone || 'UTC';
-      const now = new Date();
-      // Approximate timezone by using system time; detailed tz handling can be added later
-      const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-      const day = dayNames[now.getDay()];
-      const schedule = bh.schedule && bh.schedule[day];
-      if (!schedule || !schedule.start || !schedule.end) return true;
-      const [startH, startM] = schedule.start.split(':').map(Number);
-      const [endH, endM] = schedule.end.split(':').map(Number);
-      const minutes = now.getHours() * 60 + now.getMinutes();
-      const startMin = startH * 60 + startM;
-      const endMin = endH * 60 + endM;
-      return minutes < startMin || minutes > endMin;
-    } catch (e) {
-      return false;
-    }
-  }
+  // Business-hours utility removed
 
   // Utility: check if user has priority tags
   isPriorityContact(userProfile) {

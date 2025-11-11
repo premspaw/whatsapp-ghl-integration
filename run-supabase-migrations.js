@@ -1,25 +1,43 @@
 #!/usr/bin/env node
 
-require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
+// Load .env from the script directory if available; otherwise fall back to CWD
+const dotenvPath = path.join(__dirname, '.env');
+if (fs.existsSync(dotenvPath)) {
+  require('dotenv').config({ path: dotenvPath });
+} else {
+  require('dotenv').config();
+}
+const { createClient } = require('@supabase/supabase-js');
 
 console.log('═══════════════════════════════════════════════════════════');
 console.log('   Supabase Database Migration Runner');
 console.log('═══════════════════════════════════════════════════════════\n');
 
-// Check environment variables
+// Check environment variables (supports either .env or exported vars)
+const hasDotenvInScriptDir = fs.existsSync(path.join(__dirname, '.env'));
+const hasDotenvInCwd = fs.existsSync(path.join(process.cwd(), '.env'));
+const hasDotenv = hasDotenvInScriptDir || hasDotenvInCwd;
+
 if (!process.env.SUPABASE_URL) {
-  console.error('❌ Error: SUPABASE_URL not found in .env file');
-  console.log('\n💡 Please add to .env:');
-  console.log('   SUPABASE_URL=https://sroctkdugjdsaberrlkf.supabase.co\n');
+  console.error('❌ Error: SUPABASE_URL not detected in environment');
+  if (hasDotenv) {
+    console.log('💡 .env found, but SUPABASE_URL is missing. Add:');
+  } else {
+    console.log('💡 .env not found. Either export the variable or create .env with:');
+  }
+  console.log('   SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co\n');
   process.exit(1);
 }
 
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY not found in .env file');
-  console.log('\n💡 Please add to .env:');
+  console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY not detected in environment');
+  if (hasDotenv) {
+    console.log('💡 .env found, but SUPABASE_SERVICE_ROLE_KEY is missing. Add:');
+  } else {
+    console.log('💡 .env not found. Either export the variable or create .env with:');
+  }
   console.log('   SUPABASE_SERVICE_ROLE_KEY=<your_service_role_key>\n');
   console.log('📚 See: SUPABASE_SETUP_COMPLETE.md for instructions\n');
   process.exit(1);

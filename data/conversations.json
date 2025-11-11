@@ -708,5 +708,60 @@
         }
       ]
     }
+  },
+  "+1762887670877": {
+    "id": "+1762887670877",
+    "phone": "+1762887670877",
+    "phoneNumber": "+1762887670877",
+    "name": "Test Chat",
+    "contactName": "Test Chat",
+    "type": "text",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "msg_1762887678169",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Test chat persistence check",
+        "timestamp": 1762887678168,
+        "type": "text"
+      },
+      {
+        "id": "msg_1762887678866",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hello! This is Sahansaa, your Customer Success Manager at SYNTHCORE. I'm happy to assist you with any questions or concerns you may have.\n\nI noticed you mentioned a \"test chat persistence check\". Could you please provide me with some more context about what you're looking to accomplish? I'd be glad to help you with any issues or inquiries you may have regarding our services at SYNTHCORE.\n\nPlease feel free to share more details, and I'll do my best to provide a helpful and personalized response.",
+        "timestamp": 1762887678865,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": true,
+    "syncToGHL": true,
+    "lastSyncedMessageId": 0,
+    "isRead": false,
+    "unreadCount": 1,
+    "createdAt": 1762887678169,
+    "updatedAt": 1762887678866,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "msg_1762887678169",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Test chat persistence check",
+          "timestamp": 1762887678168,
+          "type": "text"
+        },
+        {
+          "id": "msg_1762887678866",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hello! This is Sahansaa, your Customer Success Manager at SYNTHCORE. I'm happy to assist you with any questions or concerns you may have.\n\nI noticed you mentioned a \"test chat persistence check\". Could you please provide me with some more context about what you're looking to accomplish? I'd be glad to help you with any issues or inquiries you may have regarding our services at SYNTHCORE.\n\nPlease feel free to share more details, and I'll do my best to provide a helpful and personalized response.",
+          "timestamp": 1762887678865,
+          "type": "text"
+        }
+      ]
+    }
   }
 }

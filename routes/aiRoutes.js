@@ -193,16 +193,35 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
   router.post('/toggle', async (req, res) => {
     try {
       const { enabled } = req.body;
-      
-      // Here you would typically save the AI state to database or config
-      // For now, we'll just return success
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ success: false, error: 'enabled must be boolean' });
+      }
+
+      // Update in-memory personality immediately
+      if (enhancedAIService && typeof enhancedAIService.updatePersonality === 'function') {
+        enhancedAIService.updatePersonality({ aiEnabled: enabled });
+      }
+
+      // Persist to personality file
+      const fs = require('fs');
+      const path = require('path');
+      const personalityPath = path.join(__dirname, '..', 'data', 'ai-personality.json');
+      let personality = {};
+      try {
+        if (fs.existsSync(personalityPath)) {
+          personality = JSON.parse(fs.readFileSync(personalityPath, 'utf8'));
+        }
+      } catch (_) {}
+      personality.aiEnabled = enabled;
+      // Keep existing or default ignoreBusinessHours to true unless set
+      if (typeof personality.ignoreBusinessHours !== 'boolean') {
+        personality.ignoreBusinessHours = true;
+      }
+      personality.lastUpdated = new Date().toISOString();
+      fs.writeFileSync(personalityPath, JSON.stringify(personality, null, 2));
+
       console.log(`🤖 AI ${enabled ? 'enabled' : 'disabled'} via dashboard`);
-      
-      res.json({
-        success: true,
-        message: `AI ${enabled ? 'enabled' : 'disabled'} successfully`,
-        enabled: enabled
-      });
+      res.json({ success: true, message: `AI ${enabled ? 'enabled' : 'disabled'} successfully`, enabled });
     } catch (error) {
       console.error('Error toggling AI:', error);
       res.status(500).json({ 
@@ -296,6 +315,14 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
           tone: 'Professional and Friendly',
           traits: ['Helpful', 'Responsive', 'Knowledgeable']
         };
+      }
+
+      // Ensure toggle flags exist with sane defaults
+      if (typeof personality.aiEnabled !== 'boolean') {
+        personality.aiEnabled = true;
+      }
+      if (typeof personality.ignoreBusinessHours !== 'boolean') {
+        personality.ignoreBusinessHours = true;
       }
 
       // Compute AI-centric stats from conversations.json

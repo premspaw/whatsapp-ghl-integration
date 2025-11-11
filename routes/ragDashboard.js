@@ -1,26 +1,18 @@
 const express = require('express');
-const router = express.Router();
 const path = require('path');
 
-// Import services
-const EmbeddingsService = require('../services/embeddingsService');
-const EnhancedAIService = require('../services/enhancedAIService');
-const GHLService = require('../services/ghlService');
-const ConversationManager = require('../services/conversationManager');
-
-// Initialize services
-const embeddingsService = new EmbeddingsService();
-const ghlService = new GHLService();
-const enhancedAIService = new EnhancedAIService(ghlService);
-const conversationManager = new ConversationManager();
+// NOTE: This router now expects the already-initialized EnhancedAIService
+// instance from server.js to avoid duplicate personality loads.
+module.exports = (enhancedAIService) => {
+    const router = express.Router();
 
 // Dashboard route
-router.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/rag-dashboard.html'));
-});
+    router.get('/', (req, res) => {
+        res.sendFile(path.join(__dirname, '../public/rag-dashboard.html'));
+    });
 
 // AI Chat endpoint
-router.post('/api/ai/chat', async (req, res) => {
+    router.post('/api/ai/chat', async (req, res) => {
     try {
         const { message, phoneNumber = '+1234567890', conversationId = 'dashboard-test' } = req.body;
         const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || req.body.tenantId || null;
@@ -43,7 +35,7 @@ router.post('/api/ai/chat', async (req, res) => {
         );
 
         // Get retrieval metadata
-        const retrievalResults = await embeddingsService.retrieve({ query: message, topK: 5, minSimilarity: 0.5, tenantId });
+        const retrievalResults = await enhancedAIService.embeddings.retrieve({ query: message, topK: 5, minSimilarity: 0.5, tenantId });
         
         const metadata = {
             retrievedChunks: retrievalResults ? retrievalResults.length : 0,
@@ -68,10 +60,10 @@ router.post('/api/ai/chat', async (req, res) => {
             message: error.message
         });
     }
-});
+    });
 
 // Tenants list endpoint for dashboard selector
-router.get('/api/tenants', async (req, res) => {
+    router.get('/api/tenants', async (req, res) => {
     try {
         const { createClient } = require('@supabase/supabase-js');
         const supabase = createClient(
@@ -89,10 +81,10 @@ router.get('/api/tenants', async (req, res) => {
         console.error('[RAG Dashboard] Tenants fetch error:', e);
         res.json({ success: true, tenants: [] });
     }
-});
+    });
 
 // Knowledge search endpoint
-router.post('/api/knowledge/search', async (req, res) => {
+    router.post('/api/knowledge/search', async (req, res) => {
     try {
         const { query, limit = 5, minSimilarity = 0.3 } = req.body;
         const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || req.body.tenantId || null;
@@ -107,7 +99,7 @@ router.post('/api/knowledge/search', async (req, res) => {
         console.log(`[RAG Dashboard] Searching knowledge base: "${query}"`);
 
         // Search using embeddings
-        let results = await embeddingsService.retrieve({ query, topK: limit, minSimilarity, tenantId });
+        let results = await enhancedAIService.embeddings.retrieve({ query, topK: limit, minSimilarity, tenantId });
 
         // Fallback to keyword search if embeddings are empty
         const embCount = await embeddingsService.getEmbeddingsCount(tenantId);
@@ -139,10 +131,10 @@ router.post('/api/knowledge/search', async (req, res) => {
             message: error.message
         });
     }
-});
+    });
 
 // Knowledge search (GET alias) to support query-string based calls
-router.get('/api/knowledge/search', async (req, res) => {
+    router.get('/api/knowledge/search', async (req, res) => {
     try {
         const query = req.query.q || req.query.query;
         const limit = parseInt(req.query.limit || '5', 10);
@@ -159,7 +151,7 @@ router.get('/api/knowledge/search', async (req, res) => {
         console.log(`[RAG Dashboard] (GET) Searching knowledge base: "${query}"`);
 
         // Search using embeddings (same implementation as POST)
-        let results = await embeddingsService.retrieve({ query, topK: limit, minSimilarity, tenantId });
+        let results = await enhancedAIService.embeddings.retrieve({ query, topK: limit, minSimilarity, tenantId });
 
         // Fallback to keyword search if embeddings are empty
         const embCount = await embeddingsService.getEmbeddingsCount(tenantId);
@@ -190,10 +182,10 @@ router.get('/api/knowledge/search', async (req, res) => {
             message: error.message
         });
     }
-});
+    });
 
 // System status endpoint
-router.get('/api/system/status', async (req, res) => {
+    router.get('/api/system/status', async (req, res) => {
     try {
         console.log('[RAG Dashboard] Fetching system status');
 
@@ -222,7 +214,7 @@ router.get('/api/system/status', async (req, res) => {
 
         // Check embeddings service
         try {
-            const embeddingsCount = await embeddingsService.getEmbeddingsCount();
+            const embeddingsCount = await enhancedAIService.embeddings.getEmbeddingsCount();
             status.embeddings.count = embeddingsCount || 0;
         } catch (error) {
             console.error('[RAG Dashboard] Embeddings status error:', error);
@@ -266,10 +258,10 @@ router.get('/api/system/status', async (req, res) => {
             message: error.message
         });
     }
-});
+    });
 
 // Knowledge list endpoint
-router.get('/api/knowledge/list', async (req, res) => {
+    router.get('/api/knowledge/list', async (req, res) => {
     try {
         console.log('[RAG Dashboard] Fetching knowledge list');
 
@@ -292,10 +284,10 @@ router.get('/api/knowledge/list', async (req, res) => {
             message: error.message
         });
     }
-});
+    });
 
 // Test RAG system endpoint
-router.post('/api/system/test', async (req, res) => {
+    router.post('/api/system/test', async (req, res) => {
     try {
         console.log('[RAG Dashboard] Running RAG system test');
 
@@ -309,7 +301,7 @@ router.post('/api/system/test', async (req, res) => {
         // Test embeddings service
         try {
             const testQuery = "test query";
-            const embeddings = await embeddingsService.retrieve(testQuery, 1, 0.1);
+            const embeddings = await enhancedAIService.embeddings.retrieve({ query: testQuery, topK: 1, minSimilarity: 0.1 });
             testResults.embeddings.status = 'success';
             testResults.embeddings.message = `Retrieved ${embeddings ? embeddings.length : 0} embeddings`;
         } catch (error) {
@@ -362,10 +354,10 @@ router.post('/api/system/test', async (req, res) => {
             message: error.message
         });
     }
-});
+    });
 
 // Upload knowledge endpoint
-router.post('/api/knowledge/upload', async (req, res) => {
+    router.post('/api/knowledge/upload', async (req, res) => {
     try {
         const { content, source, type = 'manual', tenantId: bodyTenantId } = req.body;
         const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || bodyTenantId || null;
@@ -403,13 +395,13 @@ router.post('/api/knowledge/upload', async (req, res) => {
             message: error.message
         });
     }
-});
+    });
 
 // Get embeddings list for visualization
-router.get('/api/embeddings/list', async (req, res) => {
+    router.get('/api/embeddings/list', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 100;
-        const count = await embeddingsService.getEmbeddingsCount();
+        const count = await enhancedAIService.embeddings.getEmbeddingsCount();
         // This server does not expose raw embedding vectors; return summary only
         res.json({
             success: true,
@@ -426,21 +418,21 @@ router.get('/api/embeddings/list', async (req, res) => {
             error: error.message
         });
     }
-});
+    });
 
 // System monitoring endpoints
-router.get('/api/system/metrics', async (req, res) => {
+    router.get('/api/system/metrics', async (req, res) => {
     try {
         const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || null;
         // Calculate system metrics
         const startTime = Date.now();
         
         // Test response time with a simple operation
-        await embeddingsService.getEmbeddingsCount(tenantId);
+        await enhancedAIService.embeddings.getEmbeddingsCount(tenantId);
         const responseTime = Date.now() - startTime;
         
         // Get various system metrics
-        const embeddingsCount = await embeddingsService.getEmbeddingsCount(tenantId) || 0;
+        const embeddingsCount = await enhancedAIService.embeddings.getEmbeddingsCount(tenantId) || 0;
         const knowledgeItems = enhancedAIService.getKnowledgeBase();
         const knowledgeCount = knowledgeItems ? knowledgeItems.length : 0;
         
@@ -478,9 +470,9 @@ router.get('/api/system/metrics', async (req, res) => {
             error: error.message
         });
     }
-});
+    });
 
-router.get('/api/system/logs', async (req, res) => {
+    router.get('/api/system/logs', async (req, res) => {
     try {
         // Mock system logs for demonstration
         const logs = [
@@ -521,6 +513,7 @@ router.get('/api/system/logs', async (req, res) => {
             error: error.message
         });
     }
-});
+    });
 
-module.exports = router;
+    return router;
+};
