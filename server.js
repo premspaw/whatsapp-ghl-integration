@@ -359,11 +359,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/handoff-rules', require('./routes/handoffRulesRoutes')(enhancedAIService));
 app.use('/api/integrations', require('./routes/integrationsRoutes')());
 // Alias: allow front-end to call /rag-dashboard/api/knowledge/* and reuse /api/knowledge/*
-app.use('/rag-dashboard/api/knowledge', (req, res) => {
-  const target = '/api/knowledge' + (req.url || '');
-  // Preserve method and body with 307 redirect
-  res.redirect(307, target);
-});
+// Remove redirect alias so RAG dashboard routes handle knowledge endpoints directly
+// This prevents 307 redirects and ensures JSON responses from routes/ragDashboard.js
 
 // === Compatibility aliases for external AI Management dashboard ===
 // Many dashboards expect these root-level paths; map them to existing routes.
