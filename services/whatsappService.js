@@ -12,6 +12,21 @@ class WhatsAppService extends EventEmitter {
   initialize() {
     console.log('Initializing WhatsApp client...');
     
+    // Prevent double initialization when a client already exists
+    if (this.client) {
+      try {
+        console.log('Existing client detected; attempting graceful destroy before re-init');
+        // Best-effort destroy; swallow errors
+        if (typeof this.client.destroy === 'function') {
+          this.client.destroy().catch((e) => {
+            console.warn('Destroy on existing client failed during re-init:', e && e.message);
+          });
+        }
+      } catch (_) { /* non-fatal */ }
+      this.client = null;
+      this.isReady = false;
+    }
+
     // Allow configuring Puppeteer executable path via env for VPS stability
     const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || null;
     const puppeteerOptions = {
@@ -236,9 +251,32 @@ class WhatsAppService extends EventEmitter {
   }
 
   async disconnect() {
-    if (this.client) {
-      await this.client.destroy();
+    // Make disconnect resilient to partially initialized clients
+    try {
+      if (this.client) {
+        // Try the library's destroy first, but guard against internal nulls
+        if (typeof this.client.destroy === 'function') {
+          try {
+            await this.client.destroy();
+          } catch (err) {
+            console.warn('client.destroy failed; attempting to close puppeteer resources:', err && err.message);
+            // Some versions expose pupBrowser; close if present
+            try {
+              if (this.client.pupBrowser && typeof this.client.pupBrowser.close === 'function') {
+                await this.client.pupBrowser.close();
+              }
+            } catch (e) {
+              console.warn('Closing pupBrowser failed or not available:', e && e.message);
+            }
+          }
+        }
+      }
+    } catch (outerErr) {
+      console.warn('Resilient disconnect encountered error:', outerErr && outerErr.message);
+    } finally {
       this.isReady = false;
+      this.client = null;
+      try { this.emit('disconnected', 'manual_disconnect'); } catch (_) {}
     }
   }
 }

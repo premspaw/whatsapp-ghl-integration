@@ -106,35 +106,114 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
     });
   });
 
-  // Force reconnection (generates new QR code)
+  // Force reconnection (generates new QR code) - safe if client is null
   router.post('/reconnect', async (req, res) => {
+    try {
+      if (!whatsappService) {
+        return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
+      }
+
+      // Clear any cached QR and mark state
+      currentQRCode = null;
+      connectionStatus = 'connecting';
+
+      // If a disconnect method exists and a client might be active, attempt it
+      if (typeof whatsappService.disconnect === 'function') {
+        try {
+          await whatsappService.disconnect();
+        } catch (e) {
+          // If client is null or already closed, ignore and proceed
+          console.warn('Disconnect skipped or failed, proceeding to initialize:', e && e.message);
+        }
+      }
+
+      // Initialize regardless, so a fresh QR is generated
+      if (typeof whatsappService.initialize === 'function') {
+        setTimeout(() => {
+          try {
+            whatsappService.initialize();
+          } catch (initErr) {
+            console.error('Initialize failed during reconnect:', initErr);
+          }
+        }, 500);
+      }
+
+      return res.json({ success: true, message: 'Reconnection started. QR code will be available shortly.' });
+    } catch (error) {
+      console.error('Error during reconnection:', error);
+      res.status(500).json({ success: false, error: 'Failed to reconnect', details: error.message });
+    }
+  });
+
+  // Explicit connect route for frontends that call /connect
+  router.post('/connect', async (req, res) => {
+    try {
+      if (!whatsappService) {
+        return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
+      }
+
+      // If already ready, just return success
+      if (whatsappService.isReady) {
+        return res.json({ success: true, message: 'WhatsApp already connected' });
+      }
+
+      // Clear any previous QR and mark as connecting
+      currentQRCode = null;
+      connectionStatus = 'connecting';
+
+      // Initialize if possible
+      if (typeof whatsappService.initialize === 'function') {
+        whatsappService.initialize();
+        return res.json({ success: true, message: 'Initializing WhatsApp; QR code will be available shortly' });
+      }
+
+      return res.status(500).json({ success: false, error: 'Initialize method not available on WhatsApp service' });
+    } catch (error) {
+      console.error('Error during connect:', error);
+      res.status(500).json({ success: false, error: 'Failed to start WhatsApp', details: error.message });
+    }
+  });
+
+  // GET alias for connect (some frontends use GET)
+  router.get('/connect', async (req, res) => {
+    try {
+      if (!whatsappService) {
+        return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
+      }
+
+      if (whatsappService.isReady) {
+        return res.json({ success: true, message: 'WhatsApp already connected' });
+      }
+
+      currentQRCode = null;
+      connectionStatus = 'connecting';
+
+      if (typeof whatsappService.initialize === 'function') {
+        whatsappService.initialize();
+        return res.json({ success: true, message: 'Initializing WhatsApp; QR code will be available shortly' });
+      }
+
+      return res.status(500).json({ success: false, error: 'Initialize method not available on WhatsApp service' });
+    } catch (error) {
+      console.error('Error during connect (GET):', error);
+      res.status(500).json({ success: false, error: 'Failed to start WhatsApp', details: error.message });
+    }
+  });
+
+  // Graceful disconnect route used by the frontend
+  router.post('/disconnect', async (req, res) => {
     try {
       if (whatsappService && typeof whatsappService.disconnect === 'function') {
         await whatsappService.disconnect();
-        // Wait a moment then reinitialize
-        setTimeout(() => {
-          if (whatsappService && typeof whatsappService.initialize === 'function') {
-            whatsappService.initialize();
-          }
-        }, 2000);
-        
-        res.json({
-          success: true,
-          message: 'Reconnection initiated. New QR code will be generated shortly.'
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          error: 'WhatsApp service not available'
-        });
+        // Clear any cached QR and update status
+        currentQRCode = null;
+        connectionStatus = 'disconnected';
+        return res.json({ success: true, message: 'WhatsApp disconnected' });
       }
+      return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
     } catch (error) {
-      console.error('Error during reconnection:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to reconnect',
-        details: error.message
-      });
+      console.error('Error during disconnect:', error);
+      res.status(500).json({ success: false, error: 'Failed to disconnect', details: error.message });
     }
   });
 
@@ -153,7 +232,9 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
             ? ghlService.normalizePhoneNumber(phoneRaw)
             : null;
 
-          if (normalized && ghlService && ghlService.findContactByPhone) {
+          // Only attempt GHL enrichment when GHL is configured
+          const ghlEnabled = !!(ghlService && typeof ghlService.isConfigured === 'function' && ghlService.isConfigured());
+          if (normalized && ghlEnabled && ghlService && ghlService.findContactByPhone) {
             const ghlContact = await ghlService.findContactByPhone(normalized);
             if (ghlContact) {
               contactName = ghlContact.firstName || ghlContact.name || contactName;

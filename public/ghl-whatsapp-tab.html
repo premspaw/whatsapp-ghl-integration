@@ -1981,9 +1981,9 @@
                     whatsappConnection.style.display = 'flex';
                     connectingState.style.display = 'block';
                     connectingState.classList.add('active');
-                    if (status === 'qr') {
-                        loadQRCode();
-                    }
+                    // Load QR code image whenever we are in a connecting state
+                    // Backend returns 'connecting' when QR exists; 'qr' is rare.
+                    loadQRCode();
                     break;
                     
                 case 'disconnected':

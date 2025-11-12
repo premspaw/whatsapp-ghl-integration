@@ -6,7 +6,7 @@ class GHLService {
     this.apiKey = process.env.GHL_API_KEY;
     this.locationId = process.env.GHL_LOCATION_ID;
     this.baseUrl = process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com';
-    this.channelMode = (process.env.GHL_CHANNEL_MODE || 'sms').toLowerCase();
+    this.channelMode = (process.env.GHL_CHANNEL_MODE || 'whatsapp').toLowerCase();
     this.cacheTTL = parseInt(process.env.GHL_CACHE_TTL_MS || '900000'); // 15m default
     this.contactCache = new Map(); // key: contact:<id> -> { value, expiresAt }
     this.opportunityCache = new Map(); // key: opp:<contactId>
@@ -14,6 +14,7 @@ class GHLService {
     
     this.client = axios.create({
       baseURL: this.baseUrl,
+      
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
@@ -30,7 +31,10 @@ class GHLService {
   async getContacts() {
     try {
       if (!this.isConfigured()) {
-        throw new Error('GHL not configured - API key or location ID missing');
+        // In non-configured environments, return an empty list instead of throwing.
+        // This prevents noisy error logs in routes that try to enrich conversations.
+        console.warn('GHL not configured - returning empty contacts list');
+        return [];
       }
       
       // Use the correct GHL API endpoint format
@@ -562,9 +566,14 @@ class GHLService {
   }
 
   isConfigured() {
-    return !!(this.apiKey && this.locationId && 
-              this.apiKey !== 'your_ghl_api_key_here' && 
-              this.apiKey.startsWith('pit-'));
+    // Consider GHL configured if a non-placeholder API key and a location ID are present.
+    // Accept various valid key formats (e.g., pit-, sk_, pat-, lc_), and allow disabling via 'disabled'.
+    const key = (this.apiKey || '').trim();
+    const loc = (this.locationId || '').trim();
+    if (!key || !loc) return false;
+    const lowerKey = key.toLowerCase();
+    if (lowerKey === 'your_ghl_api_key_here' || lowerKey === 'disabled') return false;
+    return true;
   }
 
   // Get conversations by contact ID for AI context

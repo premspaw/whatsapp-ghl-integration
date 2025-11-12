@@ -166,6 +166,17 @@ try {
   
   console.log('✅ All services initialized successfully');
   console.log(`📱 WhatsApp Mode: ${useMockWhatsApp ? 'Mock' : 'Real'}`);
+
+  // Enforce GHL configuration when required
+  const requireGHL = String(process.env.REQUIRE_GHL || '').toLowerCase() === 'true';
+  if (requireGHL) {
+    if (!ghlService || typeof ghlService.isConfigured !== 'function' || !ghlService.isConfigured()) {
+      console.error('❌ GHL is required but not configured. Set GHL_API_KEY and GHL_LOCATION_ID, then restart.');
+      process.exit(1);
+    } else {
+      console.log('✅ GHL is configured and required: continuing with full sync.');
+    }
+  }
   
   // Track AI conversation metrics for analytics
   enhancedAIService.on('conversation', (data) => {
@@ -1390,15 +1401,31 @@ server.listen(PORT, () => {
     // Set up event handlers
     whatsappService.on('qr', (qr) => {
       console.log('📱 QR Code received - scan with WhatsApp');
-      // QR code is already displayed in terminal by whatsapp-web.js
+      // Broadcast QR to frontend via Socket.IO for web display
+      try {
+        io.emit('qr_code', qr);
+      } catch (e) {
+        console.warn('Socket emit qr_code failed:', e && e.message ? e.message : e);
+      }
     });
 
     whatsappService.on('ready', () => {
       console.log('✅ WhatsApp client is ready!');
+      // Notify frontend that WhatsApp is ready
+      try {
+        io.emit('whatsapp_ready', { ready: true });
+      } catch (e) {
+        console.warn('Socket emit whatsapp_ready failed:', e && e.message ? e.message : e);
+      }
     });
 
     whatsappService.on('disconnected', () => {
       console.log('❌ WhatsApp client disconnected');
+      try {
+        io.emit('whatsapp_disconnected', { ready: false });
+      } catch (e) {
+        console.warn('Socket emit whatsapp_disconnected failed:', e && e.message ? e.message : e);
+      }
     });
 
     whatsappService.on('message', async (message) => {
