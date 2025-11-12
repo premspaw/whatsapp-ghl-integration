@@ -434,31 +434,51 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
   try {
     const body = req.body || {};
     // Accept broader GHL payload shapes for phone
-    const to = (
+    let to = (
       body.to ||
       body.phone ||
+      body.customData?.to ||
+      body.customData?.phone ||
       body.contact?.phone ||
+      body.contact?.phoneNumber ||
+      body.contact?.phone?.number ||
+      body.message?.contact?.phone ||
+      body.message?.phone ||
+      body.data?.to ||
+      body.data?.phone ||
       body.data?.contact?.phone ||
       body.data?.message?.contact?.phone ||
-      body.custom?.to
+      body.data?.message?.phone ||
+      body.custom?.to ||
+      req.query?.to ||
+      req.query?.phone
     );
+    if (typeof to === 'string') to = to.trim();
     // Accept multiple keys for template name/id
-    const templateName = (
+    let templateName = (
       body.templateName ||
       body.template ||
       body.name ||
+      body.customData?.templateName ||
+      body.message?.templateName ||
       body.data?.templateName ||
-      body.custom?.templateName
+      body.data?.template ||
+      body.custom?.templateName ||
+      req.query?.templateName ||
+      req.query?.template
     );
-    const templateId = body.templateId || body.data?.templateId || body.custom?.templateId;
+    if (typeof templateName === 'string') templateName = templateName.trim();
+    const templateId = body.templateId || body.customData?.templateId || body.data?.templateId || body.custom?.templateId;
     // Variables may arrive as string or nested in data/custom
     const rawVariables = (
       body.variables !== undefined ? body.variables :
+      body.customData?.variables !== undefined ? body.customData.variables :
       body.data?.variables !== undefined ? body.data.variables :
       body.custom?.variables !== undefined ? body.custom.variables :
+      req.query?.variables !== undefined ? req.query.variables :
       {}
     );
-    const mediaUrl = body.mediaUrl || body.imageUrl || body.custom?.imageUrl || '';
+    const mediaUrl = body.mediaUrl || body.imageUrl || body.customData?.imageUrl || body.custom?.imageUrl || '';
     const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
 
     if (!to || (!templateName && !templateId)) {
@@ -552,7 +572,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
         const normalized = ghlService.normalizePhoneNumber(to);
         const contact = await ghlService.findContactByPhone(normalized);
         if (contact) {
-  await ghlService.addOutboundMessage(contact.id, { message: text, type: 'TYPE_SMS', direction: 'outbound' });
+          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'SMS', direction: 'outbound' });
         }
       }
     } catch (_) {}
@@ -567,29 +587,49 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
 app.post('/api/whatsapp/template-send', async (req, res) => {
   try {
     const body = req.body || {};
-    const to = (
+    let to = (
       body.to ||
       body.phone ||
+      body.customData?.to ||
+      body.customData?.phone ||
       body.contact?.phone ||
+      body.contact?.phoneNumber ||
+      body.contact?.phone?.number ||
+      body.message?.contact?.phone ||
+      body.message?.phone ||
+      body.data?.to ||
+      body.data?.phone ||
       body.data?.contact?.phone ||
       body.data?.message?.contact?.phone ||
-      body.custom?.to
+      body.data?.message?.phone ||
+      body.custom?.to ||
+      req.query?.to ||
+      req.query?.phone
     );
-    const templateName = (
+    if (typeof to === 'string') to = to.trim();
+    let templateName = (
       body.templateName ||
       body.template ||
       body.name ||
+      body.customData?.templateName ||
+      body.message?.templateName ||
       body.data?.templateName ||
-      body.custom?.templateName
+      body.data?.template ||
+      body.custom?.templateName ||
+      req.query?.templateName ||
+      req.query?.template
     );
-    const templateId = body.templateId || body.data?.templateId || body.custom?.templateId;
+    if (typeof templateName === 'string') templateName = templateName.trim();
+    const templateId = body.templateId || body.customData?.templateId || body.data?.templateId || body.custom?.templateId;
     const rawVariables = (
       body.variables !== undefined ? body.variables :
+      body.customData?.variables !== undefined ? body.customData.variables :
       body.data?.variables !== undefined ? body.data.variables :
       body.custom?.variables !== undefined ? body.custom.variables :
+      req.query?.variables !== undefined ? req.query.variables :
       {}
     );
-    const mediaUrl = body.mediaUrl || body.imageUrl || body.custom?.imageUrl || '';
+    const mediaUrl = body.mediaUrl || body.imageUrl || body.customData?.imageUrl || body.custom?.imageUrl || '';
     const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
 
     if (!to || (!templateName && !templateId)) {
@@ -671,7 +711,7 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
         const normalized = ghlService.normalizePhoneNumber(to);
         const contact = await ghlService.findContactByPhone(normalized);
         if (contact) {
-          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'TYPE_SMS', direction: 'outbound' });
+          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'SMS', direction: 'outbound' });
         }
       }
     } catch (_) {}
