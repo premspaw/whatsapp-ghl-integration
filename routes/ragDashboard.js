@@ -34,13 +34,13 @@ module.exports = (enhancedAIService) => {
             tenantId
         );
 
-        // Get retrieval metadata
-        const retrievalResults = await enhancedAIService.embeddings.retrieve({ query: message, topK: 5, minSimilarity: 0.5, tenantId });
+        // Get retrieval metadata using safe retrieval (vectors with keyword fallback)
+        const retrievalResults = await enhancedAIService.safeRetrieveEmbeddings(message, conversationId, null, 0.2, tenantId, 5);
         
         const metadata = {
             retrievedChunks: retrievalResults ? retrievalResults.length : 0,
             similarity: retrievalResults && retrievalResults.length > 0 ? 
-                Math.max(...retrievalResults.map(r => r.similarity)).toFixed(3) : null,
+                (retrievalResults[0].similarity || null) : null,
             timestamp: new Date().toISOString()
         };
 
