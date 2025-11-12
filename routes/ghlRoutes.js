@@ -18,6 +18,15 @@ try {
 module.exports = (ghlService) => {
   const router = express.Router();
   const oauthService = new GHLOAuthService();
+  // Lazy-load Supabase repos for context assembly
+  let contactRepo, messageRepo;
+  try {
+    contactRepo = require('../services/db/contactRepo');
+    messageRepo = require('../services/db/messageRepo');
+  } catch (_) {
+    contactRepo = null;
+    messageRepo = null;
+  }
 
   // Minimal health endpoint to prevent startup crash
   router.get('/health', (req, res) => {
@@ -215,6 +224,112 @@ module.exports = (ghlService) => {
         return res.status(500).json({ success: false, error: result.error || 'PDF upload failed' });
       }
       res.json({ success: true, result });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Contact metadata by phone (normalized). Includes basic GHL details.
+  router.get('/contact/:phone', async (req, res) => {
+    try {
+      const rawPhone = req.params.phone;
+      const normalized = ghlService && typeof ghlService.normalizePhoneNumber === 'function'
+        ? ghlService.normalizePhoneNumber(rawPhone)
+        : rawPhone;
+
+      if (!normalized) {
+        return res.status(400).json({ success: false, error: 'Invalid phone' });
+      }
+
+      // Find contact via GHL when configured
+      let ghlContact = null;
+      let details = null;
+      let tags = [];
+      let pipelineStage = null;
+      const configured = !!(ghlService && typeof ghlService.isConfigured === 'function' && ghlService.isConfigured());
+      if (configured && ghlService && typeof ghlService.findContactByPhone === 'function') {
+        try {
+          ghlContact = await ghlService.findContactByPhone(normalized);
+          if (ghlContact && typeof ghlService.getContactDetails === 'function') {
+            details = await ghlService.getContactDetails(ghlContact.id);
+          }
+          tags = (details && details.tags) || (ghlContact && ghlContact.tags) || [];
+          pipelineStage = (details && (details.stage || details.pipelineStage)) || null;
+        } catch (e) {
+          console.warn('⚠️ GHL contact lookup failed:', e.message);
+        }
+      }
+
+      res.json({
+        success: true,
+        phone: normalized,
+        configured,
+        contact: ghlContact,
+        details,
+        tags,
+        pipelineStage
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Context endpoint: assemble GHL metadata + last 3–5 messages from Supabase
+  router.get('/context/:phone', async (req, res) => {
+    try {
+      const rawPhone = req.params.phone;
+      const normalized = ghlService && typeof ghlService.normalizePhoneNumber === 'function'
+        ? ghlService.normalizePhoneNumber(rawPhone)
+        : rawPhone;
+      if (!normalized) return res.status(400).json({ success: false, error: 'Invalid phone' });
+
+      const limit = Math.max(3, Math.min(5, Number(req.query.limit || 5)));
+
+      // GHL
+      let ghlContact = null;
+      let details = null;
+      let tags = [];
+      let pipelineStage = null;
+      const configured = !!(ghlService && typeof ghlService.isConfigured === 'function' && ghlService.isConfigured());
+      if (configured && ghlService && typeof ghlService.findContactByPhone === 'function') {
+        try {
+          ghlContact = await ghlService.findContactByPhone(normalized);
+          if (ghlContact && typeof ghlService.getContactDetails === 'function') {
+            details = await ghlService.getContactDetails(ghlContact.id);
+          }
+          tags = (details && details.tags) || (ghlContact && ghlContact.tags) || [];
+          pipelineStage = (details && (details.stage || details.pipelineStage)) || null;
+        } catch (_) {}
+      }
+
+      // Supabase recent messages
+      let recent = [];
+      let contactRow = null;
+      if (contactRepo && messageRepo && typeof contactRepo.findByPhone === 'function') {
+        try {
+          const phoneE164 = String(normalized).replace('@c.us','');
+          contactRow = await contactRepo.findByPhone(phoneE164);
+          if (contactRow && typeof messageRepo.getRecentMessagesByContact === 'function') {
+            recent = await messageRepo.getRecentMessagesByContact(contactRow.id, limit);
+          }
+        } catch (e) {
+          console.warn('⚠️ Supabase context fetch failed:', e.message);
+        }
+      }
+
+      res.json({
+        success: true,
+        phone: normalized,
+        configured,
+        contact: ghlContact,
+        details,
+        tags,
+        pipelineStage,
+        supabase: {
+          contact: contactRow,
+          lastMessages: recent
+        }
+      });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
     }

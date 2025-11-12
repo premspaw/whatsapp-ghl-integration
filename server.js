@@ -786,6 +786,76 @@ app.post('/api/conversations/:id/sync-ghl', async (req, res) => {
   }
 });
 
+// Generic WhatsApp send endpoint with auto-sync to GHL
+async function sendWhatsappMessageHandler(req, res) {
+  try {
+    const body = req.body || {};
+    let to = body.to || body.phone || body.contact?.phone;
+    const text = body.message || body.text || '';
+    const mediaUrl = body.mediaUrl || '';
+    const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
+
+    if (!to || !text) {
+      return res.status(400).json({ success: false, error: 'Required: to/phone and message' });
+    }
+
+    // Normalize to WhatsApp chat ID
+    let normalizedTo = to;
+    try { const { normalize } = require('./utils/phoneNormalizer'); normalizedTo = normalize(String(to)) || to; } catch (_) {}
+    let chatId = String(normalizedTo || to);
+    if (!chatId.includes('@c.us')) {
+      // Strip all non-digit characters to form WhatsApp JID
+      chatId = chatId.replace(/\D/g, '');
+      chatId = chatId + '@c.us';
+    }
+
+    // Send message or media via WhatsApp service
+    let result;
+    if (mediaUrl && typeof whatsappService.sendMediaFromUrl === 'function') {
+      const mType = mediaType || 'image';
+      result = await whatsappService.sendMediaFromUrl(chatId, mediaUrl, text, mType);
+    } else {
+      result = await whatsappService.sendMessage(chatId, text);
+    }
+
+    // Store sent message in local conversation
+    try {
+      const messageData = {
+        id: `sent_${Date.now()}`,
+        from: 'ai',
+        body: text,
+        timestamp: Date.now(),
+        type: mediaUrl ? 'media' : 'text',
+        direction: 'outbound'
+      };
+      await conversationManager.addMessage(messageData, chatId);
+      // Emit to frontend so live UI updates
+      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
+    } catch (_) {}
+
+    // Auto-sync the conversation to GHL
+    try {
+      const conversation = await conversationManager.getConversation(chatId);
+      if (conversation && ghlService && typeof ghlService.syncConversation === 'function') {
+        await ghlService.syncConversation(conversation);
+        console.log('✅ Sent message auto-synced to GHL');
+      }
+    } catch (syncError) {
+      console.error('❌ Error auto-syncing sent message to GHL:', syncError.message || syncError);
+    }
+
+    return res.json({ success: true, message: 'Message sent', sentMessage: { to, content: text, id: result?.id?._serialized || result?.id || null } });
+  } catch (error) {
+    console.error('❌ Send message error:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+// Primary endpoint used by the tab
+app.post('/api/whatsapp/send', sendWhatsappMessageHandler);
+// Alias used by legacy UI
+app.post('/api/send-message', sendWhatsappMessageHandler);
+
 // Serve analytics dashboard
 app.get('/analytics', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'analytics.html'));
@@ -1389,6 +1459,44 @@ app.post('/api/ai/knowledge/upload', upload.array('files', 10), async (req, res)
   }
 });
 
+// Media upload endpoint for WhatsApp tab (images/videos)
+// Saves to public/uploads/media so files are directly accessible via static hosting
+const mediaStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dest = path.join(__dirname, 'public', 'uploads', 'media');
+    try {
+      fs.mkdirSync(dest, { recursive: true });
+    } catch (e) {}
+    cb(null, dest);
+  },
+  filename: function (req, file, cb) {
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, Date.now() + '-' + safeName);
+  }
+});
+
+const mediaUpload = multer({
+  storage: mediaStorage,
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+});
+
+app.post('/api/media/upload', mediaUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+    const isImage = req.file.mimetype && req.file.mimetype.startsWith('image/');
+    const isVideo = req.file.mimetype && req.file.mimetype.startsWith('video/');
+    const mediaType = isImage ? 'image' : isVideo ? 'video' : 'file';
+    const relativePath = req.file.path.replace(path.join(__dirname, 'public'), '').replace(/\\/g, '/');
+    const url = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
+    return res.json({ success: true, url, mediaType });
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // List all knowledge base items (used by AI Management Dashboard)
 app.get('/api/ai/knowledge', async (req, res) => {
   try {
@@ -1725,17 +1833,47 @@ server.listen(PORT, () => {
           console.log('⚠️ Error checking GHL contacts, using Unknown Contact');
         }
         
+        // If inbound has media, download and attach data URL for UI
+        let mediaFields = {};
+        try {
+          if (message.hasMedia && typeof message.downloadMedia === 'function') {
+            const media = await message.downloadMedia();
+            if (media && media.data) {
+              const mime = media.mimetype || 'application/octet-stream';
+              const kind = mime.startsWith('image') ? 'image' : (mime.startsWith('video') ? 'video' : 'file');
+              mediaFields = {
+                hasMedia: true,
+                mediaUrl: `data:${mime};base64,${media.data}`,
+                mediaType: kind,
+                mimeType: mime,
+                fileName: media.filename || undefined,
+                caption: message.caption || undefined
+              };
+            }
+          }
+        } catch (mediaErr) {
+          console.warn('⚠️ Failed to download inbound media:', mediaErr && mediaErr.message);
+        }
+
         // Store conversation with correct parameter order (conversationId, contactName)
-        await conversationManager.addMessage(message, message.from, contactName);
-        
-        // Emit to frontend
-        io.to('whatsapp').emit('new_message', {
-          id: message.id._serialized,
+        await conversationManager.addMessage({
+          id: (message.id && message.id._serialized) || message.id,
           from: message.from,
           body: message.body,
           timestamp: message.timestamp,
           type: message.type,
-          contactName: contactName
+          ...mediaFields
+        }, message.from, contactName);
+        
+        // Emit to frontend (include media fields for immediate display)
+        io.to('whatsapp').emit('new_message', {
+          id: (message.id && message.id._serialized) || message.id,
+          from: message.from,
+          body: message.body,
+          timestamp: message.timestamp,
+          type: message.type,
+          contactName: contactName,
+          ...mediaFields
         });
 
         // FIRST: Sync the user's message to GHL immediately

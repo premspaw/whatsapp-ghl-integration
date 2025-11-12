@@ -181,6 +181,41 @@ class ConversationManager {
         type: message.type || 'text'
       };
 
+      // Preserve media/template-related fields when present
+      try {
+        // Media flags
+        const hasMedia = !!(message.hasMedia || message.mediaUrl);
+        if (hasMedia) {
+          messageData.hasMedia = true;
+        }
+        // Media URL (can be external or data URL)
+        if (message.mediaUrl) {
+          messageData.mediaUrl = message.mediaUrl;
+        }
+        // Media type (image/video/file)
+        if (message.mediaType) {
+          messageData.mediaType = message.mediaType;
+        }
+        // Optional caption separate from body
+        if (message.caption) {
+          messageData.caption = message.caption;
+        }
+        // MIME type and filename when available
+        if (message.mimeType) {
+          messageData.mimeType = message.mimeType;
+        }
+        if (message.fileName || message.filename) {
+          messageData.fileName = message.fileName || message.filename;
+        }
+        // Template metadata
+        if (message.templateId) {
+          messageData.templateId = message.templateId;
+        }
+        if (message.templateName) {
+          messageData.templateName = message.templateName;
+        }
+      } catch (_) { /* non-fatal */ }
+
       conversation.messages.push(messageData);
       conversation.updatedAt = Date.now();
       

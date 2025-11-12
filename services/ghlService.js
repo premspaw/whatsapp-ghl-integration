@@ -3,7 +3,8 @@ const { normalize: normalizePhone } = require('../utils/phoneNormalizer');
 
 class GHLService {
   constructor() {
-    this.apiKey = process.env.GHL_API_KEY;
+    // Support both GHL_API_KEY and LEADCONNECTOR_API_KEY for flexibility
+    this.apiKey = process.env.GHL_API_KEY || process.env.LEADCONNECTOR_API_KEY;
     this.locationId = process.env.GHL_LOCATION_ID;
     this.baseUrl = process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com';
     this.channelMode = (process.env.GHL_CHANNEL_MODE || 'whatsapp').toLowerCase();
@@ -12,14 +13,18 @@ class GHLService {
     this.opportunityCache = new Map(); // key: opp:<contactId>
     this.convCache = new Map(); // key: conv:<contactId>
     
+    // Build headers conditionally to avoid sending "Bearer undefined"
+    const headers = {
+      'Content-Type': 'application/json',
+      'Version': '2021-07-28'
+    };
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+
     this.client = axios.create({
       baseURL: this.baseUrl,
-      
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-        'Version': '2021-07-28'
-      }
+      headers
     });
   }
 
@@ -174,7 +179,8 @@ class GHLService {
       const response = await this.client.post('/conversations/', {
         contactId: conversationData.contactId,
         locationId: this.locationId,
-        type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'SMS',
+        // Some deployments reject uppercase 'SMS'; prefer lowercase or omit
+        type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'sms',
         status: conversationData.status || 'active',
         phoneNumber: conversationData.phoneNumber
       });
@@ -187,7 +193,7 @@ class GHLService {
         return {
           id: error.response.data.conversationId,
           contactId: conversationData.contactId,
-          type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'SMS',
+          type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'sms',
           status: 'active',
           provider: 'whatsapp',
           phoneNumber: conversationData.phoneNumber
@@ -238,8 +244,6 @@ class GHLService {
       }
 
       const payload = {
-        // Always use a valid enum type for GHL messages; default to 'TYPE_SMS'
-        type: (messageData && messageData.type) ? messageData.type : 'TYPE_SMS',
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
@@ -270,6 +274,13 @@ class GHLService {
         ...(messageData && messageData.meta && typeof messageData.meta === 'object' ? messageData.meta : {})
       };
 
+      console.log('📤 GHL inbound payload:', {
+        contactId: payload.contactId,
+        conversationId: payload.conversationId,
+        direction: payload.direction,
+        hasHtml: !!payload.html,
+        hasMessage: !!payload.message
+      });
       const response = await this.client.post('/conversations/messages', payload);
       return response.data;
     } catch (error) {
@@ -295,12 +306,6 @@ class GHLService {
       // For outbound messages (from AI/Agent), we DON'T set FROM field
       // This tells GHL it's from the location/business
       const payload = {
-        // Always use a valid enum type for GHL messages; default to 'SMS'
-        // Normalize legacy values like 'TYPE_SMS' to 'SMS'
-        type: (() => {
-          const t = (messageData && messageData.type) ? String(messageData.type) : 'SMS';
-          return t === 'TYPE_SMS' ? 'SMS' : t;
-        })(),
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
@@ -330,6 +335,13 @@ class GHLService {
         ...(messageData && messageData.meta && typeof messageData.meta === 'object' ? messageData.meta : {})
       };
 
+      console.log('📤 GHL outbound payload:', {
+        contactId: payload.contactId,
+        conversationId: payload.conversationId,
+        direction: payload.direction,
+        hasHtml: !!payload.html,
+        hasMessage: !!payload.message
+      });
       const response = await this.client.post('/conversations/messages', payload);
       return response.data;
     } catch (error) {
@@ -384,7 +396,8 @@ class GHLService {
         console.log('📝 Creating new conversation in GHL');
         conversation = await this.createConversation({
           contactId: contact.id,
-          type: 'SMS',
+          // Prefer lowercase for type when creating conversations
+          type: 'sms',
           status: 'active',
           phoneNumber: normalizedPhone
         });
@@ -416,7 +429,7 @@ class GHLService {
           
           const messageData = {
             message: message.body,
-            type: 'SMS', // GHL only accepts 'SMS' type for messages
+            // Omit type to avoid enum validation 422s; GHL infers from conversation
             timestamp: new Date(message.timestamp * 1000).toISOString(), // Convert unix to ISO
             senderName: isInbound ? contactName : 'AI Assistant', // Set sender name
             meta: {

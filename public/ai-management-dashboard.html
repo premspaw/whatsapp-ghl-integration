@@ -618,6 +618,23 @@
     </style>
 </head>
 <body>
+    <script>
+        // Redirect this legacy dashboard to the unified AI Training page
+        (function() {
+            try {
+                var target = '/ai-training.html';
+                // Always move users to the consolidated editor
+                window.location.replace(target);
+            } catch (e) {
+                console && console.warn && console.warn('Redirect failed:', e);
+            }
+        })();
+    </script>
+    <noscript>
+        <div style="padding:16px; background:#fff3cd; color:#856404; border:1px solid #ffeeba;">
+            This page moved. Open <a href="/ai-training.html">AI Training</a>.
+        </div>
+    </noscript>
     <div class="container">
         <div class="header">
             <div class="header-top">

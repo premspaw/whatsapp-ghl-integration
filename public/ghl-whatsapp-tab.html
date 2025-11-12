@@ -992,6 +992,49 @@
         .btn.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
         .btn.ghost { background: #f8fafc; }
         .btn.danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+        /* Emoji panel */
+        .emoji-panel {
+            position: absolute;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 0.5rem;
+            width: 300px;
+            max-height: 260px;
+            overflow: auto;
+            z-index: 1000;
+            display: none;
+        }
+        .emoji-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .emoji-search {
+            flex: 1;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 0.375rem 0.5rem;
+            font-size: 0.9rem;
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.25rem;
+        }
+        .emoji-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .emoji-item:hover { background: #f1f5f9; }
     </style>
 </head>
 <body>
@@ -1025,13 +1068,7 @@
         </div>
     </div>
 
-    <div class="filter-section">
-        <div class="filter-buttons">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="unread">Unread</button>
-            <button class="filter-btn" data-filter="read">Read</button>
-        </div>
-    </div>
+    <!-- Duplicate filter header removed; using the icon-labeled filters in the sidebar below -->
 
     <div class="main-container">
         <!-- Sidebar -->
@@ -1816,6 +1853,168 @@
             }
         }
 
+        // ===== Media attachment workflow =====
+        function ensureAttachInput() {
+            if (!document.getElementById('attachInput')) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.id = 'attachInput';
+                input.accept = 'image/*,video/*';
+                input.style.display = 'none';
+                document.body.appendChild(input);
+                input.addEventListener('change', handleFileSelected);
+            }
+        }
+
+        async function handleFileSelected(e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            if (!selectedConversation) { alert('⚠️ Select a conversation first'); return; }
+            try {
+                const caption = (document.getElementById('messageInput').value || '').trim();
+                const { url, mediaType } = await uploadMedia(file);
+                await sendMediaMessage(selectedConversation, url, mediaType, caption);
+                document.getElementById('messageInput').value = '';
+            } catch (err) {
+                console.error('❌ Media send failed:', err);
+                alert('Error sending media: ' + (err.message || 'Unknown'));
+            } finally {
+                e.target.value = '';
+            }
+        }
+
+        async function uploadMedia(file) {
+            const fd = new FormData();
+            fd.append('file', file);
+            const resp = await fetch(apiUrl('/api/media/upload'), { method: 'POST', body: fd });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                throw new Error(data.error || 'Upload failed');
+            }
+            return { url: data.url, mediaType: data.mediaType };
+        }
+
+        async function sendMediaMessage(conversation, mediaUrl, mediaType, caption) {
+            const to = conversation.phoneNumber || conversation.id;
+            const resp = await fetch(apiUrl('/api/whatsapp/send'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to, message: caption || '', mediaUrl, mediaType })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Send failed');
+            }
+            conversation.messages = conversation.messages || [];
+            conversation.messages.push({
+                id: data.messageId || `media_${Date.now()}`,
+                from: 'ai',
+                direction: 'outbound',
+                body: caption || '',
+                timestamp: Date.now(),
+                type: mediaType || 'image',
+                hasMedia: true,
+                mediaUrl: mediaUrl,
+                mediaType: mediaType
+            });
+            conversation.updatedAt = Date.now();
+            updateStats();
+            renderConversations();
+            renderMessages();
+            try { await fetch(apiUrl(`/api/conversations/${conversation.id}/sync-ghl`), { method: 'POST' }); } catch (_) {}
+        }
+
+        // ===== Emoji picker workflow =====
+        const EMOJIS = (
+            '😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😜 🤪 ' +
+            '🤨 🧐 😎 🤓 🥳 😏 😒 😞 😔 😟 😕 🙁 ☹️ 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 ' +
+            '🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😴 🤤 😪 😮‍💨 ' +
+            '😮 😯 😲 🥱 🤧 🤒 🤕 🤢 🤮 🤧 🥴 🤠 😈 👿 💀 ☠️ 👻 👽 🤖 🎃 💩 🤡 💋 ❤️ 💛 💚 💙 💜 🖤 🤍 🤎'
+        ).split(/\s+/);
+
+        let emojiPanel = null;
+        let emojiSearchInput = null;
+
+        function createEmojiPanel() {
+            if (emojiPanel) return emojiPanel;
+            emojiPanel = document.createElement('div');
+            emojiPanel.className = 'emoji-panel';
+
+            const header = document.createElement('div');
+            header.className = 'emoji-header';
+            emojiSearchInput = document.createElement('input');
+            emojiSearchInput.className = 'emoji-search';
+            emojiSearchInput.placeholder = 'Search';
+            header.appendChild(emojiSearchInput);
+            emojiPanel.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = 'emoji-grid';
+            emojiPanel.appendChild(grid);
+
+            function renderGrid(filter = '') {
+                const q = filter.trim().toLowerCase();
+                grid.innerHTML = '';
+                EMOJIS.filter(e => !q || e.toLowerCase().includes(q)).forEach(e => {
+                    const item = document.createElement('div');
+                    item.className = 'emoji-item';
+                    item.textContent = e;
+                    item.title = e;
+                    item.addEventListener('click', () => insertEmoji(e));
+                    grid.appendChild(item);
+                });
+            }
+            renderGrid();
+            emojiSearchInput.addEventListener('input', () => renderGrid(emojiSearchInput.value));
+
+            document.body.appendChild(emojiPanel);
+            // Close when clicking outside
+            document.addEventListener('click', (ev) => {
+                const target = ev.target;
+                const isBtn = target && (target.id === 'emojiBtn');
+                if (!isBtn && emojiPanel && emojiPanel.style.display === 'block' && !emojiPanel.contains(target)) {
+                    hideEmojiPanel();
+                }
+            });
+
+            return emojiPanel;
+        }
+
+        function toggleEmojiPanel(anchorBtn) {
+            const panel = createEmojiPanel();
+            if (panel.style.display === 'block') {
+                hideEmojiPanel();
+                return;
+            }
+            const rect = anchorBtn.getBoundingClientRect();
+            panel.style.left = `${rect.left}px`;
+            panel.style.top = `${rect.top - 280}px`;
+            if (parseInt(panel.style.top, 10) < 0) {
+                panel.style.top = `${rect.bottom + 8}px`;
+            }
+            panel.style.display = 'block';
+            emojiSearchInput && (emojiSearchInput.value = '');
+        }
+
+        function hideEmojiPanel() {
+            if (emojiPanel) {
+                emojiPanel.style.display = 'none';
+            }
+        }
+
+        function insertEmoji(emoji) {
+            const textarea = document.getElementById('messageInput');
+            if (!textarea) return;
+            const start = textarea.selectionStart || textarea.value.length;
+            const end = textarea.selectionEnd || textarea.value.length;
+            const before = textarea.value.substring(0, start);
+            const after = textarea.value.substring(end);
+            textarea.value = before + emoji + after;
+            const newPos = start + emoji.length;
+            textarea.selectionStart = textarea.selectionEnd = newPos;
+            textarea.focus();
+        }
+
         // Auto-resize textarea
         function autoResizeTextarea() {
             const textarea = document.getElementById('messageInput');
@@ -1835,8 +2034,12 @@
         document.getElementById('messageInput').addEventListener('input', autoResizeTextarea);
         const attachBtn = document.getElementById('attachBtn');
         const emojiBtn = document.getElementById('emojiBtn');
-        if (attachBtn) attachBtn.addEventListener('click', () => console.log('Attach: coming soon'));
-        if (emojiBtn) emojiBtn.addEventListener('click', () => console.log('Emoji: coming soon'));
+        if (attachBtn) attachBtn.addEventListener('click', () => {
+            ensureAttachInput();
+            const input = document.getElementById('attachInput');
+            input && input.click();
+        });
+        if (emojiBtn) emojiBtn.addEventListener('click', (e) => toggleEmojiPanel(e.currentTarget));
 
         // Filter functionality
         document.querySelectorAll('.filter-btn').forEach(btn => {

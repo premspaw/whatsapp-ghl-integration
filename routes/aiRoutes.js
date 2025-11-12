@@ -294,6 +294,46 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
     }
   });
 
+  // RAG-first test chat endpoint
+  router.post('/test-chat', async (req, res) => {
+    try {
+      const { message, phoneNumber = '+1234567890', conversationId = `test-${Date.now()}` } = req.body;
+      if (!message) {
+        return res.status(400).json({ success: false, error: 'Message is required' });
+      }
+
+      // Resolve tenantId (optional)
+      let tenantId = null;
+      try { tenantId = tenantService ? await tenantService.resolveTenantId({ phone: phoneNumber, req }) : null; } catch (_) {}
+
+      // Generate contextual reply using enhanced AI
+      const reply = await enhancedAIService.generateContextualReply(message, phoneNumber, conversationId, tenantId);
+
+      // Retrieve RAG metadata (vectors with keyword fallback)
+      let retrieval = [];
+      try {
+        retrieval = await enhancedAIService.safeRetrieveEmbeddings(message, conversationId, null, 0.2, tenantId, 5);
+      } catch (e) {
+        retrieval = [];
+      }
+
+      // Compose response with grounding info
+      res.json({
+        success: true,
+        reply,
+        query: message,
+        phoneNumber,
+        conversationId,
+        retrievalCount: Array.isArray(retrieval) ? retrieval.length : 0,
+        retrieval,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error in test-chat:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Get AI personality (with persistent storage) and AI-focused stats
   router.get('/personality', (req, res) => {
     try {
@@ -386,9 +426,28 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
         averageResponseTime = `${secs}s`;
       }
 
+      // Populate sensible defaults for brand fields
+      const defaults = {
+        website: personality.website || 'https://www.yourbusiness.com',
+        supportEmail: personality.supportEmail || '',
+        supportPhone: personality.supportPhone || '',
+        supportLink: personality.supportLink || '',
+        address: personality.address || '',
+        businessHours: personality.businessHours || ''
+      };
+      // Ensure faqTemplates exists with empty defaults
+      const faqDefaults = {
+        companyName: (personality.faqTemplates && personality.faqTemplates.companyName) || '',
+        website: (personality.faqTemplates && personality.faqTemplates.website) || '',
+        contactSupport: (personality.faqTemplates && personality.faqTemplates.contactSupport) || '',
+        businessHours: (personality.faqTemplates && personality.faqTemplates.businessHours) || '',
+        address: (personality.faqTemplates && personality.faqTemplates.address) || ''
+      };
+      const merged = { ...personality, ...defaults, faqTemplates: { ...(personality.faqTemplates || {}), ...faqDefaults } };
+
       res.json({
         success: true,
-        personality: personality,
+        personality: merged,
         stats: {
           aiReplies,
           aiConversations,
@@ -404,47 +463,131 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
     }
   });
 
-  // Update AI personality (with persistent storage)
+  // Update AI personality (with persistent storage, brand fields, and sanitation)
   router.post('/personality', async (req, res) => {
     try {
-      const { name, role, company, tone, traits } = req.body;
-      
-      if (!name || !role || !company || !tone) {
-        return res.status(400).json({
-          success: false,
-          error: 'All personality fields are required'
-        });
+      const {
+        name,
+        role,
+        company,
+        tone,
+        traits,
+        website,
+        supportEmail,
+        supportPhone,
+        supportLink,
+        address,
+        businessHours
+      } = req.body || {};
+
+      const hasFaqUpdate = req.body && typeof req.body.faqTemplates === 'object';
+      if (!hasFaqUpdate && (!name || !role || !company || !tone)) {
+        return res.status(400).json({ success: false, error: 'name, role, company, tone are required' });
       }
 
-      console.log('🤖 Updating AI personality:', { name, role, company, tone, traits });
+      // Simple sanitation helpers
+      const sanitizeString = (v) => {
+        if (typeof v !== 'string') return '';
+        return String(v)
+          .replace(/[`]/g, '') // remove backticks
+          .replace(/[\r\n]+/g, ' ')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      };
+      const sanitizeArray = (arr) => {
+        if (!Array.isArray(arr)) return [];
+        return arr.map((x) => sanitizeString(x)).filter(Boolean);
+      };
+      const normalizeWebsite = (url) => {
+        const val = sanitizeString(url);
+        if (!val) return '';
+        const clean = val.replace(/^\/+/, '');
+        if (!/^https?:\/\//i.test(clean)) return `https://${clean}`;
+        return clean;
+      };
+      const normalizePhone = (phone) => {
+        const val = sanitizeString(phone);
+        if (!val) return '';
+        // Remove non-digits except leading +
+        const cleaned = val.replace(/(?!^)[^\d]/g, '');
+        // If starts with + already, keep; else attempt to add + if it looks like country code + number
+        if (/^\+\d{6,}$/.test(val)) return val;
+        if (/^\d{6,}$/.test(cleaned)) return `+${cleaned}`;
+        return val; // fallback to original sanitized
+      };
+
+      const payload = {};
+      if (name !== undefined) payload.name = sanitizeString(name);
+      if (role !== undefined) payload.role = sanitizeString(role);
+      if (company !== undefined) payload.company = sanitizeString(company);
+      if (tone !== undefined) payload.tone = sanitizeString(tone);
+      if (traits !== undefined) payload.traits = sanitizeArray(traits);
+      if (website !== undefined) payload.website = normalizeWebsite(website || '');
+      if (supportEmail !== undefined) payload.supportEmail = sanitizeString(supportEmail || '');
+      if (supportPhone !== undefined) payload.supportPhone = normalizePhone(supportPhone || '');
+      if (supportLink !== undefined) payload.supportLink = normalizeWebsite(supportLink || '');
+      if (address !== undefined) payload.address = sanitizeString(address || '');
+      if (businessHours !== undefined) payload.businessHours = sanitizeString(businessHours || '');
+      payload.lastUpdated = new Date().toISOString();
+
+      console.log('🤖 Updating AI personality (sanitized):', {
+        name: payload.name,
+        role: payload.role,
+        company: payload.company,
+        tone: payload.tone,
+        website: payload.website,
+        supportEmail: payload.supportEmail,
+        supportPhone: payload.supportPhone,
+        supportLink: payload.supportLink,
+        address: payload.address,
+        businessHours: payload.businessHours,
+        traits: payload.traits
+      });
 
       const fs = require('fs');
       const path = require('path');
       const personalityPath = path.join(__dirname, '..', 'data', 'ai-personality.json');
 
-      const personalityData = {
-        name,
-        role,
-        company,
-        tone,
-        traits: Array.isArray(traits) ? traits : [],
-        lastUpdated: new Date().toISOString()
-      };
+      // Merge with existing file to preserve unknown future fields
+      let existing = {};
+      try {
+        if (fs.existsSync(personalityPath)) {
+          existing = JSON.parse(fs.readFileSync(personalityPath, 'utf8')) || {};
+        }
+      } catch (_) {}
 
-      // Save to file
+      const personalityData = { ...existing, ...payload };
+      // Merge FAQ templates if provided
+      if (hasFaqUpdate) {
+        const sanitizeFAQ = (obj) => {
+          const out = {};
+          if (obj && typeof obj === 'object') {
+            const allowed = ['companyName','website','contactSupport','businessHours','address'];
+            for (const key of allowed) {
+              if (obj[key] !== undefined) out[key] = sanitizeString(obj[key]);
+            }
+          }
+          return out;
+        };
+        personalityData.faqTemplates = { ...(existing.faqTemplates || {}), ...sanitizeFAQ(req.body.faqTemplates) };
+      }
+      // Keep toggle flags stable
+      if (typeof personalityData.aiEnabled !== 'boolean') personalityData.aiEnabled = true;
+      if (typeof personalityData.ignoreBusinessHours !== 'boolean') personalityData.ignoreBusinessHours = true;
+
       fs.writeFileSync(personalityPath, JSON.stringify(personalityData, null, 2));
 
-      res.json({
-        success: true,
-        message: 'AI personality updated successfully',
-        personality: personalityData
-      });
+      // Update in-memory personality immediately
+      try {
+        if (enhancedAIService && typeof enhancedAIService.updatePersonality === 'function') {
+          enhancedAIService.updatePersonality(personalityData);
+        }
+      } catch (_) {}
+
+      res.json({ success: true, message: 'AI personality updated successfully', personality: personalityData });
     } catch (error) {
       console.error('Error updating AI personality:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
-      });
+      res.status(500).json({ success: false, error: error.message });
     }
   });
 

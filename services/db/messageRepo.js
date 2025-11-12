@@ -21,6 +21,19 @@ async function createMessage({ conversationId, contactId, direction, providerMes
   return data;
 }
 
-module.exports = { createMessage };
+async function getRecentMessagesByContact(contactId, limit = 5) {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, conversation_id, contact_id, direction, content, media, meta, created_at')
+    .eq('contact_id', contactId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return Array.isArray(data) ? data : [];
+}
+
+module.exports = { createMessage, getRecentMessagesByContact };
 
 

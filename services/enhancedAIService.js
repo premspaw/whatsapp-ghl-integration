@@ -5,6 +5,16 @@ const EmbeddingsService = require('./embeddingsService');
 const UserContextService = require('./userContextService');
 const AIService = require('./aiService');
 const GHLKnowledgeService = require('./ghlKnowledgeService');
+// Supabase context repos
+let findByPhone, upsertContactByPhone, getRecentMessagesByContact;
+try {
+  ({ findByPhone, upsertContactByPhone } = require('./db/contactRepo'));
+  ({ getRecentMessagesByContact } = require('./db/messageRepo'));
+} catch (_) {
+  findByPhone = null;
+  upsertContactByPhone = null;
+  getRecentMessagesByContact = null;
+}
 
 class EnhancedAIService extends EventEmitter {
   constructor(ghlService) {
@@ -127,6 +137,31 @@ class EnhancedAIService extends EventEmitter {
         this.getUserProfileFromGHL(phoneNumber)
       ]);
 
+      // Augment memory from Supabase: last 3–5 messages for grounded context
+      let supaMessages = [];
+      try {
+        if (findByPhone && getRecentMessagesByContact) {
+          const normalizedPhone = this.ghlService && typeof this.ghlService.normalizePhoneNumber === 'function'
+            ? this.ghlService.normalizePhoneNumber(phoneNumber)
+            : phoneNumber;
+          const phoneE164 = String(normalizedPhone).replace('@c.us','');
+          const contactRow = await findByPhone(phoneE164);
+          if (contactRow) {
+            supaMessages = await getRecentMessagesByContact(contactRow.id, 5);
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Supabase memory enrich failed:', e.message);
+      }
+      const supaMemory = Array.isArray(supaMessages)
+        ? supaMessages.map(m => ({
+            timestamp: new Date(m.created_at).getTime(),
+            user: m.direction === 'INCOMING' ? m.content : '',
+            ai: m.direction === 'OUTGOING' ? m.content : ''
+          })).filter(x => x.user || x.ai)
+        : [];
+      const mergedMemory = [...supaMemory, ...(Array.isArray(memory) ? memory : [])].slice(-this.conversationContextWindow);
+
       // Human handoff: check with profile + rules before generating reply
       if (this.isHandoffRequested(message, userProfile)) {
         this.emit('handoff', { phoneNumber, conversationId, message });
@@ -166,6 +201,24 @@ class EnhancedAIService extends EventEmitter {
           console.log(`🔎 Keyword fallback matches: ${count}`);
         }
       }
+      // If user asks about membership/pipeline, inject stage as a knowledge item to keep answers grounded and short
+      try {
+        const needsPipeline = /\b(member(ship)?|pipeline|plan|tier)\b/i.test(message);
+        if (needsPipeline) {
+          const stage = await this.resolveMembershipPipeline(phoneNumber);
+          if (stage) {
+            const pipelineItem = { title: 'Membership Pipeline', content: `Current stage (from GHL): ${stage}`, source: 'ghl' };
+            relevantKnowledge = Array.isArray(relevantKnowledge) ? [pipelineItem, ...relevantKnowledge] : [pipelineItem];
+          }
+        }
+      } catch (_) {}
+      // Always add concise response style guidance to keep WhatsApp replies short and useful
+      const styleItem = {
+        title: 'Response Style',
+        content: 'Keep replies short (1–3 sentences). Avoid disclaimers. Provide concrete info. If context is thin, ask one clarifying question.',
+        source: 'system'
+      };
+      relevantKnowledge = Array.isArray(relevantKnowledge) ? [styleItem, ...relevantKnowledge] : [styleItem];
       // If RAG found nothing and intent requires knowledge, broaden the keyword search
       if ((!relevantKnowledge || relevantKnowledge.length === 0) && intent.requiresKnowledge) {
         relevantKnowledge = this.searchKnowledgeBase(`${message} services pricing products automation whatsapp seo`);
@@ -194,11 +247,13 @@ class EnhancedAIService extends EventEmitter {
       // Generate contextual reply
       const knowledgeCount = Array.isArray(relevantKnowledge) ? relevantKnowledge.length : 0;
       console.log(`📚 Knowledge items selected for reply: ${knowledgeCount}`);
-      const reply = await this.generateEnhancedReply(message, userProfile, memory, relevantKnowledge, null);
+      let reply;
+      // Generate reply using merged memory (Supabase + in-memory)
+      reply = await this.generateEnhancedReply(message, userProfile, mergedMemory, relevantKnowledge, null);
       
       // Store this conversation in memory
       await this.storeConversation(phoneNumber, message, reply);
-      
+
       return reply;
     } catch (error) {
       console.error('Error generating contextual reply:', error);
@@ -371,6 +426,22 @@ class EnhancedAIService extends EventEmitter {
       
       const contact = await this.ghlService.findContactByPhone(normalizedPhone);
       if (contact) {
+        // Opportunistic Supabase upsert for contact metadata (tags, pipeline, etc.)
+        try {
+          if (typeof upsertContactByPhone === 'function') {
+            const phoneE164 = String(normalizedPhone).replace('@c.us','');
+            const meta = {
+              ghl_location_id: contact.locationId || null,
+              ghl_tags: contact.tags || [],
+              ghl_custom_fields: contact.customFields || {},
+              source: 'ghl',
+              last_profile_refresh: new Date().toISOString()
+            };
+            await upsertContactByPhone({ phone: phoneE164, name: contact.firstName || contact.name || null, ghlContactId: contact.id || null, metadata: meta });
+          }
+        } catch (e) {
+          console.warn('⚠️ Supabase contact upsert skipped:', e.message);
+        }
         return {
           name: contact.firstName || contact.name || 'Unknown',
           email: contact.email,
@@ -384,6 +455,45 @@ class EnhancedAIService extends EventEmitter {
       console.error('Error getting user profile from GHL:', error);
       return null;
     }
+  }
+
+  // Resolve membership pipeline stage or status from GHL context
+  async resolveMembershipPipeline(phoneNumber) {
+    try {
+      if (!this.ghlService || typeof this.ghlService.normalizePhoneNumber !== 'function') return null;
+      const normalizedPhone = this.ghlService.normalizePhoneNumber(phoneNumber);
+      const contact = await this.ghlService.findContactByPhone(normalizedPhone);
+      if (!contact) return null;
+      // Try opportunities or tags to infer pipeline
+      let stage = null;
+      try {
+        if (typeof this.ghlService.getOpportunities === 'function') {
+          const opps = await this.ghlService.getOpportunities(contact.id);
+          if (Array.isArray(opps) && opps.length) {
+            // pick the most recent or highest status
+            const latest = opps.sort((a,b)=> new Date(b.updatedAt||0) - new Date(a.updatedAt||0))[0];
+            stage = latest?.pipelineStage || latest?.stageName || latest?.status || null;
+          }
+        }
+      } catch (_) {}
+      if (!stage && Array.isArray(contact.tags) && contact.tags.length) {
+        // use tags as fallback pipeline hint
+        stage = contact.tags.find(t => /pipeline|member|plan|tier|stage/i.test(t)) || null;
+      }
+      return stage;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  shortStyleDirectives() {
+    return [
+      'Style: WhatsApp-friendly, concise, 1–3 sentences by default.',
+      'Avoid role disclaimers or saying you lack access.',
+      'If info is insufficient, ask ONE specific clarifying question.',
+      'Use available GHL context (tags, pipeline, last messages) if relevant.',
+      'Prefer direct answers; do not over-explain unless asked.'
+    ].join('\n');
   }
 
   // Search knowledge base (token-based scoring, fuzzy match)
@@ -462,7 +572,14 @@ class EnhancedAIService extends EventEmitter {
         '';
       
       // Generate contextual prompt with enhanced context
-      const prompt = this.buildEnhancedContextPrompt(message, contextString, contextMessages, knowledgeContext, userContext);
+      let prompt = this.buildEnhancedContextPrompt(message, contextString, contextMessages, knowledgeContext, userContext);
+      // Enforce RAG-first grounding when knowledge is available
+      try {
+        const knowledgeUsed = Array.isArray(knowledgeArray) && knowledgeArray.length > 0;
+        if (knowledgeUsed) {
+          prompt += "\n\nInstruction: Ground your answer strictly in the provided Relevant Information and user context. Do not invent details; if information is insufficient, ask a clarifying question.";
+        }
+      } catch (_) {}
       
       // Generate AI reply using the aiService with enhanced context
       const context = {
@@ -1978,5 +2095,20 @@ Respond as ${this.aiPersonality.name} would, using the knowledge and context abo
     }
   }
 }
+
+// Add lightweight membership pipeline resolver to avoid verbose non-answers.
+// Tries GHL profile first; falls back to tags if available.
+enhancedAIService.resolveMembershipPipeline = async function(phoneNumber) {
+  try {
+    const profile = await this.getUserProfileFromGHL(phoneNumber);
+    const stageFromOpp = profile?.opportunities?.[0]?.stageName || profile?.pipelineStage || null;
+    const tagHint = Array.isArray(profile?.tags)
+      ? profile.tags.find(t => /member|premium|trial|basic|pro|gold|silver/i.test(String(t)))
+      : null;
+    return stageFromOpp || tagHint || null;
+  } catch (_) {
+    return null;
+  }
+};
 
 module.exports = EnhancedAIService;
