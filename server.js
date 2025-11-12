@@ -68,6 +68,8 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Accept application/x-www-form-urlencoded bodies (GHL webhook key–value pairs)
+app.use(express.urlencoded({ extended: true }));
 
 // Ngrok bypass middleware - add headers to skip browser warning
 app.use((req, res, next) => {
@@ -550,7 +552,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
         const normalized = ghlService.normalizePhoneNumber(to);
         const contact = await ghlService.findContactByPhone(normalized);
         if (contact) {
-          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'text', direction: 'outbound' });
+  await ghlService.addOutboundMessage(contact.id, { message: text, type: 'TYPE_SMS', direction: 'outbound' });
         }
       }
     } catch (_) {}
@@ -700,7 +702,7 @@ app.post('/webhooks/ghl', async (req, res) => {
               message.contact?.id || message.contactId,
               {
                 message: messageText,
-                type: 'SMS',
+                type: 'TYPE_SMS',
                 timestamp: new Date().toISOString(),
                 meta: { source: 'whatsapp' }
               },
@@ -810,7 +812,7 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
         const normalized = ghlService.normalizePhoneNumber(to);
         const contact = await ghlService.findContactByPhone(normalized);
         if (contact) {
-          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'text', direction: 'outbound' });
+          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'SMS', direction: 'outbound' });
         }
       }
     } catch (_) {}
@@ -925,7 +927,7 @@ app.post('/webhook/whatsapp', async (req, res) => {
           // Log AI response to GHL
           await ghlService.addOutboundMessage(contact.id, {
             message: aiResponse,
-            type: 'SMS',
+            type: 'TYPE_SMS',
             timestamp: new Date().toISOString(),
             meta: { source: 'ai_whatsapp' }
           });
@@ -1050,7 +1052,7 @@ app.post('/webhooks/ghl-automation', async (req, res) => {
             const normalized = ghlService.normalizePhoneNumber(_to);
             const contact = await ghlService.findContactByPhone(normalized);
             if (contact) {
-              await ghlService.addOutboundMessage(contact.id, { message: text, type: 'text', direction: 'outbound' });
+          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'TYPE_SMS', direction: 'outbound' });
             }
           }
         } catch (_) {}

@@ -279,20 +279,20 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
         return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
       }
 
-      // Normalize phone number to WhatsApp chat ID
-      let chatId = to;
-      if (!String(chatId).includes('@c.us')) {
-        chatId = String(chatId).replace(/[^\d+]/g, '');
-        if (chatId.startsWith('+')) chatId = chatId.substring(1);
-        chatId = chatId + '@c.us';
+      // Normalize phone number to E.164 and construct valid WhatsApp chat ID
+      const { normalize } = require('../utils/phoneNormalizer');
+      const normalized = normalize(String(to));
+      if (!normalized) {
+        return res.status(400).json({ success: false, error: 'Invalid phone number format' });
       }
+      const chatId = normalized.replace('+','') + '@c.us';
 
       const result = await whatsappService.sendMessage(chatId, text);
 
       // Optionally record into conversation manager
       try {
         if (conversationManager && typeof conversationManager.addMessage === 'function') {
-          await conversationManager.addMessage(to, {
+          await conversationManager.addMessage(normalized, {
             id: result?.id?._serialized || `sent_${Date.now()}`,
             from: 'me',
             body: text,

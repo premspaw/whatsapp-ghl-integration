@@ -31,7 +31,14 @@ async function matchEmbeddings({ queryEmbedding, matchCount = 5, conversationId 
       filter_conversation: conversationId,
       filter_tenant: tenantId
     });
-  if (error) throw new Error(error.message);
+  if (error) {
+    const msg = String(error.message || '');
+    if (msg.includes('Could not find the function') || msg.includes('function match_embeddings')) {
+      console.warn('Supabase match_embeddings not available; returning empty results.');
+      return [];
+    }
+    throw new Error(error.message);
+  }
   return data || [];
 }
 

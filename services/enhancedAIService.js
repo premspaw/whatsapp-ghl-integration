@@ -248,7 +248,7 @@ class EnhancedAIService extends EventEmitter {
       { category: 'services', requiresKnowledge: true, patterns: ['service', 'services', 'offer', 'provide', 'solution', 'solutions'] },
       { category: 'pricing', requiresKnowledge: true, patterns: ['price', 'pricing', 'cost', 'fee', 'charges', 'plans'] },
       { category: 'automation', requiresKnowledge: true, patterns: ['automation', 'automate', 'workflow', 'whatsapp', 'zapier', 'integration'] },
-      { category: 'identity', requiresKnowledge: false, patterns: ['company', 'website', 'about', 'who are you', 'what is your company'] },
+      { category: 'identity', requiresKnowledge: true, patterns: ['company', 'website', 'about', 'who are you', 'what is your company'] },
       { category: 'support', requiresKnowledge: true, patterns: ['support', 'contact', 'email', 'help', 'address', 'phone', 'hours'] }
     ];
     for (const intent of intents) {
@@ -400,7 +400,7 @@ class EnhancedAIService extends EventEmitter {
       if (!tokens.length) return [];
 
       // Common business keywords boost
-      const boostTokens = new Set(['service','services','pricing','price','products','automation','whatsapp','seo','features','plans']);
+      const boostTokens = new Set(['service','services','pricing','price','products','automation','whatsapp','seo','features','plans','company','website','about','address','support','contact','hours']);
 
       const scored = [];
       for (const [, item] of this.knowledgeBase) {

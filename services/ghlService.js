@@ -238,8 +238,8 @@ class GHLService {
       }
 
       const payload = {
-        // Always use a valid enum type for GHL messages; default to 'SMS'
-        type: (messageData && messageData.type) ? messageData.type : 'SMS',
+        // Always use a valid enum type for GHL messages; default to 'TYPE_SMS'
+        type: (messageData && messageData.type) ? messageData.type : 'TYPE_SMS',
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
@@ -295,8 +295,8 @@ class GHLService {
       // For outbound messages (from AI/Agent), we DON'T set FROM field
       // This tells GHL it's from the location/business
       const payload = {
-        // Always use a valid enum type for GHL messages; default to 'SMS'
-        type: (messageData && messageData.type) ? messageData.type : 'SMS',
+        // Always use a valid enum type for GHL messages; default to 'TYPE_SMS'
+        type: (messageData && messageData.type) ? messageData.type : 'TYPE_SMS',
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
