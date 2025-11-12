@@ -433,12 +433,20 @@ app.post('/api/conversations/:id/mark-read', async (req, res) => {
 app.post('/api/whatsapp/send-template', async (req, res) => {
   try {
     const body = req.body || {};
+    // Some GHL payloads send customData as a JSON string; parse safely
+    if (body.customData && typeof body.customData === 'string') {
+      try { body.customData = JSON.parse(body.customData); } catch (_) {}
+    }
     // Accept broader GHL payload shapes for phone
     let to = (
       body.to ||
       body.phone ||
       body.customData?.to ||
+      body.customData?.recipient ||
       body.customData?.phone ||
+      body.recipient ||
+      body.to_number ||
+      body.phoneNumber ||
       body.contact?.phone ||
       body.contact?.phoneNumber ||
       body.contact?.phone?.number ||
@@ -481,10 +489,24 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
     const mediaUrl = body.mediaUrl || body.imageUrl || body.customData?.imageUrl || body.custom?.imageUrl || '';
     const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
 
+    // Debug: show resolved, computed fields before validation
+    try {
+      console.log('🧩 send-template resolved fields:', {
+        to,
+        templateName,
+        templateId,
+        variablesType: typeof rawVariables,
+        hasMedia: !!mediaUrl
+      });
+    } catch (_) {}
+
     if (!to || (!templateName && !templateId)) {
       // Log body to help diagnose missing fields during configuration
       try {
-        console.warn('⚠️ send-template missing required fields. Incoming body:', JSON.stringify(body));
+        console.warn('⚠️ send-template missing required fields.', {
+          resolved: { to, templateName, templateId },
+          incoming: body
+        });
       } catch (_) {}
       return res.status(400).json({ success: false, error: 'Required: phone/to and templateName or templateId' });
     }
@@ -587,11 +609,18 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
 app.post('/api/whatsapp/template-send', async (req, res) => {
   try {
     const body = req.body || {};
+    if (body.customData && typeof body.customData === 'string') {
+      try { body.customData = JSON.parse(body.customData); } catch (_) {}
+    }
     let to = (
       body.to ||
       body.phone ||
       body.customData?.to ||
+      body.customData?.recipient ||
       body.customData?.phone ||
+      body.recipient ||
+      body.to_number ||
+      body.phoneNumber ||
       body.contact?.phone ||
       body.contact?.phoneNumber ||
       body.contact?.phone?.number ||
@@ -632,8 +661,23 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
     const mediaUrl = body.mediaUrl || body.imageUrl || body.customData?.imageUrl || body.custom?.imageUrl || '';
     const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
 
+    try {
+      console.log('🧩 template-send resolved fields:', {
+        to,
+        templateName,
+        templateId,
+        variablesType: typeof rawVariables,
+        hasMedia: !!mediaUrl
+      });
+    } catch (_) {}
+
     if (!to || (!templateName && !templateId)) {
-      try { console.warn('⚠️ template-send missing required fields. Incoming body:', JSON.stringify(body)); } catch (_) {}
+      try {
+        console.warn('⚠️ template-send missing required fields.', {
+          resolved: { to, templateName, templateId },
+          incoming: body
+        });
+      } catch (_) {}
       return res.status(400).json({ success: false, error: 'Required: phone/to and templateName or templateId' });
     }
 
