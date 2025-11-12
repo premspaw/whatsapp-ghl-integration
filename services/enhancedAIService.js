@@ -2096,19 +2096,5 @@ Respond as ${this.aiPersonality.name} would, using the knowledge and context abo
   }
 }
 
-// Add lightweight membership pipeline resolver to avoid verbose non-answers.
-// Tries GHL profile first; falls back to tags if available.
-enhancedAIService.resolveMembershipPipeline = async function(phoneNumber) {
-  try {
-    const profile = await this.getUserProfileFromGHL(phoneNumber);
-    const stageFromOpp = profile?.opportunities?.[0]?.stageName || profile?.pipelineStage || null;
-    const tagHint = Array.isArray(profile?.tags)
-      ? profile.tags.find(t => /member|premium|trial|basic|pro|gold|silver/i.test(String(t)))
-      : null;
-    return stageFromOpp || tagHint || null;
-  } catch (_) {
-    return null;
-  }
-};
 
 module.exports = EnhancedAIService;
