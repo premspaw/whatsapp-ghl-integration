@@ -204,7 +204,8 @@ class GHLService {
       const response = await this.client.post('/conversations/messages', {
         conversationId: conversationId,
         message: messageData.message,
-        type: messageData.type || 'text',
+        // GHL expects a valid enum for message type; use 'SMS' for phone/WhatsApp flows
+        type: messageData.type || 'SMS',
         direction: messageData.direction || 'inbound',
         locationId: this.locationId
       });
@@ -237,11 +238,14 @@ class GHLService {
       }
 
       const payload = {
-        type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'SMS',
+        // Always use a valid enum type for GHL messages; default to 'SMS'
+        type: (messageData && messageData.type) ? messageData.type : 'SMS',
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
         locationId: this.locationId,
+        // Explicitly mark inbound direction to avoid ambiguity
+        direction: 'inbound',
         // Key: Set FROM to contact's phone for inbound (customer) messages
         from: contactPhone || contactId,
         // Add sender name for display
@@ -291,7 +295,8 @@ class GHLService {
       // For outbound messages (from AI/Agent), we DON'T set FROM field
       // This tells GHL it's from the location/business
       const payload = {
-        type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'SMS',
+        // Always use a valid enum type for GHL messages; default to 'SMS'
+        type: (messageData && messageData.type) ? messageData.type : 'SMS',
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
