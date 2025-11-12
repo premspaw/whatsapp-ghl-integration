@@ -102,7 +102,7 @@ module.exports = (enhancedAIService) => {
         let results = await enhancedAIService.embeddings.retrieve({ query, topK: limit, minSimilarity, tenantId });
 
         // Fallback to keyword search if embeddings are empty
-        const embCount = await embeddingsService.getEmbeddingsCount(tenantId);
+        const embCount = await enhancedAIService.embeddings.getEmbeddingsCount(tenantId);
         if ((!results || results.length === 0) || (embCount === 0)) {
             const keywordMatches = enhancedAIService.searchKnowledgeBase(query) || [];
             results = keywordMatches.map(k => ({
@@ -154,7 +154,7 @@ module.exports = (enhancedAIService) => {
         let results = await enhancedAIService.embeddings.retrieve({ query, topK: limit, minSimilarity, tenantId });
 
         // Fallback to keyword search if embeddings are empty
-        const embCount = await embeddingsService.getEmbeddingsCount(tenantId);
+        const embCount = await enhancedAIService.embeddings.getEmbeddingsCount(tenantId);
         if ((!results || results.length === 0) || (embCount === 0)) {
             const keywordMatches = enhancedAIService.searchKnowledgeBase(query) || [];
             results = keywordMatches.map(k => ({
