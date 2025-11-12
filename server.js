@@ -201,6 +201,8 @@ try {
 // API Routes
 console.log('=== SERVER BOOT: registering routes ===');
 app.use('/api/whatsapp', require('./routes/whatsappRoutes')(whatsappService, ghlService, enhancedAIService, conversationManager));
+// System metrics endpoint (simple health and code metrics)
+app.use('/api/system', require('./routes/metricsRoutes')());
 // Debug middleware to trace KB route handling order
 app.use('/api/ghl/kb', (req, res, next) => {
   console.log(`[server.js] KB route hit: ${req.method} ${req.originalUrl}`);
@@ -389,10 +391,21 @@ app.get('/api/knowledge/search', (req, res) => {
   res.redirect(307, target);
 });
 
-// System status
+// System status (return JSON directly)
 app.get('/api/system/status', (req, res) => {
-  const target = '/rag-dashboard/api/system/status' + (req.url || '');
-  res.redirect(307, target);
+  try {
+    const status = {
+      success: true,
+      status: 'ok',
+      timestamp: Date.now(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      port: process.env.PORT || 3000,
+    };
+    res.json(status);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message || 'Status error' });
+  }
 });
 
 // Training history/logs
@@ -1391,6 +1404,7 @@ app.use((req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
+if (require.main === module) {
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   
@@ -1614,3 +1628,4 @@ server.listen(PORT, () => {
     whatsappService.initialize();
   }
 });
+}

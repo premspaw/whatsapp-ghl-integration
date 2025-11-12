@@ -9,6 +9,8 @@ module.exports = {
         NODE_ENV: "production",
         // Enable knowledge-aware citations in replies
         REPLY_CITATIONS: "auto",
+        // Explicitly set the server port for PM2 environment
+        PORT: 3000,
       },
       max_memory_restart: "300M",
       restart_delay: 3000,
