@@ -51,8 +51,8 @@ class EnhancedAIService extends EventEmitter {
     // Optional: prefer GHL KB results before local RAG
     this.ghlKBFirst = String(process.env.GHL_KB_FIRST || 'true').toLowerCase() === 'true';
     this.ghlKnowledge = new GHLKnowledgeService(ghlService);
-    // Optional citations in replies: 'off' | 'auto' | 'always' (default off)
-    this.citationMode = (process.env.REPLY_CITATIONS || 'off').toLowerCase();
+    // Optional citations in replies: 'off' | 'auto' | 'always' (default always for RAG-first)
+    this.citationMode = (process.env.REPLY_CITATIONS || 'always').toLowerCase();
   }
 
   // Memory Management
@@ -161,6 +161,10 @@ class EnhancedAIService extends EventEmitter {
               source: m.chunk_meta?.url || m.chunk_meta?.filename || m.source_id 
             }))
           : this.searchKnowledgeBase(message);
+        if (!vectorMatches.length) {
+          const count = Array.isArray(relevantKnowledge) ? relevantKnowledge.length : 0;
+          console.log(`🔎 Keyword fallback matches: ${count}`);
+        }
       }
       // If RAG found nothing and intent requires knowledge, broaden the keyword search
       if ((!relevantKnowledge || relevantKnowledge.length === 0) && intent.requiresKnowledge) {
@@ -188,6 +192,8 @@ class EnhancedAIService extends EventEmitter {
       relevantKnowledge = this._prioritizeKnowledgeByProfile(relevantKnowledge, userProfile);
 
       // Generate contextual reply
+      const knowledgeCount = Array.isArray(relevantKnowledge) ? relevantKnowledge.length : 0;
+      console.log(`📚 Knowledge items selected for reply: ${knowledgeCount}`);
       const reply = await this.generateEnhancedReply(message, userProfile, memory, relevantKnowledge, null);
       
       // Store this conversation in memory
@@ -380,19 +386,53 @@ class EnhancedAIService extends EventEmitter {
     }
   }
 
-  // Search knowledge base
+  // Search knowledge base (token-based scoring, fuzzy match)
   searchKnowledgeBase(query) {
-    const results = [];
-    const lowerQuery = query.toLowerCase();
-    
-    for (const [id, item] of this.knowledgeBase) {
-      if (item.content.toLowerCase().includes(lowerQuery) || 
-          item.title.toLowerCase().includes(lowerQuery)) {
-        results.push(item);
+    try {
+      const text = String(query || '').toLowerCase();
+      if (!text.trim()) return [];
+
+      // Tokenize query into meaningful words
+      const tokens = text
+        .split(/[^a-z0-9+]+/i)
+        .map(t => t.trim())
+        .filter(t => t && t.length > 2);
+      if (!tokens.length) return [];
+
+      // Common business keywords boost
+      const boostTokens = new Set(['service','services','pricing','price','products','automation','whatsapp','seo','features','plans']);
+
+      const scored = [];
+      for (const [, item] of this.knowledgeBase) {
+        const blob = `${String(item.title||'').toLowerCase()}\n${String(item.content||'').toLowerCase()}\n${String(item.category||'').toLowerCase()}`;
+        let score = 0;
+        for (const tok of tokens) {
+          if (!tok) continue;
+          if (blob.includes(tok)) {
+            score += 1;
+            if (boostTokens.has(tok)) score += 0.5;
+          }
+        }
+        // Lightweight semantic hint: partial matches for plural/singular
+        for (const tok of tokens) {
+          const base = tok.replace(/s$/,'');
+          if (base && base.length > 2 && blob.includes(base)) score += 0.25;
+        }
+        if (score > 0) scored.push({ item, score });
       }
+
+      // Sort by score desc, then by recency
+      scored.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        const at = a.item.createdAt || 0;
+        const bt = b.item.createdAt || 0;
+        return bt - at;
+      });
+
+      return scored.slice(0, 3).map(s => s.item);
+    } catch (_) {
+      return [];
     }
-    
-    return results.slice(0, 3); // Return top 3 relevant items
   }
 
   // Generate enhanced reply with memory and knowledge
@@ -785,6 +825,7 @@ Custom Fields: ${userProfile.customFields ? JSON.stringify(userProfile.customFie
     const identityLine = companyPart || websitePart
       ? `You are ${this.aiPersonality.name}, a ${this.aiPersonality.role}${companyPart ? ` at ${companyPart}` : ''}${websitePart ? ` (${websitePart})` : ''}.`
       : `You are ${this.aiPersonality.name}, a ${this.aiPersonality.role}.`;
+    const website = this._normalizeWebsite(this.aiPersonality.website || '');
 
     return `
 ${identityLine}
@@ -798,13 +839,14 @@ ${knowledgeContext}
 
 Current message: ${message}
 
-Instructions:
-- Prefer the "Relevant Information" above as the primary source of truth.
-- If knowledge includes company name, website, services, pricing, or policies, answer using that content.
-- Do not use placeholders or defaults (e.g., "www.yourbusiness.com"); use specific facts from knowledge when available.
-- If knowledge is empty, fall back to personality and general service guidance.
+ Instructions:
+  - If "Relevant Information" is present, base the answer strictly on it.
+  - Do not invent facts or rely on personality for content; use personality only for tone.
+  - Use specific facts from knowledge (company, website, services, pricing, policies) and cite if asked.
+  - If knowledge is empty, say you don’t have enough information and ask a clarifying question.
+  ${website ? `- You may optionally direct the user to ${website} for more details.` : ''}
 
-Respond as ${this.aiPersonality.name} would, using the context and knowledge above to provide a helpful, personalized response.
+Respond as ${this.aiPersonality.name} would, using the knowledge and context above. Keep responses concise and grounded.
     `.trim();
   }
 
@@ -1155,8 +1197,10 @@ Respond as ${this.aiPersonality.name} would, using the context and knowledge abo
 
   // Fallback response
   getFallbackResponse(message) {
-    // Explicit offline notice to meet fallback requirements
-    return "Hey! 👋 Our assistant is currently offline. Please try again in a moment or leave your message — our team will get back to you shortly.";
+    // RAG-first fallback: avoid personality-only answers. Ask for clarification and point to website/docs.
+    const website = this._normalizeWebsite(this.aiPersonality.website || '');
+    const hint = website ? ` You can also find details here: ${website}` : '';
+    return `I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)?${hint}`;
   }
 
   // Normalize website to include scheme

@@ -514,7 +514,7 @@
 
     <script>
         // Route API calls to the main server to avoid HTML responses
-        const API_BASE = window.API_BASE_URL || 'http://localhost:3000';
+        const API_BASE = window.API_BASE_URL || window.location.origin;
         let templates = [];
         let automationRules = [];
         let stats = {};

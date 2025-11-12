@@ -431,14 +431,39 @@ app.post('/api/conversations/:id/mark-read', async (req, res) => {
 app.post('/api/whatsapp/send-template', async (req, res) => {
   try {
     const body = req.body || {};
-    const to = body.to || body.phone || body.contact?.phone;
-    const templateName = body.templateName || body.template || body.name;
-    const templateId = body.templateId;
-    const variables = body.variables || {};
-    const mediaUrl = body.mediaUrl || body.imageUrl || '';
+    // Accept broader GHL payload shapes for phone
+    const to = (
+      body.to ||
+      body.phone ||
+      body.contact?.phone ||
+      body.data?.contact?.phone ||
+      body.data?.message?.contact?.phone ||
+      body.custom?.to
+    );
+    // Accept multiple keys for template name/id
+    const templateName = (
+      body.templateName ||
+      body.template ||
+      body.name ||
+      body.data?.templateName ||
+      body.custom?.templateName
+    );
+    const templateId = body.templateId || body.data?.templateId || body.custom?.templateId;
+    // Variables may arrive as string or nested in data/custom
+    const rawVariables = (
+      body.variables !== undefined ? body.variables :
+      body.data?.variables !== undefined ? body.data.variables :
+      body.custom?.variables !== undefined ? body.custom.variables :
+      {}
+    );
+    const mediaUrl = body.mediaUrl || body.imageUrl || body.custom?.imageUrl || '';
     const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
 
     if (!to || (!templateName && !templateId)) {
+      // Log body to help diagnose missing fields during configuration
+      try {
+        console.warn('⚠️ send-template missing required fields. Incoming body:', JSON.stringify(body));
+      } catch (_) {}
       return res.status(400).json({ success: false, error: 'Required: phone/to and templateName or templateId' });
     }
 
@@ -470,7 +495,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
     }
 
     // Build user profile for variable replacement
-    const vars = (typeof variables === 'string') ? (() => { try { return JSON.parse(variables); } catch (_) { return {}; } })() : (variables || {});
+    const vars = (typeof rawVariables === 'string') ? (() => { try { return JSON.parse(rawVariables); } catch (_) { return {}; } })() : (rawVariables || {});
     const userProfile = {
       name: vars.name || `${vars.first_name || ''} ${vars.last_name || ''}`.trim(),
       first_name: vars.first_name || vars.firstName || '',
@@ -495,8 +520,14 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
       text = enhancedAIService.applyTemplateVariables(text, userProfile, vars);
     } catch (_) {}
 
+    // Normalize phone to E.164 when possible (e.g., '081231 33382' -> '+918123133382')
+    let normalizedTo = to;
+    try {
+      const { normalize } = require('./utils/phoneNormalizer');
+      normalizedTo = normalize(String(to)) || to;
+    } catch (_) {}
     // Format WhatsApp chat ID
-    let chatId = String(to);
+    let chatId = String(normalizedTo || to);
     if (!chatId.includes('@c.us')) {
       chatId = chatId.replace(/[^\d+]/g, '');
       if (chatId.startsWith('+')) chatId = chatId.substring(1);
@@ -749,8 +780,14 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
       text = enhancedAIService.applyTemplateVariables(text, userProfile, varsAugmented);
     } catch (_) {}
 
+    // Normalize phone (e.g., local '081231 33382' -> '+918123133382')
+    let normalizedTo = to;
+    try {
+      const { normalize } = require('./utils/phoneNormalizer');
+      normalizedTo = normalize(String(to)) || to;
+    } catch (_) {}
     // Format WhatsApp JID
-    let chatId = String(to);
+    let chatId = String(normalizedTo || to);
     if (!chatId.includes('@c.us')) {
       chatId = chatId.replace(/[^\d+]/g, '');
       if (chatId.startsWith('+')) chatId = chatId.substring(1);
