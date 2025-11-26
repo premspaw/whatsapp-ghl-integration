@@ -1714,12 +1714,17 @@ let aiN8nEnabled = false;
 let n8nWebhookUrlFromSettings = '';
 let aiN8nPricing = { pricePerReply: 0, currency: 'INR', freeReplies: 0, billingNote: '' };
 
+function sanitizeUrl(u) {
+  const s = String(u || '').trim();
+  return s.replace(/^`+|`+$/g, '');
+}
+
 function loadSettings() {
   try {
     const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
     const json = JSON.parse(raw);
     aiN8nEnabled = Boolean(json.aiN8nEnabled);
-    n8nWebhookUrlFromSettings = String(json.n8nWebhookUrl || '').trim();
+    n8nWebhookUrlFromSettings = sanitizeUrl(json.n8nWebhookUrl || '');
     const p = json.pricing || {};
     aiN8nPricing = {
       pricePerReply: Number(p.pricePerReply || 0),
@@ -1738,7 +1743,7 @@ function loadSettings() {
 function saveSettings({ enabled = aiN8nEnabled, webhookUrl = n8nWebhookUrlFromSettings, pricing = aiN8nPricing } = {}) {
   const data = {
     aiN8nEnabled: Boolean(enabled),
-    n8nWebhookUrl: String(webhookUrl || ''),
+    n8nWebhookUrl: sanitizeUrl(webhookUrl || ''),
     pricing: {
       pricePerReply: Number((pricing && pricing.pricePerReply) || 0),
       currency: String((pricing && pricing.currency) || 'INR'),
@@ -1760,7 +1765,7 @@ function loadSettingsFromDisk() {
       const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
       const json = JSON.parse(raw);
       aiN8nEnabled = Boolean(json.aiN8nEnabled);
-      n8nWebhookUrlFromSettings = String(json.n8nWebhookUrl || '');
+      n8nWebhookUrlFromSettings = sanitizeUrl(json.n8nWebhookUrl || '');
       aiN8nPricing = {
         pricePerReply: Number((json.pricing && json.pricing.pricePerReply) || 0),
         currency: String((json.pricing && json.pricing.currency) || 'INR'),
@@ -2010,9 +2015,9 @@ server.listen(PORT, () => {
               overrideUrl: n8nWebhookUrlFromSettings || undefined
             });
             if (result.delivered) {
-              console.log('📡 Inbound webhook delivered to n8n:', result.status);
+              console.log('📡 Inbound webhook delivered to n8n:', result.status, result.url || n8nWebhookUrlFromSettings);
             } else {
-              console.warn('⚠️ Inbound webhook to n8n failed:', result.error);
+              console.warn('⚠️ Inbound webhook to n8n failed:', result.error, result.url || n8nWebhookUrlFromSettings);
             }
           } catch (relayErr) {
             console.error('❌ Inbound webhook relay error:', relayErr && relayErr.message);

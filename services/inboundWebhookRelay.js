@@ -48,7 +48,9 @@ class InboundWebhookRelay {
           timeout: this.timeoutMs,
           headers
         });
-        if (resp.status === 200) return { delivered: true, status: resp.status, data: resp.data };
+        const ctype = String((resp.headers && (resp.headers['content-type'] || resp.headers['Content-Type'])) || '');
+        const isHtml = /text\/html/i.test(ctype);
+        if (resp.status === 200 && !isHtml) return { delivered: true, status: resp.status, data: resp.data, url };
         lastErr = new Error(`Unexpected status ${resp.status}`);
       } catch (err) {
         lastErr = err;
@@ -58,7 +60,7 @@ class InboundWebhookRelay {
         await new Promise(r => setTimeout(r, backoffs[attempt]));
       }
     }
-    return { delivered: false, error: lastErr?.response?.data || lastErr?.message || 'unknown error' };
+    return { delivered: false, error: lastErr?.response?.data || lastErr?.message || 'unknown error', url };
   }
 
   async send({
@@ -101,6 +103,7 @@ class InboundWebhookRelay {
       phone,
       fromName,
       message,
+      text: message,
       messageType,
       messageId,
       integration,
