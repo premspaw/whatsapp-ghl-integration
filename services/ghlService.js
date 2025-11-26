@@ -296,6 +296,7 @@ class GHLService {
         contactId: payload.contactId,
         conversationId: payload.conversationId,
         direction: payload.direction,
+        type: payload.type,
         hasHtml: !!payload.html,
         hasMessage: !!payload.message
       });
@@ -359,6 +360,7 @@ class GHLService {
         contactId: payload.contactId,
         conversationId: payload.conversationId,
         direction: payload.direction,
+        type: payload.type,
         hasHtml: !!payload.html,
         hasMessage: !!payload.message
       });
