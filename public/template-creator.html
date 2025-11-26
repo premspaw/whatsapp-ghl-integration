@@ -466,6 +466,20 @@
                     </div>
                 </div>
             </div>
+
+            <!-- External Tracking Script Helper -->
+            <div class="card">
+                <h2>📈 External Tracking Script</h2>
+                <div class="form-group">
+                    <label>Tracking ID</label>
+                    <input type="text" id="trackingId" placeholder="e.g., tk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value="tk_d1b811ce710841eea4de029cd043bac6">
+                    <div class="help-text">Paste your tracking ID to generate the script for external pages</div>
+                </div>
+                <div class="webhook-code" id="trackingScriptBox">
+                    <pre>&lt;script src="https://link.msgsndr.com/js/external-tracking.js" data-tracking-id="tk_d1b811ce710841eea4de029cd043bac6"&gt;&lt;/script&gt;</pre>
+                </div>
+                <button class="copy-button" onclick="copyTrackingScript()">📋 Copy Tracking Script</button>
+            </div>
         </div>
     </div>
     
@@ -825,6 +839,17 @@ GHL Mapping Examples:
         
         // Load templates on page load
         loadTemplates();
+
+        // Tracking script generator
+        document.getElementById('trackingId').addEventListener('input', () => {
+            const id = document.getElementById('trackingId').value.trim();
+            const code = `<script src="https://link.msgsndr.com/js/external-tracking.js" data-tracking-id="${id || 'tk_d1b811ce710841eea4de029cd043bac6'}"></script>`;
+            document.getElementById('trackingScriptBox').innerHTML = '<pre>' + code.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>';
+        });
+        function copyTrackingScript() {
+            const txt = document.getElementById('trackingScriptBox').textContent;
+            navigator.clipboard.writeText(txt).then(() => alert('✅ Tracking script copied'));
+        }
     </script>
 </body>
 </html>

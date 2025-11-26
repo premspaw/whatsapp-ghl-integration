@@ -1057,9 +1057,7 @@
                 <button class="header-btn" id="openAIDashboardBtn" title="AI Dashboard" onclick="window.location.href='/ai-management-dashboard.html'">
                     🤖
                 </button>
-                <button class="header-btn" id="openTrainingBtn" title="AI Training" onclick="window.location.href='/ai-training.html'">
-                    🧠
-                </button>
+                
             </div>
         </div>
         <div class="status-indicator">
@@ -1202,6 +1200,7 @@
                     <div class="input-actions">
                         <button class="input-icon" id="attachBtn" title="Attach">📎</button>
                         <button class="input-icon" id="emojiBtn" title="Emoji">😊</button>
+                        <button class="input-icon" id="templateBtn" title="Templates">📝</button>
                     </div>
                     <textarea 
                         class="message-input" 
@@ -1753,14 +1752,12 @@
                 });
                 conversation.updatedAt = Date.now();
                 
-                // Update UI
                 updateStats();
                 renderConversations();
-                
-                // If this is the currently selected conversation, update messages
                 if (selectedConversation && selectedConversation.id === reply.to) {
                     renderMessages();
                 }
+                (async () => { try { await fetch(apiUrl(`/api/conversations/${conversation.id}/sync-ghl`), { method: 'POST' }); } catch (_) {} })();
             }
         }
 
@@ -1859,7 +1856,7 @@
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.id = 'attachInput';
-                input.accept = 'image/*,video/*';
+                input.accept = 'image/*,video/*,application/*';
                 input.style.display = 'none';
                 document.body.appendChild(input);
                 input.addEventListener('change', handleFileSelected);
@@ -1896,15 +1893,26 @@
 
         async function sendMediaMessage(conversation, mediaUrl, mediaType, caption) {
             const to = conversation.phoneNumber || conversation.id;
-            const resp = await fetch(apiUrl('/api/whatsapp/send'), {
+            let resp = await fetch(apiUrl('/api/whatsapp/send'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ to, message: caption || '', mediaUrl, mediaType })
+                body: JSON.stringify({ to, message: caption || ' ', mediaUrl, mediaType })
             });
-            const data = await resp.json();
-            if (!data.success) {
-                throw new Error(data.error || 'Send failed');
+            let dataText = await resp.text();
+            let data = {};
+            try { data = JSON.parse(dataText); } catch (_) { data = { success: false, error: dataText }; }
+            if (!resp.ok || !data.success) {
+                try {
+                    resp = await fetch(apiUrl('/api/whatsapp/send'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ to, message: caption || 'Attachment', mediaUrl, mediaType })
+                    });
+                    dataText = await resp.text();
+                    try { data = JSON.parse(dataText); } catch (_) { data = { success: false, error: dataText }; }
+                } catch (_) {}
             }
+            if (!resp.ok || !data.success) throw new Error((data && data.error) || 'Send failed');
             conversation.messages = conversation.messages || [];
             conversation.messages.push({
                 id: data.messageId || `media_${Date.now()}`,
@@ -2034,12 +2042,14 @@
         document.getElementById('messageInput').addEventListener('input', autoResizeTextarea);
         const attachBtn = document.getElementById('attachBtn');
         const emojiBtn = document.getElementById('emojiBtn');
+        const templateBtn = document.getElementById('templateBtn');
         if (attachBtn) attachBtn.addEventListener('click', () => {
             ensureAttachInput();
             const input = document.getElementById('attachInput');
             input && input.click();
         });
         if (emojiBtn) emojiBtn.addEventListener('click', (e) => toggleEmojiPanel(e.currentTarget));
+        if (templateBtn) templateBtn.addEventListener('click', (e) => toggleTemplatePanel(e.currentTarget));
 
         // Filter functionality
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -2069,7 +2079,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadConversations();
             initializeSocket();
-            syncContactNames(); // Sync contact names on load
+            syncContactNames();
+            initTemplatePanel();
             
             // Header button wiring
             document.getElementById('refreshBtn').addEventListener('click', refreshConversations);
@@ -2302,6 +2313,180 @@
             }
         });
 
+        let templatePanel = null;
+        let templateBackdrop = null;
+        let templateSearchInput = null;
+        let templateItems = [];
+        function initTemplatePanel() { createTemplatePanel(); }
+        async function refreshTemplateItems() {
+            try {
+                const res = await fetch(apiUrl('/api/templates'));
+                const data = await res.json();
+                templateItems = data.templates || [];
+                renderTemplateGrid(templateSearchInput ? templateSearchInput.value : '');
+            } catch (_) {
+                templateItems = [];
+                renderTemplateGrid('');
+            }
+        }
+        function createTemplatePanel() {
+            if (templatePanel) return templatePanel;
+            templatePanel = document.createElement('div');
+            templatePanel.className = 'emoji-panel';
+            templatePanel.style.width = '360px';
+            templatePanel.style.position = 'fixed';
+            templatePanel.style.right = '12px';
+            templatePanel.style.top = '100px';
+            templatePanel.style.maxHeight = '60vh';
+            templatePanel.style.overflowY = 'auto';
+            templatePanel.style.border = '1px solid #e2e8f0';
+            templatePanel.style.borderRadius = '12px';
+            templatePanel.style.background = '#ffffff';
+            templatePanel.style.boxShadow = '0 12px 28px rgba(0,0,0,0.18)';
+            templatePanel.style.padding = '10px';
+            const header = document.createElement('div');
+            header.className = 'emoji-header';
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '8px';
+            templateSearchInput = document.createElement('input');
+            templateSearchInput.className = 'emoji-search';
+            templateSearchInput.placeholder = 'Search templates';
+            header.appendChild(templateSearchInput);
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'btn';
+            closeBtn.textContent = 'Close';
+            closeBtn.style.marginLeft = 'auto';
+            closeBtn.addEventListener('click', () => hideTemplatePanel());
+            header.appendChild(closeBtn);
+            templatePanel.appendChild(header);
+            const grid = document.createElement('div');
+            grid.className = 'emoji-grid';
+            grid.style.display = 'block';
+            templatePanel.appendChild(grid);
+            function render(items) {
+                grid.innerHTML = '';
+                items.forEach(t => {
+                    const item = document.createElement('div');
+                    item.className = 'emoji-item';
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.style.gap = '10px';
+                    item.style.padding = '10px';
+                    item.style.border = '1px solid #f1f5f9';
+                    item.style.borderRadius = '8px';
+                    item.style.marginBottom = '8px';
+                    item.style.cursor = 'pointer';
+                    const thumb = document.createElement('img');
+                    if (t.imageUrl) {
+                        thumb.src = t.imageUrl;
+                        thumb.style.width = '36px';
+                        thumb.style.height = '36px';
+                        thumb.style.borderRadius = '6px';
+                        thumb.style.objectFit = 'cover';
+                        item.appendChild(thumb);
+                    }
+                    const label = document.createElement('div');
+                    const nameEl = document.createElement('div');
+                    nameEl.style.fontWeight = '600';
+                    nameEl.textContent = t.name;
+                    const catEl = document.createElement('div');
+                    catEl.style.color = '#64748b';
+                    catEl.style.fontSize = '12px';
+                    catEl.textContent = t.category || 'general';
+                    const snipEl = document.createElement('div');
+                    snipEl.style.color = '#475569';
+                    snipEl.style.fontSize = '12px';
+                    snipEl.textContent = (t.content || t.text || '').substring(0, 80);
+                    label.appendChild(nameEl);
+                    label.appendChild(catEl);
+                    label.appendChild(snipEl);
+                    item.appendChild(label);
+                    item.title = t.name;
+                    item.addEventListener('click', () => sendTemplateToCurrent(t));
+                    grid.appendChild(item);
+                });
+            }
+            function renderFilter(q) {
+                const v = String(q||'').toLowerCase();
+                const filtered = templateItems.filter(t => (t.name||'').toLowerCase().includes(v) || (t.category||'').toLowerCase().includes(v));
+                render(filtered);
+            }
+            window.renderTemplateGrid = renderFilter;
+            templateSearchInput.addEventListener('input', () => renderFilter(templateSearchInput.value));
+            templateBackdrop = document.createElement('div');
+            templateBackdrop.style.position = 'fixed';
+            templateBackdrop.style.left = '0';
+            templateBackdrop.style.top = '0';
+            templateBackdrop.style.width = '100%';
+            templateBackdrop.style.height = '100%';
+            templateBackdrop.style.background = 'rgba(15,23,42,0.35)';
+            templateBackdrop.style.backdropFilter = 'blur(2px)';
+            templateBackdrop.style.display = 'none';
+            templateBackdrop.addEventListener('click', () => hideTemplatePanel());
+            document.body.appendChild(templateBackdrop);
+            document.body.appendChild(templatePanel);
+            document.addEventListener('click', (ev) => { const target = ev.target; const isBtn = target && (target.id === 'templateBtn'); if (!isBtn && templatePanel && templatePanel.style.display === 'block' && !templatePanel.contains(target)) { hideTemplatePanel(); } });
+            refreshTemplateItems();
+            return templatePanel;
+        }
+        function toggleTemplatePanel(anchorBtn) {
+            const panel = createTemplatePanel();
+            if (panel.style.display === 'block') { hideTemplatePanel(); return; }
+            const rect = anchorBtn.getBoundingClientRect();
+            panel.style.left = `${Math.max(8, rect.left - 160)}px`;
+            panel.style.top = `${rect.top - 320}px`;
+            if (parseInt(panel.style.top,10) < 0) panel.style.top = `${rect.bottom + 12}px`;
+            panel.style.display = 'block';
+            if (templateBackdrop) templateBackdrop.style.display = 'block';
+            templateSearchInput && (templateSearchInput.value = '');
+            renderTemplateGrid('');
+        }
+        function hideTemplatePanel() { if (templatePanel) templatePanel.style.display = 'none'; if (templateBackdrop) templateBackdrop.style.display = 'none'; }
+        async function sendTemplateToCurrent(tpl) {
+            if (!selectedConversation) { alert('Select a conversation first'); return; }
+            try {
+                hideTemplatePanel();
+                const to = selectedConversation.phoneNumber || selectedConversation.id;
+                const now = Date.now();
+                const optimistic = {
+                    id: `tpl_${now}`,
+                    from: 'ai',
+                    direction: 'outbound',
+                    body: (tpl.content || '').substring(0, 120) || `[Template: ${tpl.name}]`,
+                    timestamp: now,
+                    type: tpl.imageUrl ? 'image' : 'text',
+                    status: 'sending',
+                };
+                if (tpl.imageUrl) {
+                    optimistic.hasMedia = true;
+                    optimistic.mediaUrl = tpl.imageUrl;
+                    optimistic.mediaType = 'image';
+                }
+                selectedConversation.messages = selectedConversation.messages || [];
+                selectedConversation.messages.push(optimistic);
+                selectedConversation.updatedAt = now;
+                renderMessages();
+                renderConversations();
+
+                const payload = { templateName: tpl.name, phone: to, variables: {}, imageUrl: tpl.imageUrl || null };
+                const resp = await fetch(apiUrl('/api/whatsapp/send-template'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await resp.json();
+                const last = selectedConversation.messages[selectedConversation.messages.length - 1];
+                if (data && data.success) {
+                    last.status = 'sent';
+                } else {
+                    last.status = 'failed';
+                }
+                renderMessages();
+                await syncCurrentConversation();
+            } catch (e) {
+                const last = selectedConversation && selectedConversation.messages && selectedConversation.messages[selectedConversation.messages.length - 1];
+                if (last) { last.status = 'failed'; renderMessages(); }
+                alert('Error sending template');
+            }
+        }
+
         // Settings page helpers
         function openSettingsPage() {
             // hide main layout, show settings
@@ -2528,6 +2713,38 @@
                 alert(data.success ? 'Automation test sent' : ('Failed: '+(data.error||'Unknown')));
             } catch (e) { alert('Failed: ' + e.message); }
         }
+
+        const activityPanel = document.createElement('div');
+        activityPanel.id = 'activityPanel';
+        activityPanel.style.position = 'fixed';
+        activityPanel.style.right = '8px';
+        activityPanel.style.top = '80px';
+        activityPanel.style.width = '280px';
+        activityPanel.style.maxHeight = '60vh';
+        activityPanel.style.overflowY = 'auto';
+        activityPanel.style.background = '#fff';
+        activityPanel.style.border = '1px solid #e2e8f0';
+        activityPanel.style.borderRadius = '8px';
+        activityPanel.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+        activityPanel.style.padding = '8px';
+        activityPanel.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Activity</div><div id="activityList">Select a conversation</div>';
+        document.body.appendChild(activityPanel);
+        async function loadActivity(conversationId) {
+            try {
+                const res = await fetch(apiUrl(`/api/activity/${encodeURIComponent(conversationId)}`));
+                const data = await res.json();
+                const list = data.items || [];
+                const html = list.map(i => `<div style="border-bottom:1px solid #f1f5f9;padding:6px 0"><div style="font-weight:600">${i.type}</div><div style="font-size:12px;color:#64748b">${new Date(i.timestamp).toLocaleString()}</div>${i.meta && i.meta.mediaUrl ? `<div style="font-size:12px;color:#475569">${i.meta.mediaUrl}</div>`:''}</div>`).join('');
+                document.getElementById('activityList').innerHTML = html || '<div>No activity</div>';
+            } catch (_) { document.getElementById('activityList').innerHTML = '<div>Error</div>'; }
+        }
+        const origSelectConversation = selectConversation;
+        selectConversation = async function(conversationId) {
+            await origSelectConversation(conversationId);
+            const conv = conversations.find(c => c.id === conversationId);
+            const cid = conv ? (conv.phoneNumber || conv.id) : conversationId;
+            loadActivity(cid);
+        };
     </script>
 </body>
 </html>

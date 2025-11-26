@@ -618,23 +618,7 @@
     </style>
 </head>
 <body>
-    <script>
-        // Redirect this legacy dashboard to the unified AI Training page
-        (function() {
-            try {
-                var target = '/ai-training.html';
-                // Always move users to the consolidated editor
-                window.location.replace(target);
-            } catch (e) {
-                console && console.warn && console.warn('Redirect failed:', e);
-            }
-        })();
-    </script>
-    <noscript>
-        <div style="padding:16px; background:#fff3cd; color:#856404; border:1px solid #ffeeba;">
-            This page moved. Open <a href="/ai-training.html">AI Training</a>.
-        </div>
-    </noscript>
+    
     <div class="container">
         <div class="header">
             <div class="header-top">
@@ -870,10 +854,12 @@
             loadTenants();
             loadRagSettingsUI();
             loadPersonality();
-            loadStats();
-            loadKnowledgeBase();
-            loadTrainingHistory();
-            setupFileUpload();
+            const contentRoot = document.querySelector('.content');
+            const n8nSection = document.createElement('div');
+            n8nSection.className = 'section';
+            n8nSection.innerHTML = '<h2>🔧 n8n Status</h2><div class="stats-grid"><div class="stat-card"><div class="stat-number" id="serverStat">-</div><div class="stat-label">Server</div></div><div class="stat-card"><div class="stat-number" id="waStat">-</div><div class="stat-label">WhatsApp</div></div><div class="stat-card"><div class="stat-number" id="webhookStat">-</div><div class="stat-label">Webhook</div></div></div><div class="test-section"><div class="form-group"><label>Phone</label><input id="testPhone" placeholder="+918123133382"></div><button class="btn" id="sendWebhookTest">Send Webhook Test</button><div id="webhookResult" class="test-result hidden"><h4>Result</h4><p id="webhookText"></p></div></div>';
+            contentRoot.insertBefore(n8nSection, contentRoot.firstChild);
+            Array.from(document.querySelectorAll('.section')).forEach(sec => { const h = sec.querySelector('h2'); if (!h) return; const t = h.textContent.trim(); if (t.startsWith('📊') || t.startsWith('🧪') || t.startsWith('📚') || t.startsWith('🌐') || t.startsWith('🧠')) { sec.remove(); } });
             loadWhatsAppStatus();
             setInterval(loadWhatsAppStatus, 30000);
         });
@@ -960,6 +946,13 @@
                 badge.style.borderColor = 'rgba(231, 76, 60, 0.5)';
             }
         }
+
+        const API = window.location.origin;
+        async function getJson(u){ const r = await fetch(u); const t = await r.text(); try { return JSON.parse(t) } catch(_){ return { raw:t } } }
+        async function refreshN8nStatus(){ const s = await getJson(`${API}/api/system/status`); document.getElementById('serverStat').textContent = s.success ? s.status : 'error'; const w = await getJson(`${API}/api/whatsapp/status`); document.getElementById('waStat').textContent = w.status || 'unknown'; const k = await getJson(`${API}/api/settings/ai-enabled`); document.getElementById('webhookStat').textContent = String(k.webhookUrl||'').trim(); }
+        async function sendWebhookTest(){ const phone = document.getElementById('testPhone').value.trim() || '+910000000000'; const s = await getJson(`${API}/api/settings/ai-enabled`); const url = String(s.webhookUrl||'').trim(); const payload = { phone, fromName:'Test', message:'n8n webhook test', messageType:'text', integration:'location_123', timestamp:Date.now(), attachments:[] }; try { const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); const t = await r.text(); document.getElementById('webhookText').textContent = t; document.getElementById('webhookResult').classList.remove('hidden'); } catch(e){ document.getElementById('webhookText').textContent = e.message; document.getElementById('webhookResult').classList.remove('hidden'); } }
+        document.addEventListener('click', function(e){ if (e.target && e.target.id === 'sendWebhookTest') { sendWebhookTest(); } });
+        refreshN8nStatus();
 
         // RAG Settings handling
         function getRagSettings() {

@@ -612,6 +612,130 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
   }
 });
 
+const activitiesFile = path.join(__dirname, 'data', 'activities.json');
+const linksFile = path.join(__dirname, 'data', 'tracked_links.json');
+function readJsonSafe(file) {
+  try {
+    if (!fs.existsSync(file)) return [];
+    const raw = fs.readFileSync(file, 'utf8');
+    return JSON.parse(raw || '[]');
+  } catch (_) { return []; }
+}
+function writeJsonSafe(file, data) {
+  try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); } catch (_) {}
+}
+app.get('/api/activity/:conversationId', (req, res) => {
+  const id = String(req.params.conversationId || '').trim();
+  const list = readJsonSafe(activitiesFile).filter(a => a.conversationId === id).sort((a,b)=>b.timestamp-a.timestamp);
+  res.json({ success: true, items: list, count: list.length });
+});
+app.post('/api/activity/log', (req, res) => {
+  const body = req.body || {};
+  const item = { conversationId: String(body.conversationId||'').trim(), type: String(body.type||'').trim(), meta: body.meta||{}, timestamp: Date.now() };
+  if (!item.conversationId || !item.type) return res.status(400).json({ success:false, error:'conversationId and type required' });
+  const list = readJsonSafe(activitiesFile);
+  list.push(item);
+  writeJsonSafe(activitiesFile, list);
+  res.json({ success:true, item });
+});
+app.post('/api/activity/create-link', (req, res) => {
+  const body = req.body || {};
+  const url = String(body.url||'').trim();
+  const conversationId = String(body.conversationId||'').trim();
+  if (!url || !conversationId) return res.status(400).json({ success:false, error:'url and conversationId required' });
+  const token = Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+  const links = readJsonSafe(linksFile);
+  links.push({ token, url, conversationId, createdAt: Date.now() });
+  writeJsonSafe(linksFile, links);
+  res.json({ success:true, link: `/r/${token}` });
+});
+app.get('/r/:token', (req, res) => {
+  const token = String(req.params.token||'').trim();
+  const links = readJsonSafe(linksFile);
+  const found = links.find(l => l.token === token);
+  if (!found) return res.status(404).send('Not found');
+  const list = readJsonSafe(activitiesFile);
+  list.push({ conversationId: found.conversationId, type:'link_clicked', meta:{ url: found.url, token }, timestamp: Date.now() });
+  writeJsonSafe(activitiesFile, list);
+  res.redirect(found.url);
+});
+app.get('/api/activity/recent', (req, res) => {
+  const limit = Math.max(1, Math.min(200, Number(req.query.limit || 50)));
+  const list = readJsonSafe(activitiesFile).sort((a,b)=>b.timestamp-a.timestamp).slice(0, limit);
+  res.json({ success:true, items:list, count:list.length });
+});
+
+// GHL webhook to trigger template sends and reflect in tab + GHL sync
+app.post('/webhook/ghl/template-send', async (req, res) => {
+  try {
+    const body = req.body || {};
+    // Parse flexible shapes
+    let to = (
+      body.to || body.phone || body.recipient || body.contact?.phone || body.contact?.phoneNumber || body.message?.phone || body.data?.phone || ''
+    );
+    if (typeof to === 'string') to = to.trim();
+    const templateName = (body.templateName || body.template || body.name || '').trim();
+    const variables = body.variables || body.data?.variables || {};
+    const imageUrl = body.imageUrl || body.data?.imageUrl || body.mediaUrl || '';
+    const text = body.text || body.message?.text || body.content || body.message || (templateName ? `[${templateName}]` : '');
+
+    // Normalize number
+    const { normalize } = require('./utils/phoneNormalizer');
+    const normalized = normalize(String(to || ''));
+    if (!normalized) {
+      return res.status(400).json({ success: false, error: 'Invalid phone number' });
+    }
+
+    // Send media if provided, else text
+    let result;
+    try {
+      if (imageUrl && whatsappService && typeof whatsappService.sendMediaFromUrl === 'function') {
+        result = await whatsappService.sendMediaFromUrl(normalized, imageUrl, text || '', 'image');
+      } else if (whatsappService && typeof whatsappService.sendMessage === 'function') {
+        const chatId = normalized.replace('+','') + '@c.us';
+        result = await whatsappService.sendMessage(chatId, text || '');
+      } else {
+        return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
+      }
+    } catch (e) {
+      return res.status(500).json({ success: false, error: e.message || 'Send failed' });
+    }
+
+    // Persist to conversation and emit to UI
+    try {
+      if (conversationManager && typeof conversationManager.addMessage === 'function') {
+        await conversationManager.addMessage(normalized, {
+          id: result?.id?._serialized || `tpl_${Date.now()}`,
+          from: 'ai',
+          direction: 'outbound',
+          body: text || '',
+          timestamp: Date.now(),
+          type: imageUrl ? 'image' : 'text',
+          hasMedia: !!imageUrl,
+          mediaUrl: imageUrl || undefined,
+          mediaType: imageUrl ? 'image' : undefined
+        });
+      }
+    } catch (_) {}
+
+    try {
+      io.emit('ai_reply', { to: normalized, body: text || '', timestamp: Date.now(), id: result?.id?._serialized || `tpl_${Date.now()}` });
+    } catch (_) {}
+
+    // Sync to GHL for consistency
+    try {
+      const conv = await conversationManager.getConversation(normalized);
+      if (conv && ghlService && typeof ghlService.syncConversation === 'function') {
+        await ghlService.syncConversation(conv);
+      }
+    } catch (_) {}
+
+    return res.json({ success: true, delivered: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Alias endpoint to avoid 404s when using '/api/whatsapp/template-send'
 app.post('/api/whatsapp/template-send', async (req, res) => {
   try {

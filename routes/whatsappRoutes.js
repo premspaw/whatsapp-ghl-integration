@@ -266,47 +266,71 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
     }
   });
 
-  // Send a WhatsApp message
+  // Send a WhatsApp message or media
   router.post('/send', async (req, res) => {
     try {
-      const { to, message, body } = req.body || {};
+      const { to, message, body, mediaUrl, mediaType, caption } = req.body || {};
       const text = typeof message === 'string' ? message : body;
-      if (!to || !text) {
-        return res.status(400).json({ success: false, error: 'Missing required fields: to, message' });
+      if (!to) {
+        return res.status(400).json({ success: false, error: 'Missing required fields: to' });
       }
 
-      if (!whatsappService || typeof whatsappService.sendMessage !== 'function') {
+      if (!whatsappService) {
         return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
       }
 
-      // Normalize phone number to E.164 and construct valid WhatsApp chat ID
       const { normalize } = require('../utils/phoneNormalizer');
       const normalized = normalize(String(to));
       if (!normalized) {
         return res.status(400).json({ success: false, error: 'Invalid phone number format' });
       }
-      const chatId = normalized.replace('+','') + '@c.us';
 
-      const result = await whatsappService.sendMessage(chatId, text);
+      // If mediaUrl provided, send media from URL; otherwise send text
+      let result;
+      if (mediaUrl && typeof whatsappService.sendMediaFromUrl === 'function') {
+        const mediaKind = (mediaType || 'image').toLowerCase();
+        result = await whatsappService.sendMediaFromUrl(normalized, mediaUrl, caption || text || '', mediaKind);
 
-      // Optionally record into conversation manager
-      try {
-        if (conversationManager && typeof conversationManager.addMessage === 'function') {
-          await conversationManager.addMessage(normalized, {
-            id: result?.id?._serialized || `sent_${Date.now()}`,
-            from: 'me',
-            body: text,
-            timestamp: Date.now(),
-            type: 'text'
-          });
+        try {
+          if (conversationManager && typeof conversationManager.addMessage === 'function') {
+            await conversationManager.addMessage(normalized, {
+              id: result?.id?._serialized || `sent_${Date.now()}`,
+              from: 'me',
+              body: caption || text || '',
+              timestamp: Date.now(),
+              type: mediaKind,
+              hasMedia: true,
+              mediaUrl,
+              mediaType: mediaKind
+            });
+          }
+        } catch (_) {}
+      } else {
+        if (!text) {
+          return res.status(400).json({ success: false, error: 'Missing required fields: message' });
         }
-      } catch (_) { /* non-fatal */ }
+        const chatId = normalized.replace('+','') + '@c.us';
+        result = await whatsappService.sendMessage(chatId, text);
+
+        try {
+          if (conversationManager && typeof conversationManager.addMessage === 'function') {
+            await conversationManager.addMessage(normalized, {
+              id: result?.id?._serialized || `sent_${Date.now()}`,
+              from: 'me',
+              body: text,
+              timestamp: Date.now(),
+              type: 'text'
+            });
+          }
+        } catch (_) {}
+      }
 
       res.json({ success: true, result: {
         id: result?.id?._serialized,
         to: to,
-        chatId,
-        body: text
+        body: text || caption || '',
+        mediaUrl: mediaUrl || null,
+        mediaType: mediaType || null
       }});
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
