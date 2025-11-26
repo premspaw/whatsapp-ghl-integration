@@ -88,6 +88,24 @@ class PhoneNormalizer {
     if (['ai', 'system', 'bot', 'admin'].includes(lowerPhone)) {
       return true;
     }
+
+    // Skip WhatsApp non-contact identifiers and group/broadcast JIDs
+    // - status/broadcast system chats
+    // - group chats ending with @g.us
+    // - invalid JIDs like 0@c.us
+    if (lowerPhone === 'status@broadcast' || lowerPhone.endsWith('@broadcast') || lowerPhone.endsWith('@g.us')) {
+      return true;
+    }
+    if (lowerPhone === '0@c.us') {
+      return true;
+    }
+    // If input looks like a JID (contains @) but the local part isn't a plausible number, skip
+    if (lowerPhone.includes('@')) {
+      const local = lowerPhone.split('@')[0].replace(/\D/g, '');
+      if (!local || local.length < 7) {
+        return true;
+      }
+    }
     
     // Skip if it's clearly a name (contains only letters and spaces)
     if (/^[a-zA-Z\s]+$/.test(phone)) {
@@ -112,6 +130,11 @@ class PhoneNormalizer {
     cleaned = cleaned.replace(/\++/g, '+');
     
     if (!cleaned || cleaned === '+') {
+      return null;
+    }
+    // Guard against very short numbers after cleaning (e.g., '0')
+    const digitsOnly = cleaned.replace(/[^\d]/g, '');
+    if (!digitsOnly || digitsOnly.length < 7) {
       return null;
     }
     

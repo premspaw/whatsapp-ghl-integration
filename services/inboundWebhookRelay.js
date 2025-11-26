@@ -12,6 +12,7 @@ class InboundWebhookRelay {
   constructor(options = {}) {
     this.webhookUrl = options.webhookUrl || process.env.INBOUND_WEBHOOK_URL || process.env.WEBHOOK_URL;
     this.secret = options.secret || process.env.WEBHOOK_SECRET || process.env.INBOUND_WEBHOOK_SECRET;
+    this.apiKey = options.apiKey || process.env.N8N_API_KEY || process.env.WEBHOOK_API_KEY || '';
     this.defaultIntegration = process.env.GHL_LOCATION_ID || process.env.INTEGRATION_ID || 'default';
     this.timeoutMs = parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000');
   }
@@ -79,12 +80,22 @@ class InboundWebhookRelay {
       return { delivered: false, error: 'invalid_webhook_url' };
     }
 
+    // Helpful warning: n8n Test URLs require clicking "Execute workflow"
+    if (/webhook-test\//i.test(urlToUse)) {
+      console.warn('InboundWebhookRelay: using n8n TEST URL. Click "Execute workflow" in n8n or switch to the Production URL to avoid 404s.');
+    }
+
     const traceId = uuidv4();
     const headers = {
       'Content-Type': 'application/json',
       'x-webhook-secret': (overrideSecret || this.secret || ''),
       'x-trace-id': traceId
     };
+
+    // Optional API key header for n8n Cloud or secured webhook setups
+    if (this.apiKey) {
+      headers['X-Api-Key'] = this.apiKey;
+    }
 
     const payload = {
       phone,

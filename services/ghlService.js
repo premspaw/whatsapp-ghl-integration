@@ -248,6 +248,8 @@ class GHLService {
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
         locationId: this.locationId,
+        // Ensure GHL receives a valid message type
+        type: (messageData && messageData.type) ? messageData.type : 'SMS',
         // Explicitly mark inbound direction to avoid ambiguity
         direction: 'inbound',
         // Key: Set FROM to contact's phone for inbound (customer) messages
@@ -310,6 +312,8 @@ class GHLService {
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
         locationId: this.locationId,
+        // Ensure GHL receives a valid message type
+        type: (messageData && messageData.type) ? messageData.type : 'SMS',
         direction: 'outbound', // Explicitly set outbound for AI/Agent messages
         // Add sender name to show it's from AI
         senderName: 'AI Assistant',
