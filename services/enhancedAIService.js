@@ -2,18 +2,24 @@ const EventEmitter = require('events');
 const fs = require('fs').promises;
 const path = require('path');
 const EmbeddingsService = require('./embeddingsService');
+const PineconeMcpClient = require('./pineconeMcpClient');
 const UserContextService = require('./userContextService');
 const AIService = require('./aiService');
+const TenantService = require('./tenantService');
 const GHLKnowledgeService = require('./ghlKnowledgeService');
 // Supabase context repos
-let findByPhone, upsertContactByPhone, getRecentMessagesByContact;
+let findByPhone, upsertContactByPhone, getRecentMessagesByContact, createMessage, upsertConversation, touchLastMessageAt;
 try {
   ({ findByPhone, upsertContactByPhone } = require('./db/contactRepo'));
-  ({ getRecentMessagesByContact } = require('./db/messageRepo'));
+  ({ getRecentMessagesByContact, createMessage } = require('./db/messageRepo'));
+  ({ upsertConversation, touchLastMessageAt } = require('./db/conversationRepo'));
 } catch (_) {
   findByPhone = null;
   upsertContactByPhone = null;
   getRecentMessagesByContact = null;
+  createMessage = null;
+  upsertConversation = null;
+  touchLastMessageAt = null;
 }
 
 class EnhancedAIService extends EventEmitter {
@@ -37,6 +43,8 @@ class EnhancedAIService extends EventEmitter {
     
     // Initialize User Context Service for RAG
     this.userContextService = new UserContextService(ghlService);
+    // Tenant context resolver
+    this.tenantService = new TenantService();
     
     // Initialize with default personality (will be overridden by loadPersonality)
     this.aiPersonality = {
@@ -58,11 +66,23 @@ class EnhancedAIService extends EventEmitter {
     this.loadHandoffRules();
     this.loadPersonality(); // Load personality from file
     this.embeddings = new EmbeddingsService();
-    // Optional: prefer GHL KB results before local RAG
-    this.ghlKBFirst = String(process.env.GHL_KB_FIRST || 'true').toLowerCase() === 'true';
+    // Pinecone Assistant MCP for context retrieval
+    this.pineconeMcp = new PineconeMcpClient({
+      host: process.env.PINECONE_ASSISTANT_HOST,
+      assistant: process.env.PINECONE_ASSISTANT_NAME,
+      apiKey: process.env.PINECONE_API_KEY,
+    });
+    // LOCK: Enforce Pinecone-only RAG regardless of environment
+    this.ragPineconeOnly = true;
+    // LOCK: Disable GHL Knowledge Base retrieval so KB comes from Pinecone only
+    this.ghlKBFirst = false;
     this.ghlKnowledge = new GHLKnowledgeService(ghlService);
-    // Optional citations in replies: 'off' | 'auto' | 'always' (default always for RAG-first)
-    this.citationMode = (process.env.REPLY_CITATIONS || 'always').toLowerCase();
+    // Optional citations in replies: 'off' | 'auto' | 'always'
+    // Default OFF to avoid adding "Sources:" footers to WhatsApp replies
+    this.citationMode = (process.env.REPLY_CITATIONS || 'off').toLowerCase();
+    // Grounded-only enforcement: when true, suppress replies if no KB
+    // Default to false to allow replies even when Pinecone returns no snippets
+    this.groundedOnly = false;
   }
 
   // Memory Management
@@ -92,6 +112,76 @@ class EnhancedAIService extends EventEmitter {
       
       this.conversationMemory.set(phoneNumber, memory);
       console.log(`🧠 Stored conversation for ${phoneNumber}. Memory size: ${memory.length}`);
+
+      // Persist to Supabase (contacts, conversations, messages)
+      try {
+        if (upsertContactByPhone && upsertConversation && createMessage) {
+          const normalizedPhone = this.ghlService && typeof this.ghlService.normalizePhoneNumber === 'function'
+            ? this.ghlService.normalizePhoneNumber(phoneNumber)
+            : phoneNumber;
+          const phoneE164 = String(normalizedPhone).replace('@c.us','');
+
+          // Ensure contact exists
+          let contact = null;
+          try {
+            contact = await upsertContactByPhone({ phone: phoneE164 });
+          } catch (e) {
+            console.warn('⚠️ Supabase upsertContactByPhone failed:', e.message);
+          }
+          if (!contact && findByPhone) {
+            try { contact = await findByPhone(phoneE164); } catch (_) {}
+          }
+          if (!contact) return; // Skip if no contact row
+
+          // Ensure conversation exists
+          let conversation = null;
+          try {
+            conversation = await upsertConversation({ contactId: contact.id, channel: 'whatsapp' });
+          } catch (e) {
+            console.warn('⚠️ Supabase upsertConversation failed:', e.message);
+          }
+          if (!conversation) return;
+
+          // Insert incoming user message
+          try {
+            if (userMessage) {
+              await createMessage({
+                conversationId: conversation.id,
+                contactId: contact.id,
+                direction: 'INCOMING',
+                providerMessageId: null,
+                content: userMessage,
+                media: [],
+                meta: {}
+              });
+            }
+          } catch (e) {
+            console.warn('⚠️ Supabase createMessage (INCOMING) failed:', e.message);
+          }
+
+          // Insert outgoing AI reply
+          try {
+            if (aiResponse) {
+              await createMessage({
+                conversationId: conversation.id,
+                contactId: contact.id,
+                direction: 'OUTGOING',
+                providerMessageId: null,
+                content: aiResponse,
+                media: [],
+                meta: { source: 'ai' }
+              });
+            }
+          } catch (e) {
+            console.warn('⚠️ Supabase createMessage (OUTGOING) failed:', e.message);
+          }
+
+          // Touch last_message_at
+          try { if (touchLastMessageAt) await touchLastMessageAt(conversation.id); } catch (_) {}
+        }
+      } catch (e) {
+        console.warn('⚠️ Supabase memory persist failed:', e.message);
+      }
     } catch (error) {
       console.error('Error storing conversation:', error);
     }
@@ -168,6 +258,13 @@ class EnhancedAIService extends EventEmitter {
         return null;
       }
       
+      // Resolve tenant context for per-tenant overrides (llmTag, vectorNamespace)
+      let tenantCtx = null;
+      try {
+        const loc = this.ghlService?.locationId || null;
+        tenantCtx = await this.tenantService.resolveTenantContext({ phone: phoneNumber, locationId: loc, req: null });
+      } catch (_) {}
+
       // Detect intent to tune RAG retrieval
       const intent = this._detectQueryIntent(message);
       const ragMin = intent.requiresKnowledge ? 0.15 : 0.3;
@@ -185,20 +282,38 @@ class EnhancedAIService extends EventEmitter {
         } catch (e) {}
       }
 
-      // Retrieve vector matches (RAG) if KB is empty
+      // Retrieve Pinecone Assistant MCP context if KB is empty
+      if ((!relevantKnowledge || relevantKnowledge.length === 0) && this.pineconeMcp?.isConfigured()) {
+        try {
+          const mcpItems = await this.pineconeMcp.getContext(message, { topK: ragTopK, tenantId });
+          if (Array.isArray(mcpItems) && mcpItems.length) {
+            relevantKnowledge = mcpItems.map(m => ({ title: m.title || 'context', content: m.content, source: m.source }));
+            console.log(`📚 Pinecone MCP context used: ${mcpItems.length}`);
+          }
+        } catch (e) {
+          console.warn('⚠️ MCP context retrieval failed:', e.message);
+        }
+      }
+
+      // Pinecone-only RAG: skip local vector/keyword fallbacks if configured
       if (!relevantKnowledge || relevantKnowledge.length === 0) {
-        const vectorMatches = await this.safeRetrieveEmbeddings(message, conversationId, null, ragMin, tenantId, ragTopK);
-        console.log(`🔍 Intent: ${intent.category} | Retrieved ${vectorMatches.length} chunks (minSim=${ragMin}, topK=${ragTopK})`);
-        relevantKnowledge = vectorMatches.length > 0
-          ? vectorMatches.map(m => ({ 
-              title: m.chunk_meta?.title || m.source_type || 'doc', 
-              content: m.text, 
-              source: m.chunk_meta?.url || m.chunk_meta?.filename || m.source_id 
-            }))
-          : this.searchKnowledgeBase(message);
-        if (!vectorMatches.length) {
-          const count = Array.isArray(relevantKnowledge) ? relevantKnowledge.length : 0;
-          console.log(`🔎 Keyword fallback matches: ${count}`);
+        if (this.ragPineconeOnly) {
+          console.log('🔒 Pinecone-only RAG enabled: skipping local vector and keyword fallbacks.');
+          relevantKnowledge = [];
+        } else {
+          const vectorMatches = await this.safeRetrieveEmbeddings(message, conversationId, null, ragMin, tenantId, ragTopK);
+          console.log(`🔍 Intent: ${intent.category} | Retrieved ${vectorMatches.length} chunks (minSim=${ragMin}, topK=${ragTopK})`);
+          relevantKnowledge = vectorMatches.length > 0
+            ? vectorMatches.map(m => ({ 
+                title: m.chunk_meta?.title || m.source_type || 'doc', 
+                content: m.text, 
+                source: m.chunk_meta?.url || m.chunk_meta?.filename || m.source_id 
+              }))
+            : this.searchKnowledgeBase(message);
+          if (!vectorMatches.length) {
+            const count = Array.isArray(relevantKnowledge) ? relevantKnowledge.length : 0;
+            console.log(`🔎 Keyword fallback matches: ${count}`);
+          }
         }
       }
       // If user asks about membership/pipeline, inject stage as a knowledge item to keep answers grounded and short
@@ -218,14 +333,23 @@ class EnhancedAIService extends EventEmitter {
         content: 'Keep replies short (1–3 sentences). Avoid disclaimers. Provide concrete info. If context is thin, ask one clarifying question.',
         source: 'system'
       };
+      // Add style item but do not count it as "knowledge" for grounded-only enforcement
       relevantKnowledge = Array.isArray(relevantKnowledge) ? [styleItem, ...relevantKnowledge] : [styleItem];
-      // If RAG found nothing and intent requires knowledge, broaden the keyword search
-      if ((!relevantKnowledge || relevantKnowledge.length === 0) && intent.requiresKnowledge) {
+      // If Pinecone-only RAG is enabled, do not broaden keyword search
+      if ((!relevantKnowledge || relevantKnowledge.length === 0) && intent.requiresKnowledge && !this.ragPineconeOnly) {
         relevantKnowledge = this.searchKnowledgeBase(`${message} services pricing products automation whatsapp seo`);
       }
       // RAG-first: if we have knowledge items, do not lead with personality-based snippets
       // Append deterministic snippets only when RAG/KB is empty, otherwise skip to keep replies grounded
-      const hasKnowledge = Array.isArray(relevantKnowledge) && relevantKnowledge.length > 0;
+      const hasKnowledge = Array.isArray(relevantKnowledge) && relevantKnowledge.some(k => (k && k.source !== 'system'));
+      // Enforce grounded replies only if configured (use instance flag)
+      const groundedOnly = this.groundedOnly === true;
+      if (groundedOnly && !hasKnowledge) {
+        console.log('🛑 RAG-first enforcement: No knowledge found, suppressing AI reply to avoid unguided answers.');
+        // Record the attempt without sending a reply
+        await this.storeConversation(phoneNumber, message, null);
+        return null;
+      }
       if (!hasKnowledge) {
         if (deterministicSnippet) {
           const faqItem = { title: 'FAQ', content: deterministicSnippet };
@@ -591,7 +715,7 @@ class EnhancedAIService extends EventEmitter {
         knowledgeContext
       };
       
-      const aiResponse = await this.aiService.generateCustomReply(message, prompt, context);
+      const aiResponse = await this.aiService.generateCustomReply(message, prompt, { ...context, llmTag: tenantCtx?.llmTag });
       console.log('🤖 AI Service response:', aiResponse ? 'Generated' : 'NULL');
       
       // If AI service returns null (e.g., API key issues), use fallback
@@ -600,25 +724,8 @@ class EnhancedAIService extends EventEmitter {
         return this.getFallbackResponse(message);
       }
       
-      // Optionally append minimal source hints if enabled
-      let finalResponse = aiResponse;
-      try {
-        const mode = this.citationMode;
-        const knowledgeArray = Array.isArray(relevantKnowledge) ? relevantKnowledge : [];
-        const knowledgeUsed = knowledgeArray.length > 0;
-        if (finalResponse && knowledgeUsed && (mode === 'always' || mode === 'auto')) {
-          const sources = [...new Set(knowledgeArray
-            .map(k => (k.source || k.url || '')
-              .replace(/^https?:\/\//, '')
-              .replace(/\/$/, ''))
-            .filter(Boolean))].slice(0, 3);
-          if (sources.length) {
-            finalResponse += `\n\nSources: ${sources.join(', ')}`;
-          }
-        }
-      } catch (_) {}
-
-      return finalResponse;
+      // Sources footer disabled by preference; return raw AI response
+      return aiResponse;
       
     } catch (error) {
       console.error('Error generating enhanced reply:', error);
@@ -956,15 +1063,131 @@ ${knowledgeContext}
 
 Current message: ${message}
 
- Instructions:
-  - If "Relevant Information" is present, base the answer strictly on it.
-  - Do not invent facts or rely on personality for content; use personality only for tone.
-  - Use specific facts from knowledge (company, website, services, pricing, policies) and cite if asked.
-  - If knowledge is empty, say you don’t have enough information and ask a clarifying question.
-  ${website ? `- You may optionally direct the user to ${website} for more details.` : ''}
+  Instructions:
+   - If "Relevant Information" is present, base the answer strictly on it.
+   - Do not invent facts or rely on personality for content; use personality only for tone.
+   - Use specific facts from knowledge (company, website, services, pricing, policies).
+   - If knowledge is empty, say you don’t have enough information and ask a clarifying question.
+   - Do not include a "Sources:" footer or external links unless the user explicitly asks for links.
+   - Do not suggest visiting the website by default; answer directly based on available knowledge.
+
+  PRINCIPLES (always follow):
+  - Fact-first: Prefer GHL data (contact, appointments, tags, pipeline) for user-specific details.
+  - RAG-first: Use only KB snippets for product/service info; if none, acknowledge the gap.
+  - No hallucination: If knowledge is missing, say you don’t have the info and offer to escalate or check.
+  - Short & useful: Keep reply to 2–4 sentences; use bullets only when listing options or steps.
+  - Localize: Reply in the same language as the user's message.
+  - Escalate: If user asks for human, payment, legal, or sensitive content — escalate politely.
+
+  Style and output:
+  - Mention business name on first reference.
+  - Be warm, concise, slightly playful.
+  - Provide a clear next step (CTA) when appropriate.
+  - If both KB and GHL lack relevant info, say: "I don't have that info right now — want me to escalate to a team member or collect more details?"
 
 Respond as ${this.aiPersonality.name} would, using the knowledge and context above. Keep responses concise and grounded.
     `.trim();
+  }
+
+  // Build structured AI orchestration plan (does not execute external calls)
+  buildStructuredPlan({
+    incoming_message,
+    contact = null,
+    account = {},
+    conversation_history = [],
+    pinecone_top_k = 5,
+    ghl_lookup_result = null,
+    uploaded_file_paths = []
+  }) {
+    const businessName = this._isPlaceholderIdentity(this.aiPersonality.company, 'company')
+      ? 'Your Business'
+      : this.aiPersonality.company;
+
+    // Action plan (one sentence)
+    const action_plan = "Search GHL for contact, run Pinecone top-K, then compose grounded reply.";
+
+    // API calls to make (ordered)
+    const api_calls = [];
+    if (!contact || !contact.contactId) {
+      api_calls.push({
+        type: 'GHL',
+        action: 'getContactByPhone',
+        params: { phone: (contact && contact.phone) || null }
+      });
+    }
+    api_calls.push({
+      type: 'PINECONE',
+      action: 'query',
+      params: {
+        namespace: account?.namespace || 'default',
+        query: incoming_message,
+        top_k: pinecone_top_k
+      }
+    });
+    // Optional MCP/LOG entries to align with host orchestrator
+    api_calls.push({ type: 'LOG', action: 'auditTrail', params: { event: 'structured_plan_built' } });
+
+    // RAG prompt template (placeholders – host fills with retrieved snippets/contact)
+    const rag_prompt = [
+      `SYSTEM: You are a helpful assistant for ${businessName} (location ${account?.location_id || '{{account.location_id}}'}). Use only the provided KB snippets and GHL contact data. If unsure, say you will escalate.`,
+      '',
+      'KB SNIPPETS:',
+      '1) {{snippet_1}} (source: {{source_1}} | {{url_or_path_1}})',
+      '2) {{snippet_2}} (source: {{source_2}} | {{url_or_path_2}})',
+      '...',
+      '',
+      'CONTACT:',
+      'name: {{contact.name}} | lead_stage: {{contact.lead_stage}} | tags: {{contact.tags}} | last_interaction: {{contact.last_interaction}}',
+      '',
+      'CHAT HISTORY:',
+      ...(conversation_history.slice(-5).map(m => `- ${m.from}: ${m.body}`)),
+      '',
+      `USER: ${incoming_message}`,
+      '',
+      `INSTRUCTIONS: Reply in <=3 short sentences, friendly, and include next action (CTA) if relevant. Do not invent facts. If missing, say "I don't have that info — want me to check with the team?"`
+    ].join('\n');
+
+    const final_response_instructions = 'Once LLM reply is produced, send as WhatsApp text. Include JSON meta: {should_sync_to_ghl:true, sync_type:"outbound_message", escalate:false} unless escalation is required.';
+
+    return {
+      action_plan,
+      api_calls,
+      rag_prompt,
+      final_response_instructions,
+      meta: {
+        business_name: businessName,
+        account,
+        uploaded_file_paths
+      }
+    };
+  }
+
+  // Compose the RAG prompt with actual snippets and contact summary
+  composeRagPrompt({
+    incoming_message,
+    business_name,
+    account = {},
+    snippets = [], // [{text, source, url_or_path}]
+    contact_summary = {}, // {name, lead_stage, tags, last_interaction}
+    conversation_history = []
+  }) {
+    const systemLine = `SYSTEM: You are a helpful assistant for ${business_name || this.aiPersonality.company} (location ${account?.location_id || '{{account.location_id}}'}). Use only the provided KB snippets and GHL contact data. If unsure, say you will escalate.`;
+    const kbLines = ['KB SNIPPETS:'];
+    const topN = (snippets || []).slice(0, 5);
+    if (topN.length === 0) {
+      kbLines.push('[none]');
+    } else {
+      for (let i = 0; i < topN.length; i++) {
+        const s = topN[i];
+        kbLines.push(`${i + 1}) ${s.text || ''} (source: ${s.source || 'unknown'} | ${s.url_or_path || s.url || s.path || ''})`);
+      }
+    }
+    const contactLine = `CONTACT: name: ${contact_summary?.name || 'Unknown'} | lead_stage: ${contact_summary?.lead_stage || ''} | tags: ${(contact_summary?.tags || []).join(', ')} | last_interaction: ${contact_summary?.last_interaction || ''}`;
+    const historyLines = ['CHAT HISTORY:', ...conversation_history.slice(-5).map(m => `- ${m.from}: ${m.body}`)];
+    const userLine = `USER: ${incoming_message}`;
+    const instructions = 'INSTRUCTIONS: Reply in <=3 short sentences, friendly, and include next action (CTA) if relevant. Do not invent facts. If missing, say "I don\'t have that info — want me to check with the team?"';
+
+    return [systemLine, '', ...kbLines, '', contactLine, '', ...historyLines, '', userLine, '', instructions].join('\n');
   }
 
   // Detect placeholder identity values
@@ -1314,10 +1537,8 @@ Respond as ${this.aiPersonality.name} would, using the knowledge and context abo
 
   // Fallback response
   getFallbackResponse(message) {
-    // RAG-first fallback: avoid personality-only answers. Ask for clarification and point to website/docs.
-    const website = this._normalizeWebsite(this.aiPersonality.website || '');
-    const hint = website ? ` You can also find details here: ${website}` : '';
-    return `I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)?${hint}`;
+    // RAG-first fallback: keep concise, avoid disclaimers; ask one clarifying question.
+    return `Could you clarify what you need (e.g., services, pricing, or a specific feature)?`;
   }
 
   // Normalize website to include scheme

@@ -32,5 +32,7 @@
       "Priority",
       "Premium"
     ]
-  }
+  },
+  "suppress_on_outbound_initiated": true,
+  "media_no_reply_types": ["image", "video", "document", "audio", "ptt", "sticker"]
 }

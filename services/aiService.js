@@ -91,8 +91,8 @@ class AIService {
 
       const conversationHistory = context.messages || [];
       const conversationType = context.type || 'default';
-      // Prefer a speed-optimized model for WhatsApp quick replies
-      const selectedModel = this.selectModelForConversation(conversationType, { prioritizeSpeed: true });
+      // Prefer a speed-optimized model for WhatsApp quick replies; honor tenant llmTag override when provided
+      const selectedModel = this.selectModelForConversation(conversationType, { prioritizeSpeed: true, llmTag: context.llmTag });
       
       const messages = [
         { role: 'system', content: customPrompt }
@@ -247,6 +247,13 @@ class AIService {
   }
 
   selectModelForConversation(conversationType, context = {}) {
+    // Allow per-tenant override via llm_tag when provided
+    if (context && typeof context.llmTag === 'string' && context.llmTag.trim()) {
+      const override = context.llmTag.trim();
+      console.log(`🤖 Using tenant override model tag for ${conversationType}: ${override}`);
+      return override;
+    }
+
     // Use model selector to choose optimal model
     const requirements = {
       prioritizeSpeed: context.prioritizeSpeed || false,
@@ -255,7 +262,6 @@ class AIService {
     };
 
     const selectedModel = this.modelSelector.selectModel(conversationType, requirements);
-    
     console.log(`🤖 Selected model for ${conversationType}: ${selectedModel}`);
     return selectedModel;
   }

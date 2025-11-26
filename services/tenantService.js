@@ -116,6 +116,49 @@ class TenantService {
     return null;
   }
 
+  /**
+   * Resolve full tenant context, including llm_tag and vector_namespace
+   * Priority:
+   * - Use explicit tenant hint from request
+   * - Resolve tenant_id via existing maps/lookups
+   * - Lookup accounts by tenant_id, then by locationId, then by phone
+   */
+  async resolveTenantContext({ phone = null, locationId = null, tags = null, req = null } = {}) {
+    const tenantId = await this.resolveTenantId({ phone, locationId, tags, req });
+
+    const normalizedPhone = phone ? (phoneNormalizer.normalize(phone) || phone) : null;
+
+    // Try accounts by tenant_id first
+    let account = null;
+    if (tenantId) {
+      account = await this.findAccountByTenant(tenantId);
+    }
+
+    // Next by location
+    if (!account && locationId) {
+      account = await this.findAccountByLocation(locationId);
+    }
+
+    // Finally by phone
+    if (!account && normalizedPhone) {
+      account = await this.findAccountByPhone(normalizedPhone);
+    }
+
+    const vectorNamespace = account?.vector_namespace || null;
+    const llmTag = account?.llm_tag || null;
+    const ghlLocationId = account?.ghl_location_id || locationId || null;
+    const whatsappNumber = account?.whatsapp_number || null;
+
+    return {
+      tenantId: tenantId || account?.tenant_id || null,
+      accountId: account?.id || null,
+      vectorNamespace,
+      llmTag,
+      ghlLocationId,
+      whatsappNumber
+    };
+  }
+
   async findTenantByLocation(locationId) {
     try {
       if (!this.supabase) return null;
@@ -165,6 +208,55 @@ class TenantService {
       return found || null;
     } catch (e) {
       console.warn('Tenant lookup by phone failed:', e.message);
+      return null;
+    }
+  }
+
+  // Accounts lookups
+  async findAccountByTenant(tenantId) {
+    try {
+      if (!this.supabase || !tenantId) return null;
+      const { data, error } = await this.supabase
+        .from('accounts')
+        .select('id, name, tenant_id, ghl_location_id, whatsapp_number, vector_namespace, llm_tag')
+        .eq('tenant_id', tenantId)
+        .limit(1);
+      if (error) throw error;
+      return Array.isArray(data) && data.length > 0 ? data[0] : null;
+    } catch (e) {
+      console.warn('Account lookup by tenant failed:', e.message);
+      return null;
+    }
+  }
+
+  async findAccountByLocation(locationId) {
+    try {
+      if (!this.supabase || !locationId) return null;
+      const { data, error } = await this.supabase
+        .from('accounts')
+        .select('id, name, tenant_id, ghl_location_id, whatsapp_number, vector_namespace, llm_tag')
+        .eq('ghl_location_id', locationId)
+        .limit(1);
+      if (error) throw error;
+      return Array.isArray(data) && data.length > 0 ? data[0] : null;
+    } catch (e) {
+      console.warn('Account lookup by location failed:', e.message);
+      return null;
+    }
+  }
+
+  async findAccountByPhone(normalizedPhone) {
+    try {
+      if (!this.supabase || !normalizedPhone) return null;
+      const { data, error } = await this.supabase
+        .from('accounts')
+        .select('id, name, tenant_id, ghl_location_id, whatsapp_number, vector_namespace, llm_tag')
+        .eq('whatsapp_number', normalizedPhone)
+        .limit(1);
+      if (error) throw error;
+      return Array.isArray(data) && data.length > 0 ? data[0] : null;
+    } catch (e) {
+      console.warn('Account lookup by phone failed:', e.message);
       return null;
     }
   }

@@ -4,6 +4,8 @@
     "name": "welcome",
     "content": "Hi  {name}  this new automation working checking",
     "category": "general",
+    "mediaUrl": "",
+    "mediaType": "",
     "createdAt": 1760729292514
   },
   "tpl_1761067226395": {
@@ -14,5 +16,14 @@
     "mediaUrl": "https://storage.googleapis.com/msgsndr/dXh04Cd8ixM9hnk1IS5b/media/6821eaac31661a2879c6a865.png",
     "mediaType": "image",
     "createdAt": 1761067999748
+  },
+  "tpl_1763997000000": {
+    "id": "tpl_1763997000000",
+    "name": "welcome3",
+    "content": "Hi {name}, this is a test template with image.",
+    "category": "general",
+    "mediaUrl": "https://via.placeholder.com/300.png",
+    "mediaType": "image",
+    "createdAt": 1763996500584
   }
 }

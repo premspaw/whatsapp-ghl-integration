@@ -98,21 +98,24 @@ module.exports = (enhancedAIService) => {
 
         console.log(`[RAG Dashboard] Searching knowledge base: "${query}"`);
 
-        // Search using embeddings
-        let results = await enhancedAIService.embeddings.retrieve({ query, topK: limit, minSimilarity, tenantId });
-
-        // Fallback to keyword search if embeddings are empty
-        const embCount = await enhancedAIService.embeddings.getEmbeddingsCount(tenantId);
-        if ((!results || results.length === 0) || (embCount === 0)) {
-            const keywordMatches = enhancedAIService.searchKnowledgeBase(query) || [];
-            results = keywordMatches.map(k => ({
-                id: k.id,
-                title: k.title,
-                content: k.content,
-                similarity: 1.0,
-                sourceType: 'knowledge'
-            })).slice(0, limit);
-        }
+    // Prefer Pinecone MCP context results
+    let results = [];
+    try {
+      const mcp = enhancedAIService && enhancedAIService.pineconeMcp;
+      if (mcp && mcp.isConfigured()) {
+        const items = await mcp.getContext(query, { topK: limit, tenantId });
+        results = (items || []).map((it, idx) => ({
+          id: `mcp-${idx}`,
+          title: it.title || 'context',
+          content: it.content || '',
+          similarity: typeof it.score === 'number' ? it.score : null,
+          sourceType: 'pinecone'
+        }));
+      }
+    } catch (e) {
+      console.warn('[RAG Dashboard] MCP context fetch failed:', e.message);
+      results = [];
+    }
 
         console.log(`[RAG Dashboard] Found ${results ? results.length : 0} knowledge items`);
 
@@ -150,21 +153,24 @@ module.exports = (enhancedAIService) => {
 
         console.log(`[RAG Dashboard] (GET) Searching knowledge base: "${query}"`);
 
-        // Search using embeddings (same implementation as POST)
-        let results = await enhancedAIService.embeddings.retrieve({ query, topK: limit, minSimilarity, tenantId });
-
-        // Fallback to keyword search if embeddings are empty
-        const embCount = await enhancedAIService.embeddings.getEmbeddingsCount(tenantId);
-        if ((!results || results.length === 0) || (embCount === 0)) {
-            const keywordMatches = enhancedAIService.searchKnowledgeBase(query) || [];
-            results = keywordMatches.map(k => ({
-                id: k.id,
-                title: k.title,
-                content: k.content,
-                similarity: 1.0,
-                sourceType: 'knowledge'
-            })).slice(0, limit);
-        }
+    // Pinecone MCP context (GET flavor)
+    let results = [];
+    try {
+      const mcp = enhancedAIService && enhancedAIService.pineconeMcp;
+      if (mcp && mcp.isConfigured()) {
+        const items = await mcp.getContext(query, { topK: limit, tenantId });
+        results = (items || []).map((it, idx) => ({
+          id: `mcp-${idx}`,
+          title: it.title || 'context',
+          content: it.content || '',
+          similarity: typeof it.score === 'number' ? it.score : null,
+          sourceType: 'pinecone'
+        }));
+      }
+    } catch (e) {
+      console.warn('[RAG Dashboard] MCP context fetch failed (GET):', e.message);
+      results = [];
+    }
 
         console.log(`[RAG Dashboard] (GET) Found ${results ? results.length : 0} knowledge items`);
 

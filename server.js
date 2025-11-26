@@ -8,6 +8,44 @@ const axios = require('axios');
 const fs = require('fs');
 require('dotenv').config();
 
+// ===== N8N Integration Flags =====
+const AI_MODE = process.env.AI_MODE || 'local';
+const N8N_ENABLED = (process.env.N8N_ENABLED === 'true') || AI_MODE === 'n8n';
+const N8N_AI_REPLY_URL = (process.env.N8N_AI_REPLY_URL || '').trim();
+const N8N_API_KEY = (process.env.N8N_API_KEY || '').trim();
+
+/**
+ * Forward an inbound WhatsApp text to n8n for AI reply.
+ * Returns the reply text or null if disabled/failed.
+ */
+async function forwardToN8nAIReply({ text, from, contactName, tenantId, conversationId, messageType = 'text', fromMe = false }) {
+  try {
+    if (!N8N_ENABLED || !N8N_AI_REPLY_URL) return null;
+    const payload = {
+      phone: from,
+      text,
+      contactName: contactName || 'Unknown Contact',
+      tenantId: tenantId || null,
+      conversationId: conversationId || from,
+      messageType,
+      fromMe
+    };
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (N8N_API_KEY) headers['X-Api-Key'] = N8N_API_KEY;
+    const resp = await axios.post(N8N_AI_REPLY_URL, payload, { headers, timeout: 15000 });
+    const data = resp && resp.data ? resp.data : {};
+    // Accept common shapes: {reply}, {message}, {text}, or raw string
+    const reply = typeof data === 'string' ? data : (data.reply || data.message || data.text || null);
+    if (reply && String(reply).trim().length > 0) return String(reply);
+    return null;
+  } catch (err) {
+    console.warn('⚠️ n8n forward failed:', err && err.message ? err.message : err);
+    return null;
+  }
+}
+
 // Simple AI Reply Function (without MCP dependency)
 async function generateSimpleAIReply(message, contactName) {
   try {
@@ -46,6 +84,7 @@ const GHLService = require('./services/ghlService');
 const AIService = require('./services/aiService');
 const MCPAIService = require('./services/mcpAIService');
 const EnhancedAIService = require('./services/enhancedAIService');
+const InboundWebhookRelay = require('./services/inboundWebhookRelay');
 const ConversationManager = require('./services/conversationManager');
 const SMSService = require('./services/smsService');
 // Email service removed - WhatsApp only
@@ -98,6 +137,7 @@ let supabase;
 let tenantService;
 // Ensure these services are scoped outside try/catch so routes can access them
 let pdfProcessingService, websiteScraperService, analyticsService;
+let inboundRelay;
 
 try {
   useMockWhatsApp = process.env.USE_MOCK_WHATSAPP === 'true';
@@ -120,6 +160,13 @@ try {
   pdfProcessingService = new PDFProcessingService(enhancedAIService.embeddings);
   websiteScraperService = new WebsiteScraperService(enhancedAIService.embeddings);
   analyticsService = new AnalyticsService();
+  // Initialize inbound webhook relay (external integrations like n8n)
+  try {
+    inboundRelay = new InboundWebhookRelay();
+    console.log('✅ InboundWebhookRelay initialized');
+  } catch (e) {
+    console.warn('⚠️ InboundWebhookRelay initialization failed:', e.message);
+  }
   
   // Connect webhook cache invalidation to GHL service cache
   webhookService.onInvalidate = (contactId) => {
@@ -315,9 +362,7 @@ app.use('/api/ghl', require('./routes/ghlRoutes')(ghlService));
 app.get('/api/ghl/server-test', (req, res) => {
   res.json({ success: true, message: 'server test ok' });
 });
-app.use('/api/ai', require('./routes/aiRoutes')(aiService, mcpAIService, enhancedAIService, tenantService));
 app.use('/api/analytics', require('./routes/analyticsRoutes')(analyticsService, securityService));
-  app.use('/api/knowledge', require('./routes/knowledgeRoutes')(enhancedAIService, pdfProcessingService, websiteScraperService));
 // Simple ping for debugging
 app.get('/api/ping', (req, res) => {
   res.json({ success: true, message: 'pong' });
@@ -339,56 +384,11 @@ app.get('/api/health', (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-  // Root alias for RAG knowledge search to mirror rag-dashboard route
-  app.post('/api/knowledge/search', async (req, res) => {
-    try {
-      const { query, limit = 5, minSimilarity = 0.35, tenantId } = req.body || {};
-      const resolvedTenant = tenantId || req.headers['x-tenant-id'] || null;
-      if (!query || typeof query !== 'string' || query.trim().length === 0) {
-        return res.status(400).json({ success: false, error: 'Query required' });
-      }
-      const results = await enhancedAIService.embeddings.retrieve({
-        query,
-        topK: Number(limit) || 5,
-        minSimilarity: Number(minSimilarity) || 0.35,
-        tenantId: resolvedTenant,
-      });
-      res.json({ success: true, count: results.length, items: results });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message || 'Search failed' });
-    }
-  });
 app.use('/api/handoff-rules', require('./routes/handoffRulesRoutes')(enhancedAIService));
 app.use('/api/integrations', require('./routes/integrationsRoutes')());
 // Alias: allow front-end to call /rag-dashboard/api/knowledge/* and reuse /api/knowledge/*
 // Remove redirect alias so RAG dashboard routes handle knowledge endpoints directly
 // This prevents 307 redirects and ensures JSON responses from routes/ragDashboard.js
-
-// === Compatibility aliases for external AI Management dashboard ===
-// Many dashboards expect these root-level paths; map them to existing routes.
-// Tenants list
-app.get('/api/tenants', (req, res) => {
-  const target = '/rag-dashboard/api/tenants' + (req.url || '');
-  res.redirect(307, target);
-});
-
-// AI personality
-app.get('/api/personality', (req, res) => {
-  const target = '/api/ai/personality';
-  res.redirect(307, target);
-});
-
-// Knowledge base list
-app.get('/api/knowledge', (req, res) => {
-  const target = '/api/knowledge/list';
-  res.redirect(307, target);
-});
-
-// Knowledge search (GET) – reuse RAG dashboard implementation
-app.get('/api/knowledge/search', (req, res) => {
-  const target = '/rag-dashboard/api/knowledge/search' + (req.url || '');
-  res.redirect(307, target);
-});
 
 // System status (return JSON directly)
 app.get('/api/system/status', (req, res) => {
@@ -406,14 +406,6 @@ app.get('/api/system/status', (req, res) => {
     res.status(500).json({ success: false, error: e.message || 'Status error' });
   }
 });
-
-// Training history/logs
-app.get('/api/training/history', (req, res) => {
-  const target = '/rag-dashboard/api/system/logs' + (req.url || '');
-  res.redirect(307, target);
-});
-
-app.use('/rag-dashboard', require('./routes/ragDashboard')(enhancedAIService)); // RAG Dashboard routes (use existing EnhancedAIService)
 
 // Conversation utilities used by the WhatsApp tab
 app.post('/api/conversations/:id/mark-read', async (req, res) => {
@@ -588,6 +580,21 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
       result = await whatsappService.sendMessage(chatId, text);
     }
 
+    // Store sent message locally and emit to frontend
+    try {
+      const messageData = {
+        id: `sent_${Date.now()}`,
+        from: 'ai',
+        body: text,
+        timestamp: Date.now(),
+        type: (mediaUrl || template.mediaUrl) ? 'media' : 'text',
+        direction: 'outbound',
+        template: template.name || template.id
+      };
+      await conversationManager.addMessage(messageData, chatId);
+      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
+    } catch (_) {}
+
     // Best-effort GHL conversation sync
     try {
       if (ghlService && typeof ghlService.addOutboundMessage === 'function') {
@@ -749,6 +756,21 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
       result = await whatsappService.sendMessage(chatId, text);
     }
 
+    // Store sent message locally and emit to frontend
+    try {
+      const messageData = {
+        id: `sent_${Date.now()}`,
+        from: 'ai',
+        body: text,
+        timestamp: Date.now(),
+        type: (mediaUrl || template.mediaUrl) ? 'media' : 'text',
+        direction: 'outbound',
+        template: template.name || template.id
+      };
+      await conversationManager.addMessage(messageData, chatId);
+      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
+    } catch (_) {}
+
     // Optional GHL sync
     try {
       if (ghlService && typeof ghlService.addOutboundMessage === 'function') {
@@ -886,16 +908,7 @@ app.get('/api/debug/services', async (req, res) => {
   }
 });
 
-// Root alias for knowledge list (mirrors RAG dashboard endpoint)
-app.get('/api/knowledge/list', async (req, res) => {
-  try {
-    const items = enhancedAIService.getKnowledgeBase();
-    const stats = enhancedAIService.getKnowledgeBaseStats();
-    res.json({ success: true, items, count: items ? items.length : 0, stats, timestamp: new Date().toISOString() });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// Removed legacy RAG knowledge list alias
 
 // GHL Webhook endpoint for outbound messages
 app.post('/webhooks/ghl', async (req, res) => {
@@ -1079,6 +1092,21 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
       result = await whatsappService.sendMessage(chatId, text);
     }
 
+    // Store sent message locally and emit to frontend
+    try {
+      const messageData = {
+        id: `sent_${Date.now()}`,
+        from: 'ai',
+        body: text,
+        timestamp: Date.now(),
+        type: finalMediaUrl ? 'media' : 'text',
+        direction: 'outbound',
+        template: template.name || template.id
+      };
+      await conversationManager.addMessage(messageData, chatId);
+      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
+    } catch (_) {}
+
     // Optional GHL sync
     try {
       if (ghlService && typeof ghlService.addOutboundMessage === 'function') {
@@ -1178,26 +1206,41 @@ app.post('/webhook/whatsapp', async (req, res) => {
       console.error('Error adding message to GHL:', ghlError);
     }
 
-    // Generate AI response using Enhanced AI Service with RAG
+    // Generate AI response (n8n-first with local fallback)
     try {
       const tenantId = tenantService ? await tenantService.resolveTenantId({ phone: normalizedPhone, locationId: contact?.locationId, tags: contact?.tags || [], req }) : null;
-      console.log('🏷️ Tenant resolution (webhook):', {
-        phone: normalizedPhone,
-        locationId: contact?.locationId || null,
-        tags: contact?.tags || [],
-        tenantId
-      });
-      const aiResponse = await enhancedAIService.generateContextualReply(text, normalizedPhone, contact.id, tenantId);
-      
+      console.log('🏷️ Tenant resolution (webhook):', { phone: normalizedPhone, locationId: contact?.locationId || null, tags: contact?.tags || [], tenantId });
+      let aiResponse = '';
+
+      if (N8N_ENABLED && N8N_AI_REPLY_URL) {
+        try {
+          const n8nResult = await forwardToN8nAIReply({
+            text,
+            from: normalizedPhone,
+            contactName: contact?.name || '',
+            tenantId,
+            conversationId: contact?.id || '',
+            messageType: 'text',
+            fromMe: false
+          });
+          aiResponse = n8nResult?.text || '';
+          if (aiResponse) {
+            console.log('🤖 AI Response (n8n):', aiResponse);
+          }
+        } catch (n8nErr) {
+          console.error('⚠️ n8n forwarding failed (webhook path), falling back:', n8nErr.message || n8nErr);
+        }
+      }
+
+      if (!aiResponse) {
+        aiResponse = await enhancedAIService.generateContextualReply(text, normalizedPhone, contact.id, tenantId);
+        if (aiResponse) console.log('🤖 AI Response (local):', aiResponse);
+      }
+
       if (aiResponse && aiResponse.trim()) {
-        console.log(`🤖 AI Response: ${aiResponse}`);
-        
-        // Send AI response back via WhatsApp
         if (whatsappService && whatsappService.isReady) {
           await whatsappService.sendMessage(normalizedPhone, aiResponse);
           console.log('✅ AI response sent via WhatsApp');
-          
-          // Log AI response to GHL
           await ghlService.addOutboundMessage(contact.id, {
             message: aiResponse,
             type: 'TYPE_SMS',
@@ -1396,68 +1439,6 @@ app.delete('/api/automation/webhooks/:webhookId', async (req, res) => {
   }
 });
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/knowledge/')
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname)
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
-
-// Upload knowledge base files
-app.post('/api/ai/knowledge/upload', upload.array('files', 10), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'No files uploaded' 
-      });
-    }
-
-    const category = req.body.category || 'general';
-    const description = req.body.description || '';
-    let uploadedCount = 0;
-    const errors = [];
-
-    // Process each uploaded file
-    for (const file of req.files) {
-      try {
-        const knowledgeItem = await enhancedAIService.addKnowledgeFile(
-          file, 
-          category, 
-          description
-        );
-        uploadedCount++;
-        console.log(`✅ Knowledge base item added: ${knowledgeItem.filename}`);
-      } catch (fileError) {
-        console.error(`❌ Error processing file ${file.originalname}:`, fileError);
-        errors.push(`${file.originalname}: ${fileError.message}`);
-      }
-    }
-
-    res.json({
-      success: true,
-      uploadedCount: uploadedCount,
-      totalFiles: req.files.length,
-      errors: errors,
-      message: `Successfully processed ${uploadedCount} of ${req.files.length} files`
-    });
-
-  } catch (error) {
-    console.error('Error uploading knowledge base files:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
 
 // Media upload endpoint for WhatsApp tab (images/videos)
 // Saves to public/uploads/media so files are directly accessible via static hosting
@@ -1497,129 +1478,7 @@ app.post('/api/media/upload', mediaUpload.single('file'), async (req, res) => {
   }
 });
 
-// List all knowledge base items (used by AI Management Dashboard)
-app.get('/api/ai/knowledge', async (req, res) => {
-  try {
-    const knowledgeItems = enhancedAIService.getKnowledgeBase();
-    res.json({ success: true, knowledge: knowledgeItems, total: knowledgeItems.length });
-  } catch (error) {
-    console.error('Error fetching knowledge base:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
-// Get specific knowledge base item
-app.get('/api/ai/knowledge/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const knowledgeItem = await enhancedAIService.getKnowledgeItem(id);
-    
-    if (!knowledgeItem) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Knowledge base item not found' 
-      });
-    }
-
-    res.json({
-      success: true,
-      knowledge: knowledgeItem,
-      content: knowledgeItem.content || ''
-    });
-  } catch (error) {
-    console.error('Error getting knowledge base item:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Delete knowledge base item
-app.delete('/api/ai/knowledge/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const success = await enhancedAIService.deleteKnowledgeItem(id);
-    if (!success) {
-      return res.status(404).json({ success: false, error: 'Knowledge base item not found' });
-    }
-    res.json({ success: true, message: 'Knowledge base item deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting knowledge base item:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Test AI chat with knowledge base (RAG)
-app.post('/api/ai/test-chat', async (req, res) => {
-  try {
-    const { message, conversationId } = req.body;
-    
-    if (!message) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Message is required' 
-      });
-    }
-
-    console.log(`🧪 Testing AI chat with message: "${message}"`);
-    
-    // Generate AI response using Enhanced AI Service with RAG
-    const testConversationId = conversationId || `test-${Date.now()}`;
-    const aiReply = await enhancedAIService.generateContextualReply(
-      message, 
-      testConversationId, 
-      testConversationId
-    );
-
-    if (aiReply) {
-      // Persist test chat to conversations so analytics reflect test flows
-      try {
-        const now = Date.now();
-        // Store inbound user message
-        await conversationManager.addMessage({
-          from: testConversationId,
-          body: message,
-          timestamp: now,
-          type: 'text'
-        }, testConversationId, 'Test Chat');
-        // Store outbound AI reply
-        await conversationManager.addMessage({
-          from: 'ai',
-          body: aiReply,
-          timestamp: Date.now(),
-          type: 'text'
-        }, testConversationId, 'Test Chat');
-        console.log(`🧪 Persisted test chat for ${testConversationId}`);
-      } catch (persistErr) {
-        console.warn('Test-chat persistence warning:', persistErr.message);
-      }
-      console.log(`✅ AI generated reply: ${aiReply.substring(0, 100)}...`);
-      res.json({
-        success: true,
-        query: message,
-        reply: aiReply,
-        conversationId: testConversationId,
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: 'AI did not generate a reply'
-      });
-    }
-
-  } catch (error) {
-    console.error('Error in AI test chat:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
 
 // Supabase DB status endpoint
 app.get('/api/db/status', async (req, res) => {
@@ -1639,14 +1498,6 @@ app.get('/api/db/status', async (req, res) => {
 });
 
 // Enhanced AI status endpoint (used by Automation Dashboard overview)
-app.get('/api/enhanced-ai/status', async (req, res) => {
-  try {
-    const stats = enhancedAIService.getConversationStats();
-    res.json({ success: true, stats });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
 // Lightweight webview click tracker to avoid frontend timeouts
 app.post('/api/webviewClick', (req, res) => {
@@ -1737,6 +1588,112 @@ app.post('/api/automation/rules', async (req, res) => {
   }
 });
 
+// Settings API to manage AI via n8n toggle and pricing
+app.get('/api/settings/ai-enabled', (req, res) => {
+  try {
+    // Load the latest settings from disk
+    loadSettingsFromDisk();
+    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/settings/ai-enabled', (req, res) => {
+  try {
+    const { enabled, webhookUrl, pricing } = req.body || {};
+    saveSettings({ enabled, webhookUrl, pricing });
+    res.json({ success: true, message: 'Settings saved', enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Backward-compatible alias: '/api/settings/ai-enable' (without trailing 'd')
+app.get('/api/settings/ai-enable', (req, res) => {
+  try {
+    loadSettingsFromDisk();
+    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/settings/ai-enable', (req, res) => {
+  try {
+    const { enabled, webhookUrl, pricing } = req.body || {};
+    saveSettings({ enabled, webhookUrl, pricing });
+    res.json({ success: true, message: 'Settings saved', enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Webhook to receive final WhatsApp reply payloads from n8n (moved before 404)
+app.post('/webhook/n8n/whatsapp-reply', async (req, res) => {
+  try {
+    const body = req.body || {};
+    let to = body.to || body.phone || body.contact?.phone || body.chatId;
+    const text = body.message || body.text || '';
+    const mediaUrl = body.mediaUrl || '';
+    const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
+    const tenantId = body.tenantId || null;
+    const contactName = body.contactName || body.name || 'Unknown Contact';
+
+    if (!to || (!text && !mediaUrl)) {
+      return res.status(400).json({ success: false, error: 'Required: to/phone and message or mediaUrl' });
+    }
+
+    // Normalize to WhatsApp chat ID
+    let chatId = String(to);
+    try { const { normalize } = require('./utils/phoneNormalizer'); chatId = normalize(String(to)) || String(to); } catch (_) {}
+    if (!chatId.includes('@c.us')) {
+      chatId = chatId.replace(/\D/g, '') + '@c.us';
+    }
+
+    // Send message or media
+    let result;
+    if (mediaUrl && typeof whatsappService.sendMediaFromUrl === 'function') {
+      const mType = mediaType || 'image';
+      result = await whatsappService.sendMediaFromUrl(chatId, mediaUrl, text, mType);
+    } else {
+      result = await whatsappService.sendMessage(chatId, text);
+    }
+
+    // Store sent message locally and emit to frontend
+    try {
+      const messageData = {
+        id: `sent_${Date.now()}`,
+        from: 'ai',
+        body: text,
+        timestamp: Date.now(),
+        type: mediaUrl ? 'media' : 'text',
+        direction: 'outbound'
+      };
+      await conversationManager.addMessage(messageData, chatId, contactName);
+      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
+    } catch (_) {}
+
+    // Optional GHL sync
+    try {
+      if (ghlService && typeof ghlService.addOutboundMessage === 'function') {
+        const normalized = ghlService.normalizePhoneNumber(to);
+        const contact = await ghlService.findContactByPhone(normalized);
+        if (contact && contact.id) {
+          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'SMS', direction: 'outbound' });
+        }
+      }
+    } catch (syncErr) {
+      console.warn('GHL sync after n8n reply failed:', syncErr && syncErr.message);
+    }
+
+    res.json({ success: true, message: 'Reply delivered', messageId: result });
+  } catch (error) {
+    console.error('Error handling n8n reply webhook:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // JSON error handler to avoid HTML error pages on parse errors
 app.use((err, req, res, next) => {
   const status = err.status || err.statusCode || 500;
@@ -1751,6 +1708,105 @@ app.use((req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
+// Global AI (n8n) toggle state loaded from settings file
+const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
+let aiN8nEnabled = false;
+let n8nWebhookUrlFromSettings = '';
+let aiN8nPricing = { pricePerReply: 0, currency: 'INR', freeReplies: 0, billingNote: '' };
+
+function loadSettings() {
+  try {
+    const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
+    const json = JSON.parse(raw);
+    aiN8nEnabled = Boolean(json.aiN8nEnabled);
+    n8nWebhookUrlFromSettings = String(json.n8nWebhookUrl || '').trim();
+    const p = json.pricing || {};
+    aiN8nPricing = {
+      pricePerReply: Number(p.pricePerReply || 0),
+      currency: String(p.currency || 'INR'),
+      freeReplies: Number(p.freeReplies || 0),
+      billingNote: String(p.billingNote || '')
+    };
+  } catch (e) {
+    // Defaults if settings not present
+    aiN8nEnabled = false;
+    n8nWebhookUrlFromSettings = '';
+    aiN8nPricing = { pricePerReply: 0, currency: 'INR', freeReplies: 0, billingNote: '' };
+  }
+}
+
+function saveSettings({ enabled = aiN8nEnabled, webhookUrl = n8nWebhookUrlFromSettings, pricing = aiN8nPricing } = {}) {
+  const data = {
+    aiN8nEnabled: Boolean(enabled),
+    n8nWebhookUrl: String(webhookUrl || ''),
+    pricing: {
+      pricePerReply: Number((pricing && pricing.pricePerReply) || 0),
+      currency: String((pricing && pricing.currency) || 'INR'),
+      freeReplies: Number((pricing && pricing.freeReplies) || 0),
+      billingNote: String((pricing && pricing.billingNote) || '')
+    },
+    updatedAt: Date.now()
+  };
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(data, null, 2));
+  aiN8nEnabled = data.aiN8nEnabled;
+  n8nWebhookUrlFromSettings = data.n8nWebhookUrl;
+  aiN8nPricing = data.pricing;
+}
+
+// Load settings from disk if present, otherwise fall back to environment
+function loadSettingsFromDisk() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
+      const json = JSON.parse(raw);
+      aiN8nEnabled = Boolean(json.aiN8nEnabled);
+      n8nWebhookUrlFromSettings = String(json.n8nWebhookUrl || '');
+      aiN8nPricing = {
+        pricePerReply: Number((json.pricing && json.pricing.pricePerReply) || 0),
+        currency: String((json.pricing && json.pricing.currency) || 'INR'),
+        freeReplies: Number((json.pricing && json.pricing.freeReplies) || 0),
+        billingNote: String((json.pricing && json.pricing.billingNote) || '')
+      };
+    } else {
+      // Initialize from environment defaults
+      aiN8nEnabled = N8N_ENABLED;
+      n8nWebhookUrlFromSettings = N8N_AI_REPLY_URL;
+      aiN8nPricing = aiN8nPricing || { pricePerReply: 0, currency: 'INR', freeReplies: 0, billingNote: '' };
+      // Persist defaults once so UI can read them
+      saveSettings({ enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+    }
+    console.log('[settings] Settings loaded', { enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings });
+  } catch (e) {
+    console.warn('[settings] Failed to load settings, using defaults:', e.message);
+  }
+}
+
+// Initialize settings at startup
+loadSettingsFromDisk();
+
+// Settings API to manage AI via n8n toggle and pricing
+// Place BEFORE error/404 handlers so routes are reachable
+app.get('/api/settings/ai-enabled', (req, res) => {
+  try {
+    loadSettingsFromDisk();
+    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/settings/ai-enabled', (req, res) => {
+  try {
+    const { enabled, webhookUrl, pricing } = req.body || {};
+    saveSettings({ enabled, webhookUrl, pricing });
+    res.json({ success: true, message: 'Settings saved', enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Load settings at startup
+loadSettings();
 if (require.main === module) {
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -1793,6 +1849,12 @@ server.listen(PORT, () => {
       try {
         console.log('📨 Received message from:', message.from, 'Body:', message.body.substring(0, 50));
         
+        // Suppress AI if this is our own outbound message (initiated by us)
+        if (message.fromMe === true) {
+          console.log('🤝 Handoff: Suppressing AI reply because message is fromMe (outbound initiated).');
+          return; // Do not store or respond to outbound echoes
+        }
+
         // Skip group messages - only process individual customer conversations
         if (process.env.FILTER_GROUP_MESSAGES !== 'false' && message.from.includes('@g.us')) {
           console.log('🚫 Skipping group message from:', message.from);
@@ -1805,9 +1867,13 @@ server.listen(PORT, () => {
           console.log('🚫 Skipping broadcast message');
           return;
         }
-        
+
         console.log('New WhatsApp message:', message.body);
-        
+
+        // Media suppression: if message contains media or non-chat type, we will store and sync but skip AI reply
+        const msgType = (message.type || '').toLowerCase();
+        const isMediaInbound = !!message.hasMedia || (msgType && msgType !== 'chat' && msgType !== 'text');
+
         // Check GHL contacts first to get the proper name
         let contactName = 'Unknown Contact';
         try {
@@ -1912,6 +1978,55 @@ server.listen(PORT, () => {
           console.error('❌ Error auto-syncing user message to GHL:', syncError.message);
         }
 
+        // External webhook relay to n8n only when AI toggle enabled
+        if (aiN8nEnabled) {
+          try {
+            const { normalize } = require('./utils/phoneNormalizer');
+            const normalizedPhone = normalize(message.from) || message.from;
+            const relayType = (() => {
+              const t = (message.type || '').toLowerCase();
+              if (isMediaInbound) return 'media';
+              if (t === 'chat' || t === 'text') return 'text';
+              if (t.includes('location')) return 'location';
+              if (t.includes('button')) return 'button';
+              if (t.includes('template')) return 'template';
+              return 'text';
+            })();
+            const attachments = (mediaFields && mediaFields.mediaUrl) ? [{
+              type: mediaFields.mediaType || 'document',
+              url: mediaFields.mediaUrl,
+              filename: mediaFields.fileName || undefined
+            }] : [];
+            const result = await inboundRelay.send({
+              phone: normalizedPhone,
+              fromName: contactName || 'Unknown Contact',
+              message: message.body || '',
+              messageType: relayType,
+              messageId: (message.id && message.id._serialized) || message.id || '',
+              integration: process.env.GHL_LOCATION_ID || 'default',
+              timestamp: message.timestamp || Date.now(),
+              replyToken: null,
+              attachments,
+              overrideUrl: n8nWebhookUrlFromSettings || undefined
+            });
+            if (result.delivered) {
+              console.log('📡 Inbound webhook delivered to n8n:', result.status);
+            } else {
+              console.warn('⚠️ Inbound webhook to n8n failed:', result.error);
+            }
+          } catch (relayErr) {
+            console.error('❌ Inbound webhook relay error:', relayErr && relayErr.message);
+          }
+          // Do not generate local AI, n8n will respond via webhook
+          return;
+        }
+
+        // If media was received or non-text content, do not generate AI reply
+        if (isMediaInbound) {
+          console.log('🤝 Handoff: Suppressing AI reply due to inbound media/non-text type:', message.type);
+          return;
+        }
+
         // Check if AI reply is enabled for this conversation
         console.log('🤖 Starting AI reply check for:', message.from);
         let conversation = await conversationManager.getConversation(message.from);
@@ -1942,6 +2057,74 @@ server.listen(PORT, () => {
         if (conversation && conversation.aiEnabled) {
           console.log('🧠 Generating AI reply for:', message.body.substring(0, 50) + '...');
           try {
+            // Helper: structured AI executor
+            async function generateStructuredAIReplyLocal({ text, from, contactName, tenantId }) {
+              try {
+                const PineconeMcpClient = require('./services/pineconeMcpClient');
+                const account = { location_id: tenantId || null, namespace: 'default' };
+                // Build conversation history
+                let conversation_history = [];
+                try {
+                  const convLocal = await conversationManager.getConversation(from);
+                  const msgs = Array.isArray(convLocal?.messages) ? convLocal.messages.slice(-5) : [];
+                  conversation_history = msgs.map(m => ({ from: m.from || 'user', body: m.body || '' }));
+                } catch (_) {}
+                // Plan
+                const plan = enhancedAIService.buildStructuredPlan({
+                  incoming_message: text,
+                  contact: { phone: from },
+                  account,
+                  conversation_history,
+                  pinecone_top_k: 5,
+                  ghl_lookup_result: null,
+                  uploaded_file_paths: []
+                });
+                // Execute: GHL lookup
+                let contactSummary = { name: contactName || 'Unknown', lead_stage: '', tags: [], last_interaction: '' };
+                try {
+                  if (ghlService && typeof ghlService.findContactByPhone === 'function') {
+                    const ghlContact = await ghlService.findContactByPhone(from);
+                    if (ghlContact) {
+                      contactSummary = {
+                        name: ghlContact.firstName || ghlContact.name || contactSummary.name,
+                        lead_stage: ghlContact?.leadStage || ghlContact?.leadStatus || '',
+                        tags: Array.isArray(ghlContact?.tags) ? ghlContact.tags : [],
+                        last_interaction: ghlContact?.lastActivity || ''
+                      };
+                    }
+                  }
+                } catch (e) { console.warn('GHL lookup failed in structured flow:', e.message); }
+                // Execute: Pinecone/Embeddings
+                let snippets = [];
+                try {
+                  const pc = new PineconeMcpClient();
+                  if (pc && pc.isConfigured()) {
+                    const items = await pc.getContext(text, { topK: 5, tenantId });
+                    snippets = (items || []).map(it => ({ text: it.content || '', source: it.source || 'pinecone', url_or_path: it.source || '' }));
+                  } else {
+                    const results = await enhancedAIService.embeddings.retrieve({ query: text, topK: 5, minSimilarity: 0.35, tenantId });
+                    snippets = (results || []).map(r => ({ text: r.content || r.text || '', source: r.source || r.category || 'kb', url_or_path: r.source || '' }));
+                  }
+                } catch (e) { console.warn('Pinecone/Embeddings retrieval failed:', e.message); }
+                // Compose
+                const businessName = enhancedAIService?.aiPersonality?.company || 'Your Business';
+                const ragPrompt = enhancedAIService.composeRagPrompt({
+                  incoming_message: text,
+                  business_name: businessName,
+                  account,
+                  snippets,
+                  contact_summary: contactSummary,
+                  conversation_history
+                });
+                // LLM
+                const context = { messages: conversation_history, type: 'support', llmTag: tenantId ? { tag: tenantId } : undefined };
+                const aiReplyLocal = await enhancedAIService.aiService.generateCustomReply(text, ragPrompt, context);
+                return aiReplyLocal || null;
+              } catch (err) {
+                console.error('❌ Structured AI executor error:', err.message);
+                return null;
+              }
+            }
             // Use Enhanced AI Service with memory and automation
             // Fix: avoid referencing undefined `req` in event context
             // Enrich with contact tags to improve tenant resolution
@@ -1954,7 +2137,22 @@ server.listen(PORT, () => {
               tags: contactForTags?.tags || [],
               tenantId: tId
             });
-            const aiReply = await enhancedAIService.generateContextualReply(message.body, message.from, message.from, tId);
+            // n8n-first, then local EnhancedAI as fallback
+            let aiReply = await forwardToN8nAIReply({
+              text: message.body,
+              from: message.from,
+              contactName,
+              tenantId: tId,
+              conversationId: message.from,
+              messageType: 'text',
+              fromMe: false
+            });
+            if (!aiReply) {
+              aiReply = await generateStructuredAIReplyLocal({ text: message.body, from: message.from, contactName, tenantId: tId });
+              if (!aiReply) {
+                aiReply = await enhancedAIService.generateContextualReply(message.body, message.from, message.from, tId);
+              }
+            }
           
             if (aiReply) {
               console.log('✅ AI generated reply:', aiReply.substring(0, 100) + '...');
@@ -2006,3 +2204,31 @@ server.listen(PORT, () => {
   }
 });
 }
+
+// Settings endpoints for AI toggle (n8n integration)
+app.get('/api/settings/ai-enabled', (req, res) => {
+  try {
+    loadSettings();
+    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/settings/ai-enabled', (req, res) => {
+  try {
+    const enabled = Boolean(req.body?.enabled);
+    const webhookUrl = String(req.body?.webhookUrl || n8nWebhookUrlFromSettings || '').trim();
+    const pricingInput = req.body?.pricing || {};
+    const pricing = {
+      pricePerReply: Number(pricingInput.pricePerReply || 0),
+      currency: String(pricingInput.currency || 'INR'),
+      freeReplies: Number(pricingInput.freeReplies || 0),
+      billingNote: String(pricingInput.billingNote || '')
+    };
+    saveSettings({ enabled, webhookUrl, pricing });
+    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});

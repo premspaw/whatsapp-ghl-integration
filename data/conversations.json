@@ -698,6 +698,54 @@
         "body": "of assistance?",
         "timestamp": 1762976090957,
         "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A8AD4020713E56BDBB7",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1763989456,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1763989480324",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)? You can also find details here: https://synthcore.in",
+        "timestamp": 1763989480323,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A61F72D100C937E3AE7",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1763990805,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1763990815966",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)? You can also find details here: https://synthcore.in",
+        "timestamp": 1763990815966,
+        "type": "text"
+      },
+      {
+        "id": "false_918123133382@c.us_3A2FB6DD46E873B61122",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hello",
+        "timestamp": 1763991199,
+        "type": "chat"
+      },
+      {
+        "id": "msg_1763991240177",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)? You can also find details here: https://synthcore.in",
+        "timestamp": 1763991240177,
+        "type": "text"
       }
     ],
     "aiEnabled": true,
@@ -706,58 +754,10 @@
     "isRead": true,
     "unreadCount": 0,
     "createdAt": 1762021400196,
-    "updatedAt": 1762976117537,
+    "updatedAt": 1763992600274,
     "context": {
       "type": "default",
       "messages": [
-        {
-          "id": "false_918123133382@c.us_3A477A65B9D6B69E64E1",
-          "from": "user",
-          "direction": "inbound",
-          "body": "Hi",
-          "timestamp": 1762972129,
-          "type": "chat"
-        },
-        {
-          "id": "msg_1762972138349",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Hello there! This is Sahansaa, a Relationship Manager at Synthcore AI. How may I assist you today? I'd be happy to provide any information about our services or help address any questions you may have. Please feel free to share more details about your inquiry, and I'll do my best to assist you.",
-          "timestamp": 1762972138349,
-          "type": "text"
-        },
-        {
-          "id": "false_918123133382@c.us_3A6EAC606C65F53878E8",
-          "from": "user",
-          "direction": "inbound",
-          "body": "What services do you provide",
-          "timestamp": 1762972173,
-          "type": "chat"
-        },
-        {
-          "id": "msg_1762972180383",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "Thank you for your inquiry about our services. As a Relationship Manager at Synthcore AI, I'd be happy to provide you with an overview of the key services we offer.\n\nBased on the information I have access to, Synthcore AI provides the following core services:\n\n- AI-powered software development and consulting\n- Custom machine learning model training and deployment\n- Conversational AI chatbot and virtual assistant development\n- Data analytics and business intelligence solutions\n- Cloud infrastructure and DevOps automation\n\nWe work closely with our clients to understand their unique needs and challenges, and then leverage our AI expertise to deliver tailored solutions that drive business impact. \n\nI'd encourage",
-          "timestamp": 1762972180382,
-          "type": "text"
-        },
-        {
-          "id": "false_918123133382@c.us_3AAEBBAAC1ACC43704B8",
-          "from": "user",
-          "direction": "inbound",
-          "body": "",
-          "timestamp": 1762973026,
-          "type": "image"
-        },
-        {
-          "id": "msg_1762973042968",
-          "from": "ai",
-          "direction": "outbound",
-          "body": "I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)? You can also find details here: https://synthcore.in",
-          "timestamp": 1762973042968,
-          "type": "text"
-        },
         {
           "id": "false_918123133382@c.us_3A7D5C7CF67E4C776952",
           "from": "user",
@@ -873,6 +873,54 @@
           "body": "of assistance?",
           "timestamp": 1762976090957,
           "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A8AD4020713E56BDBB7",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello",
+          "timestamp": 1763989456,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1763989480324",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)? You can also find details here: https://synthcore.in",
+          "timestamp": 1763989480323,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A61F72D100C937E3AE7",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello",
+          "timestamp": 1763990805,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1763990815966",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)? You can also find details here: https://synthcore.in",
+          "timestamp": 1763990815966,
+          "type": "text"
+        },
+        {
+          "id": "false_918123133382@c.us_3A2FB6DD46E873B61122",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hello",
+          "timestamp": 1763991199,
+          "type": "chat"
+        },
+        {
+          "id": "msg_1763991240177",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "I don't have enough verified information in our knowledge base to answer that yet. Could you clarify what you need (e.g., services, pricing, or a specific feature)? You can also find details here: https://synthcore.in",
+          "timestamp": 1763991240177,
+          "type": "text"
         }
       ]
     }
@@ -927,6 +975,93 @@
           "direction": "outbound",
           "body": "Hello! This is Sahansaa, your Customer Success Manager at SYNTHCORE. I'm happy to assist you with any questions or concerns you may have.\n\nI noticed you mentioned a \"test chat persistence check\". Could you please provide me with some more context about what you're looking to accomplish? I'd be glad to help you with any issues or inquiries you may have regarding our services at SYNTHCORE.\n\nPlease feel free to share more details, and I'll do my best to provide a helpful and personalized response.",
           "timestamp": 1762887678865,
+          "type": "text"
+        }
+      ]
+    }
+  },
+  "+911234567890": {
+    "id": "+911234567890",
+    "phone": "+911234567890",
+    "phoneNumber": "+911234567890",
+    "name": "Prem",
+    "contactName": "Prem",
+    "type": "media",
+    "channel": "whatsapp_private",
+    "messages": [
+      {
+        "id": "sent_1763996520817",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hi Prem, this is a test template with image.",
+        "timestamp": 1763996520817,
+        "type": "media"
+      },
+      {
+        "id": "prov_1764089700864",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Ping from local webhook test",
+        "timestamp": 1764089700830,
+        "type": "text"
+      },
+      {
+        "id": "sent_1764090166139",
+        "from": "ai",
+        "direction": "outbound",
+        "body": "Hello from n8n reply test",
+        "timestamp": 1764090166139,
+        "type": "text"
+      },
+      {
+        "id": "prov_1764090626342",
+        "from": "user",
+        "direction": "inbound",
+        "body": "Hi, can you help?",
+        "timestamp": 1732523078,
+        "type": "text"
+      }
+    ],
+    "aiEnabled": true,
+    "syncToGHL": true,
+    "lastSyncedMessageId": 2,
+    "isRead": false,
+    "unreadCount": 1,
+    "createdAt": 1763996520821,
+    "updatedAt": 1764090626343,
+    "context": {
+      "type": "default",
+      "messages": [
+        {
+          "id": "sent_1763996520817",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hi Prem, this is a test template with image.",
+          "timestamp": 1763996520817,
+          "type": "media"
+        },
+        {
+          "id": "prov_1764089700864",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Ping from local webhook test",
+          "timestamp": 1764089700830,
+          "type": "text"
+        },
+        {
+          "id": "sent_1764090166139",
+          "from": "ai",
+          "direction": "outbound",
+          "body": "Hello from n8n reply test",
+          "timestamp": 1764090166139,
+          "type": "text"
+        },
+        {
+          "id": "prov_1764090626342",
+          "from": "user",
+          "direction": "inbound",
+          "body": "Hi, can you help?",
+          "timestamp": 1732523078,
           "type": "text"
         }
       ]

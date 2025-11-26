@@ -1,7 +1,13 @@
 const express = require('express');
+const GhlMcpClient = require('../services/ghlMcpClient');
+const { getSupabase } = require('../services/db/supabaseClient');
+const { findByPhone } = require('../services/db/contactRepo');
+const { getRecentMessagesByContact } = require('../services/db/messageRepo');
+const phoneNormalizer = require('../utils/phoneNormalizer');
 
 module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => {
   const router = express.Router();
+  const ghlMcp = new GhlMcpClient();
 
   // Minimal health endpoint to prevent startup crash
   router.get('/health', (req, res) => {
@@ -9,6 +15,52 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
       ? enhancedAIService.getConversationStats()
       : {};
     res.json({ success: true, service: 'ai', stats, timestamp: Date.now() });
+  });
+
+  // AI status including Pinecone MCP and RAG controls
+  router.get('/status', (req, res) => {
+    try {
+      const mcp = enhancedAIService && enhancedAIService.pineconeMcp;
+      const pineconeEnabled = process.env.PINECONE_MCP_ENABLED === 'true';
+      const pineconeConfigured = !!(mcp && mcp.isConfigured && mcp.isConfigured());
+      const ragPineconeOnly = (enhancedAIService && typeof enhancedAIService.ragPineconeOnly !== 'undefined')
+        ? enhancedAIService.ragPineconeOnly
+        : (process.env.RAG_PINECONE_ONLY === 'true');
+      const groundedOnly = (enhancedAIService && typeof enhancedAIService.groundedOnly !== 'undefined')
+        ? enhancedAIService.groundedOnly
+        : (String(process.env.RAG_GROUNDED_ONLY || 'true').toLowerCase() === 'true');
+      const citationMode = (enhancedAIService && enhancedAIService.citationMode)
+        ? enhancedAIService.citationMode
+        : (process.env.REPLY_CITATIONS || 'auto');
+      const ghlKbFirst = (enhancedAIService && typeof enhancedAIService.ghlKBFirst !== 'undefined')
+        ? enhancedAIService.ghlKBFirst
+        : (process.env.GHL_KB_FIRST === 'true');
+
+      // Personality summary
+      const p = enhancedAIService && enhancedAIService.aiPersonality ? enhancedAIService.aiPersonality : {};
+      const personality = {
+        name: p.name || null,
+        company: p.company || null,
+        website: p.website || null,
+        tone: p.tone || null,
+        traits: Array.isArray(p.traits) ? p.traits : [],
+        aiEnabled: typeof p.aiEnabled === 'boolean' ? p.aiEnabled : true,
+        lastUpdated: p.lastUpdated || null
+      };
+
+      return res.json({
+        success: true,
+        pineconeEnabled,
+        pineconeConfigured,
+        ragPineconeOnly,
+        groundedOnly,
+        citationMode,
+        ghlKbFirst,
+        personality
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
   });
 
   // Website training endpoint
@@ -128,6 +180,123 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
         success: false, 
         error: error.message 
       });
+    }
+  });
+
+  // Test Pinecone MCP Assistant context retrieval
+  router.post('/context/test', async (req, res) => {
+    try {
+      const { query, topK, tenantId } = req.body || {};
+      if (!query) {
+        return res.status(400).json({ success: false, error: 'query is required' });
+      }
+      const mcp = enhancedAIService && enhancedAIService.pineconeMcp;
+      if (!mcp || !mcp.isConfigured()) {
+        return res.status(400).json({ success: false, error: 'Pinecone MCP is not configured' });
+      }
+      const items = await mcp.getContext(query, { topK: topK || 8, tenantId: tenantId || null });
+      res.json({ success: true, count: items.length, items });
+    } catch (error) {
+      console.error('Error in MCP context test:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // GHL MCP: generic tool call
+  router.post('/ghl-mcp/tool', async (req, res) => {
+    try {
+      const { name, params = {}, locationId, pitToken, mcpUrl } = req.body || {};
+      if (!name) {
+        return res.status(400).json({ success: false, error: 'Tool name is required' });
+      }
+      const client = (pitToken || mcpUrl || locationId)
+        ? new GhlMcpClient({ pitToken, url: mcpUrl, locationId })
+        : ghlMcp;
+      if (!client.isConfigured()) {
+        return res.status(400).json({ success: false, error: 'GHL MCP is not configured' });
+      }
+      const headers = locationId ? { locationId } : {};
+      const result = await client.callTool(name, params, headers);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // GHL MCP: get contact by ID
+  router.get('/ghl-mcp/contact', async (req, res) => {
+    try {
+      const { contactId, locationId, pitToken, mcpUrl } = req.query;
+      if (!contactId) {
+        return res.status(400).json({ success: false, error: 'contactId is required' });
+      }
+      const client = (pitToken || mcpUrl || locationId)
+        ? new GhlMcpClient({ pitToken, url: mcpUrl, locationId })
+        : ghlMcp;
+      if (!client.isConfigured()) {
+        return res.status(400).json({ success: false, error: 'GHL MCP is not configured' });
+      }
+      const headers = locationId ? { locationId } : {};
+      const result = await client.getContact(contactId, headers);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // GHL MCP: search conversations
+  router.get('/ghl-mcp/conversations/search', async (req, res) => {
+    try {
+      const { q, locationId, pitToken, mcpUrl } = req.query;
+      if (!q) {
+        return res.status(400).json({ success: false, error: 'q (query) is required' });
+      }
+      const client = (pitToken || mcpUrl || locationId)
+        ? new GhlMcpClient({ pitToken, url: mcpUrl, locationId })
+        : ghlMcp;
+      if (!client.isConfigured()) {
+        return res.status(400).json({ success: false, error: 'GHL MCP is not configured' });
+      }
+      const headers = locationId ? { locationId } : {};
+      const result = await client.searchConversations(q, headers);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // GHL MCP: get messages by conversation ID
+  router.get('/ghl-mcp/conversations/messages', async (req, res) => {
+    try {
+      const { conversationId, locationId, pitToken, mcpUrl } = req.query;
+      if (!conversationId) {
+        return res.status(400).json({ success: false, error: 'conversationId is required' });
+      }
+      const client = (pitToken || mcpUrl || locationId)
+        ? new GhlMcpClient({ pitToken, url: mcpUrl, locationId })
+        : ghlMcp;
+      if (!client.isConfigured()) {
+        return res.status(400).json({ success: false, error: 'GHL MCP is not configured' });
+      }
+      const headers = locationId ? { locationId } : {};
+      const result = await client.getMessages(conversationId, headers);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Resolve tenant context (llm_tag, vector_namespace, tenantId) by phone/location
+  router.get('/context/tenant', async (req, res) => {
+    try {
+      const { phone, locationId } = req.query;
+      if (!phone && !locationId) {
+        return res.status(400).json({ success: false, error: 'Provide phone or locationId' });
+      }
+      const context = await tenantService.resolveTenantContext({ phone, locationId, req });
+      return res.json({ success: true, context });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: e.message || 'Failed to resolve tenant context' });
     }
   });
 
@@ -309,10 +478,15 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
       // Generate contextual reply using enhanced AI
       const reply = await enhancedAIService.generateContextualReply(message, phoneNumber, conversationId, tenantId);
 
-      // Retrieve RAG metadata (vectors with keyword fallback)
+      // Retrieve Pinecone MCP context items (Pinecone-only RAG)
       let retrieval = [];
       try {
-        retrieval = await enhancedAIService.safeRetrieveEmbeddings(message, conversationId, null, 0.2, tenantId, 5);
+        const mcp = enhancedAIService && enhancedAIService.pineconeMcp;
+        if (mcp && mcp.isConfigured()) {
+          retrieval = await mcp.getContext(message, { topK: 5, tenantId });
+        } else {
+          retrieval = [];
+        }
       } catch (e) {
         retrieval = [];
       }
@@ -331,6 +505,128 @@ module.exports = (aiService, mcpAIService, enhancedAIService, tenantService) => 
     } catch (error) {
       console.error('Error in test-chat:', error);
       res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Structured AI plan (does not execute external calls)
+  router.post('/structured/plan', async (req, res) => {
+    try {
+      const {
+        incoming_message,
+        contact = null,
+        account = {},
+        conversation_history = [],
+        pinecone_top_k = 5,
+        ghl_lookup_result = null,
+        uploaded_file_paths = []
+      } = req.body || {};
+
+      if (!incoming_message) {
+        return res.status(400).json({ success: false, error: 'incoming_message is required' });
+      }
+
+      const plan = enhancedAIService.buildStructuredPlan({
+        incoming_message,
+        contact,
+        account,
+        conversation_history,
+        pinecone_top_k,
+        ghl_lookup_result,
+        uploaded_file_paths
+      });
+
+      return res.json({ success: true, plan });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Compose RAG prompt with provided snippets/contact summary (host fills data)
+  router.post('/structured/compose', async (req, res) => {
+    try {
+      const {
+        incoming_message,
+        business_name,
+        account = {},
+        snippets = [],
+        contact_summary = {},
+        conversation_history = []
+      } = req.body || {};
+
+      if (!incoming_message) {
+        return res.status(400).json({ success: false, error: 'incoming_message is required' });
+      }
+
+      const rag_prompt = enhancedAIService.composeRagPrompt({
+        incoming_message,
+        business_name,
+        account,
+        snippets,
+        contact_summary,
+        conversation_history
+      });
+
+      return res.json({ success: true, rag_prompt });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Diagnostics: Inspect Supabase linkage and latest messages for a phone
+  router.get('/diagnostics/phone', async (req, res) => {
+    try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        return res.status(400).json({ success: false, error: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_* keys.' });
+      }
+
+      const { phone, limit = 10 } = req.query;
+      if (!phone) {
+        return res.status(400).json({ success: false, error: 'Missing required query param: phone' });
+      }
+
+      // Normalize phone
+      let normalizedPhone = phone;
+      try {
+        if (phoneNormalizer && typeof phoneNormalizer.normalize === 'function') {
+          normalizedPhone = phoneNormalizer.normalize(phone);
+        } else {
+          normalizedPhone = (phone || '').replace(/[^+\d]/g, '');
+        }
+      } catch (_) {
+        normalizedPhone = (phone || '').replace(/[^+\d]/g, '');
+      }
+
+      // Find contact
+      const contact = await findByPhone(normalizedPhone);
+      if (!contact) {
+        return res.status(404).json({ success: false, error: 'Contact not found by phone', phone: normalizedPhone });
+      }
+
+      // Conversations for contact
+      const { data: conversations, error: convError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('contact_id', contact.id)
+        .order('last_message_at', { ascending: false })
+        .limit(5);
+      if (convError) {
+        return res.status(500).json({ success: false, error: convError.message });
+      }
+
+      // Latest messages for contact
+      const latestMessages = await getRecentMessagesByContact(contact.id, Number(limit));
+
+      return res.json({
+        success: true,
+        phone: normalizedPhone,
+        contact,
+        conversations: { count: conversations?.length || 0, items: conversations || [] },
+        messages: { count: latestMessages?.length || 0, items: latestMessages || [] },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: error.message });
     }
   });
 

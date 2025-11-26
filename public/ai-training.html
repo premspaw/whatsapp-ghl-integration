@@ -117,12 +117,11 @@
     <h1>🤖 AI Management</h1>
     <div class="flex">
       <a href="/ghl-whatsapp-tab.html" class="btn secondary">Back to GHL Tab</a>
-      <a href="/rag-dashboard.html" class="btn" title="Open RAG Dashboard">Open RAG Dashboard</a>
     </div>
   </header>
   
   <main>
-    <!-- AI Toggle Section -->
+    <!-- AI Control (Personality-based) -->
     <div class="section">
       <h2>🔧 AI Control</h2>
       <div class="toggle-container">
@@ -132,6 +131,9 @@
         <div class="status-text" id="aiStatus">AI is Active</div>
       </div>
       <div id="aiToggleStatus" class="alert info" style="display:none"></div>
+      <div class="flex">
+        <a href="/ai-n8n.html" class="btn secondary">Open AI via n8n</a>
+      </div>
     </div>
 
     <!-- Personality & Brand Editing -->
@@ -247,7 +249,6 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ enabled: aiEnabled })
         });
-        
         const data = await response.json();
         if (data.success) {
           setStatus('aiToggleStatus', `AI ${aiEnabled ? 'enabled' : 'disabled'} successfully`, 'success');
@@ -310,6 +311,7 @@
         updateAIToggleUI();
       }
     }
+
 
     function setVal(id, v) {
       const el = document.getElementById(id);
