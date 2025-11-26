@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI n8n Integration</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;margin:0}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.title{font-weight:700;font-size:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:16px}
+.label{font-size:12px;color:#94a3b8}
+.value{font-size:14px;color:#e5e7eb;word-break:break-all}
+.row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.btn{border:1px solid #334155;background:#111827;color:#e5e7eb;border-radius:8px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:#2563eb;border-color:#2563eb}
+.log{background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:12px;margin-top:16px;height:180px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px}
+.input{width:100%;padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e5e7eb}
+.row-gap{display:flex;gap:8px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title">AI n8n Integration</div>
+    <button id="refresh" class="btn">Refresh</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="label">Server Status</div>
+      <div class="row">
+        <button id="checkStatus" class="btn">Check</button>
+        <div id="statusValue" class="value">-</div>
+      </div>
+      <div class="label" style="margin-top:12px">WhatsApp Status</div>
+      <div class="row">
+        <button id="checkWhatsApp" class="btn">Check</button>
+        <div id="waValue" class="value">-</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">n8n Settings</div>
+      <div class="row"><div class="value" id="aiEnabled">enabled: -</div></div>
+      <div class="row"><div class="value" id="webhookUrl">webhookUrl: -</div></div>
+      <div class="row-gap" style="margin-top:12px">
+        <input id="testPhone" class="input" placeholder="Phone e.g. +918123133382">
+        <button id="sendTest" class="btn primary">Send Test</button>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="label">Result</div>
+    <div id="result" class="value">-</div>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+<script>
+const API=window.location.origin
+function log(s){const el=document.getElementById('log');el.textContent+=`\n${s}`;el.scrollTop=el.scrollHeight}
+async function getJson(u){const r=await fetch(u);const t=await r.text();try{return JSON.parse(t)}catch(_){return {raw:t}}}
+async function loadSettings(){const d=await getJson(`${API}/api/settings/ai-enabled`);document.getElementById('aiEnabled').textContent=`enabled: ${d.enabled}`;document.getElementById('webhookUrl').textContent=`webhookUrl: ${String(d.webhookUrl||'').trim()}`}
+async function checkStatus(){const d=await getJson(`${API}/api/system/status`);document.getElementById('statusValue').textContent=d.success?d.status:'error'}
+async function checkWhatsApp(){const d=await getJson(`${API}/api/whatsapp/status`);document.getElementById('waValue').textContent=d.status||'unknown'}
+async function sendTest(){const phone=document.getElementById('testPhone').value.trim()||'+910000000000';const s=await getJson(`${API}/api/settings/ai-enabled`);const url=String(s.webhookUrl||'').trim();const payload={phone,fromName:'Test',message:'n8n webhook test',messageType:'text',integration:'location_123',timestamp:Date.now(),attachments:[]};try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const t=await r.text();document.getElementById('result').textContent=r.status===200?t:(`status ${r.status}`);log(`POST ${url} -> ${r.status}`)}catch(e){document.getElementById('result').textContent=e.message;log(`POST error: ${e.message}`)}}
+document.getElementById('refresh').addEventListener('click',()=>{loadSettings();checkStatus();checkWhatsApp()})
+document.getElementById('checkStatus').addEventListener('click',checkStatus)
+document.getElementById('checkWhatsApp').addEventListener('click',checkWhatsApp)
+document.getElementById('sendTest').addEventListener('click',sendTest)
+loadSettings()
+</script>
+</body>
+</html>
