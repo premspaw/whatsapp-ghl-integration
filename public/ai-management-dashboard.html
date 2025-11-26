@@ -688,10 +688,13 @@
             </div>
 
             <!-- Conversation Stats Section -->
-            <div class="section">
-                <h2>📊 Conversation Statistics</h2>
-                <div id="statsDisplay" class="stats-grid">
-                    <div class="loading"></div>
+            <div class="section" id="liveMetrics">
+                <h2>📈 Live Metrics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number" id="msgsTotal">0</div><div class="stat-label">Total Messages Sent</div></div>
+                    <div class="stat-card"><div class="stat-number" id="templatesTotal">0</div><div class="stat-label">Templates Sent</div></div>
+                    <div class="stat-card"><div class="stat-number" id="aiRepliesTotal">0</div><div class="stat-label">AI Replies</div></div>
+                    <div class="stat-card"><div class="stat-number" id="aiCost">₹0.00</div><div class="stat-label">AI Cost (₹0.20 / reply)</div></div>
                 </div>
             </div>
 
@@ -850,16 +853,16 @@
 
         // Load AI personality and stats on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Load tenant selector and saved settings first
-            loadTenants();
+            // Simplify header, remove tenant selector
+            try { document.querySelector('.tenant-selector').remove(); } catch(_) {}
             loadRagSettingsUI();
-            loadPersonality();
+            const pd = document.getElementById('personalityDisplay'); if (pd) pd.textContent = 'Ready';
             const contentRoot = document.querySelector('.content');
             const n8nSection = document.createElement('div');
             n8nSection.className = 'section';
-            n8nSection.innerHTML = '<h2>🔧 n8n Status</h2><div class="stats-grid"><div class="stat-card"><div class="stat-number" id="serverStat">-</div><div class="stat-label">Server</div></div><div class="stat-card"><div class="stat-number" id="waStat">-</div><div class="stat-label">WhatsApp</div></div><div class="stat-card"><div class="stat-number" id="webhookStat">-</div><div class="stat-label">Webhook</div></div></div><div class="test-section"><div class="form-group"><label>Phone</label><input id="testPhone" placeholder="+918123133382"></div><button class="btn" id="sendWebhookTest">Send Webhook Test</button><div id="webhookResult" class="test-result hidden"><h4>Result</h4><p id="webhookText"></p></div></div>';
+            n8nSection.innerHTML = '<h2>🔧 n8n Status</h2><div class="stats-grid"><div class="stat-card"><div class="stat-number" id="serverStat">-</div><div class="stat-label">Server</div></div><div class="stat-card"><div class="stat-number" id="waStat">-</div><div class="stat-label">WhatsApp</div></div><div class="stat-card"><div class="stat-number" id="webhookStat" style="word-break:break-all;font-size:0.9em;">-</div><div class="stat-label">Webhook</div></div></div><div class="test-section"><div class="form-group"><label>Phone</label><input id="testPhone" placeholder="+918123133382"></div><button class="btn" id="sendWebhookTest">Send Webhook Test</button><div id="webhookResult" class="test-result hidden"><h4>Result</h4><p id="webhookText"></p></div></div>';
             contentRoot.insertBefore(n8nSection, contentRoot.firstChild);
-            Array.from(document.querySelectorAll('.section')).forEach(sec => { const h = sec.querySelector('h2'); if (!h) return; const t = h.textContent.trim(); if (t.startsWith('📊') || t.startsWith('🧪') || t.startsWith('📚') || t.startsWith('🌐') || t.startsWith('🧠')) { sec.remove(); } });
+            Array.from(document.querySelectorAll('.section')).forEach(sec => { const h = sec.querySelector('h2'); if (!h) return; const t = h.textContent.trim(); if (t.startsWith('🧪') || t.startsWith('📚') || t.startsWith('🌐')) { sec.remove(); } });
             loadWhatsAppStatus();
             setInterval(loadWhatsAppStatus, 30000);
         });
@@ -951,8 +954,9 @@
         async function getJson(u){ const r = await fetch(u); const t = await r.text(); try { return JSON.parse(t) } catch(_){ return { raw:t } } }
         async function refreshN8nStatus(){ const s = await getJson(`${API}/api/system/status`); document.getElementById('serverStat').textContent = s.success ? s.status : 'error'; const w = await getJson(`${API}/api/whatsapp/status`); document.getElementById('waStat').textContent = w.status || 'unknown'; const k = await getJson(`${API}/api/settings/ai-enabled`); document.getElementById('webhookStat').textContent = String(k.webhookUrl||'').trim(); }
         async function sendWebhookTest(){ const phone = document.getElementById('testPhone').value.trim() || '+910000000000'; const s = await getJson(`${API}/api/settings/ai-enabled`); const url = String(s.webhookUrl||'').trim(); const payload = { phone, fromName:'Test', message:'n8n webhook test', messageType:'text', integration:'location_123', timestamp:Date.now(), attachments:[] }; try { const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); const t = await r.text(); document.getElementById('webhookText').textContent = t; document.getElementById('webhookResult').classList.remove('hidden'); } catch(e){ document.getElementById('webhookText').textContent = e.message; document.getElementById('webhookResult').classList.remove('hidden'); } }
+        async function refreshCounters(){ try { const d = await getJson(`${API}/api/analytics/counters`); document.getElementById('msgsTotal').textContent = d.messagesSent ?? 0; document.getElementById('templatesTotal').textContent = d.templatesSent ?? 0; document.getElementById('aiRepliesTotal').textContent = d.aiReplies ?? 0; const cost = (d.aiCostInr ?? 0); document.getElementById('aiCost').textContent = `₹${Number(cost).toFixed(2)}`; } catch(_){ }
         document.addEventListener('click', function(e){ if (e.target && e.target.id === 'sendWebhookTest') { sendWebhookTest(); } });
-        refreshN8nStatus();
+        refreshN8nStatus(); refreshCounters(); setInterval(refreshCounters, 10000);
 
         // RAG Settings handling
         function getRagSettings() {

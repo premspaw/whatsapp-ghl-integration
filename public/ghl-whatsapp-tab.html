@@ -1035,7 +1035,24 @@
             border-radius: 8px;
         }
         .emoji-item:hover { background: #f1f5f9; }
-    </style>
+</style>
+<style>
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; }
+  .app-header, .topbar, .status-bar { flex: 0 0 auto; }
+  .filter-section { flex: 0 0 auto; }
+  .main-container { flex: 1 1 auto; display: flex; min-height: 0; }
+  .sidebar { flex: 0 0 320px; display: flex; flex-direction: column; border-right: 1px solid #e2e8f0; min-height: 0; }
+  .conversation-list, .conversation-container { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .chat-container { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+  #messagesArea { flex: 1 1 auto; overflow-y: auto; padding-bottom: 12px; }
+  .message-input-container { position: sticky; bottom: 0; background: #fff; border-top: 1px solid #e2e8f0; padding: 10px; }
+  .message-input { min-height: 44px; max-height: 160px; }
+  .input-actions { display: flex; align-items: center; gap: 8px; }
+  @media (max-width: 1200px) { .sidebar { flex-basis: 300px; } }
+  @media (max-width: 1024px) { .sidebar { flex-basis: 280px; } }
+  @media (max-width: 768px) { .sidebar { display: none; } .main-container { padding: 0; } }
+</style>
 </head>
 <body>
     <div class="ghl-header">

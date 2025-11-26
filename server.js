@@ -665,6 +665,31 @@ app.get('/api/activity/recent', (req, res) => {
   res.json({ success:true, items:list, count:list.length });
 });
 
+app.get('/api/analytics/counters', (req, res) => {
+  try {
+    const file = path.join(__dirname, 'data', 'conversations.json');
+    const all = readJsonSafe(file);
+    let messagesSent = 0;
+    let templatesSent = 0;
+    let aiReplies = 0;
+    (all || []).forEach(conv => {
+      const msgs = Array.isArray(conv.messages) ? conv.messages : [];
+      msgs.forEach(m => {
+        const isOutbound = (m.direction === 'outbound') || (m.from === 'me') || (m.from === 'ai');
+        if (isOutbound) messagesSent++;
+        const isTemplate = (m.meta && m.meta.isTemplate) || (typeof m.id === 'string' && m.id.startsWith('tpl_')) || (m.source === 'template');
+        if (isTemplate) templatesSent++;
+        if ((m.from === 'ai') && isOutbound) aiReplies++;
+      });
+    });
+    const pricePerReplyInr = 0.20;
+    const aiCostInr = Number((aiReplies * pricePerReplyInr).toFixed(2));
+    res.json({ success:true, messagesSent, templatesSent, aiReplies, pricePerReplyInr, aiCostInr });
+  } catch (e) {
+    res.status(500).json({ success:false, error:e.message });
+  }
+});
+
 // GHL webhook to trigger template sends and reflect in tab + GHL sync
 app.post('/webhook/ghl/template-send', async (req, res) => {
   try {
