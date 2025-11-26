@@ -28,6 +28,23 @@ class GHLService {
     });
   }
 
+  mapMessageTypeFromConversationType(convType) {
+    const t = String(convType || '').toUpperCase();
+    if (t === 'WHATSAPP' || t === 'TYPE_PHONE') return 'TYPE_PHONE';
+    if (t === 'SMS') return 'SMS';
+    return this.channelMode === 'whatsapp' ? 'TYPE_PHONE' : 'SMS';
+  }
+
+  async resolveMessageType(conversationId) {
+    try {
+      if (conversationId) {
+        const conv = await this.getConversationById(conversationId);
+        return this.mapMessageTypeFromConversationType(conv && conv.type);
+      }
+    } catch (_) {}
+    return this.channelMode === 'whatsapp' ? 'TYPE_PHONE' : 'SMS';
+  }
+
   // Helper function to normalize phone numbers for GHL API
   normalizePhoneNumber(phone) {
     return normalizePhone(phone);
@@ -179,8 +196,7 @@ class GHLService {
       const response = await this.client.post('/conversations/', {
         contactId: conversationData.contactId,
         locationId: this.locationId,
-        // Some deployments reject uppercase 'SMS'; prefer lowercase or omit
-        type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'sms',
+        type: this.channelMode === 'whatsapp' ? 'TYPE_PHONE' : 'SMS',
         status: conversationData.status || 'active',
         phoneNumber: conversationData.phoneNumber
       });
@@ -193,7 +209,7 @@ class GHLService {
         return {
           id: error.response.data.conversationId,
           contactId: conversationData.contactId,
-          type: this.channelMode === 'whatsapp' ? 'whatsapp' : 'sms',
+          type: this.channelMode === 'whatsapp' ? 'TYPE_PHONE' : 'SMS',
           status: 'active',
           provider: 'whatsapp',
           phoneNumber: conversationData.phoneNumber
@@ -243,11 +259,13 @@ class GHLService {
         console.log('  ℹ️  Could not fetch contact phone, using contactId');
       }
 
+      const resolvedType = (messageData && messageData.type) ? messageData.type : await this.resolveMessageType(conversationId);
       const payload = {
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
         locationId: this.locationId,
+        type: resolvedType,
         // Explicitly mark inbound direction to avoid ambiguity
         direction: 'inbound',
         // Key: Set FROM to contact's phone for inbound (customer) messages
@@ -305,11 +323,13 @@ class GHLService {
       }
       // For outbound messages (from AI/Agent), we DON'T set FROM field
       // This tells GHL it's from the location/business
+      const resolvedType = (messageData && messageData.type) ? messageData.type : await this.resolveMessageType(conversationId);
       const payload = {
         contactId: contactId,
         message: messageData.message || messageData.body,
         html: messageData.message || messageData.body,
         locationId: this.locationId,
+        type: resolvedType,
         direction: 'outbound', // Explicitly set outbound for AI/Agent messages
         // Add sender name to show it's from AI
         senderName: 'AI Assistant',
