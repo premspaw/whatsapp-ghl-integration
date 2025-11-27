@@ -1,0 +1,263 @@
+{
+  "name": "Send → WhatsApp (VPS) RAW",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=You are the Synthcore WhatsApp AI Assistant.\n\nYour role: Answer user questions by ACTIVELY USING the available tools.\n\nAVAILABLE TOOLS (YOU MUST USE THESE):\n1. mcp_pinecone - Use this tool to search the knowledge base for:\n   - Company information\n   - Pricing details\n   - Services offered by Synthcore\n   - Product information\n   - Any general questions about Synthcore\n   \n2. mcp_ghl - Use this tool to access CRM data:\n   - User tags\n   - Pipeline information\n   - Tasks\n   - Contact details\n\nIMPORTANT INSTRUCTIONS:\n- ALWAYS use mcp_pinecone tool when users ask about pricing, services, or company information\n- ALWAYS use mcp_ghl tool when you need to check user data, tags, or CRM information\n- Call the appropriate tool BEFORE responding to the user\n- After getting tool results, provide a helpful, conversational response\n- Start responses with a friendly greeting\n\nCONTEXT:\n- User phone: {{ $json.phone }}\n- Contact name: {{ $json.contactName || \"there\" }}\n- Tenant ID: {{ $json.tenantId }}\n\nRespond naturally and conversationally after using the tools to gather information."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        12128,
+        1840
+      ],
+      "id": "ef7fbfec-8e4f-47f9-87c4-4c2bb12521e1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4.1-fast:free",
+        "options": {
+          "maxTokens": -1,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        12064,
+        2064
+      ],
+      "id": "116b2f5c-dd45-41c9-9ee2-67d7c71586a3",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "KOkZXjveUcOPbX6z",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/webhook/whatsapp",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        11616,
+        1840
+      ],
+      "id": "e87daafd-d445-4ecd-b604-b63873c44bc2",
+      "name": "Webhook",
+      "webhookId": "311bdfb2-d348-415d-ab92-3a210fe67bf4"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://services.leadconnectorhq.com/mcp/",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        12192,
+        2064
+      ],
+      "id": "007758bc-9b7d-4d4f-872c-1e0b9f27a2a4",
+      "name": "mcp_ghl",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gpyuE7pK61lKn5xP",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://prod-1-data.ke.pinecone.io/mcp/assistants/whatappdemo",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "get_context"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        12320,
+        2064
+      ],
+      "id": "646ab1b1-c54d-4d4f-b451-650210fc65ea",
+      "name": "mcp_pinecone",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gpyuE7pK61lKn5xP",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format WhatsApp Request — robust and n8n-compatible\n\n// 1) Get Normalize node output safely (update name if your node name differs)\nconst normalizeNodeName = \"Normalize Payload\"; // <- change if your node has a different name\nconst normalize = ($node && $node[normalizeNodeName] && $node[normalizeNodeName].json) ? $node[normalizeNodeName].json : (items[0].json.normalize || {});\n\n// 2) Get AI output from this node's input (or fallback to a named node)\nconst aiInput = $input && $input.length ? $input[0].json : null;\nconst aiNode = aiInput || (($node && $node[\"AI Agent\"] && $node[\"AI Agent\"].json) ? $node[\"AI Agent\"].json : {});\n\n// 3) Normalize AI object (it might be a stringified JSON or object)\nlet aiObj = aiNode.output ?? aiNode;\nif (typeof aiObj === 'string') {\n  try { aiObj = JSON.parse(aiObj); } catch(e) { aiObj = { reply: [ aiObj ] }; }\n}\n\n// 4) Build message text (join reply array or use text fields)\nlet messageText = '';\nif (aiObj && Array.isArray(aiObj.reply)) {\n  messageText = aiObj.reply.join(' ').trim();\n} else if (aiObj && typeof aiObj.reply === 'string') {\n  messageText = aiObj.reply.trim();\n} else if (aiObj && typeof aiObj === 'string') {\n  messageText = aiObj.trim();\n}\n\n// 5) Final fallback: if AI didn't provide reply, use normalized text fields\nif (!messageText) {\n  messageText = (normalize && (normalize.reply || normalize.text || normalize.text_raw)) ||\n                (aiNode && (aiNode.text || aiNode.message)) || '';\n  messageText = (Array.isArray(messageText) ? messageText.join(' ') : messageText).toString().trim();\n}\n\n// 6) Determine recipient phone (prefer normalized E.164 then raw fields)\nconst to =\n  (normalize && (normalize.phone || normalize.phone_raw)) ||\n  aiNode.to || aiNode.phone || aiNode.from ||\n  items[0].json.from || items[0].json.phone || null;\n\n// 7) Build the output in n8n Function node format (array with json)\nreturn [{\n  json: {\n    to,\n    message: messageText\n  }\n}];\n"
+      },
+      "id": "a200c1a5-96d5-41e9-9719-df3b806721c0",
+      "name": "Format WhatsApp Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        12528,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Minimal Normalize Payload — tailored to your payload\nconst i = items[0].json || {};\n\n// helper to normalize phone to E.164\nfunction toE164(raw) {\n  if (!raw && raw !== 0) return null;\n  const s = raw.toString().trim();\n  if (s.startsWith('+')) return s;\n  const digits = s.replace(/[^\\d]/g,'');\n  if (digits.length === 10) return '+91' + digits;\n  if (digits.length > 10) return '+' + digits;\n  return null;\n}\n\n// Direct extraction (explicit for the shape you posted)\nconst phoneRaw = i.phone || i.from || i.sender || i.contact?.phone || null;\nconst contactName = i.fromName || i.contactName || i.name || null;\nconst text = i.text || i.message || i.body?.text || '';\n\n// Return normalized fields plus a debug snapshot of top-level keys\nconst out = {\n  phone_raw: phoneRaw,\n  phone: toE164(phoneRaw),\n  contactName: contactName,\n  text: text,\n  // debug helper: list top-level keys visible to this node\n  _debug_keys: Object.keys(i),\n  raw: i,\n  traceId: (i.traceId || `trace_${Date.now()}`),\n  timestamp: Date.now()\n};\n\nreturn [{ json: out }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        11872,
+        1840
+      ],
+      "id": "fc8c6a58-cadc-4ca4-ad09-06e6f64a4480",
+      "name": "Normalize Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.synthcore.in/api/whatsapp/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "=={{ $json.from || $json.phone || $json.contact?.phone || $json.whatsappNumber || '+918123133382' }}"
+            },
+            {
+              "name": "message",
+              "value": "=={{ $json.message || $json.text || $json.body || 'Hello from n8n' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        12784,
+        1840
+      ],
+      "id": "473c661e-5c41-4a80-bf23-7348d78139af",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mcp_ghl": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mcp_pinecone": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format WhatsApp Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format WhatsApp Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Payload": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "fce4b744-c84b-4177-88b0-59ff7eb20367",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0a824ed8f0d2fd57e918bf34e566799d94a60fee25391d0cd1f59f96d39dce19"
+  },
+  "id": "iDvh1PB5jrWS24OK",
+  "tags": []
+}
