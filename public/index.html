@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp AI Automation Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 WhatsApp AI Automation</h1>
+            <p class="subtitle">Powered by Grok AI & LangChain | <span id="liveStatus" title="Server connection">🟢
+                    Live</span></p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">Dashboard</button>
+            <button class="tab" data-tab="messages">Recent Messages</button>
+            <button class="tab" data-tab="prompt">Prompt Editor</button>
+            <button class="tab" data-tab="config">Configuration</button>
+            <button class="tab" data-tab="test">Test Webhook</button>
+            <button class="tab" data-tab="logs">Activity Logs</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard">
+            <div class="cards">
+                <div class="card">
+                    <div class="card-icon">🚀</div>
+                    <h3>Server Status</h3>
+                    <p class="status-text" id="serverStatus">Checking...</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Total Requests</h3>
+                    <p class="stat-number" id="totalRequests">0</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <h3>AI Agent</h3>
+                    <p class="status-text" id="agentStatus">Ready</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">💾</div>
+                    <h3>Supabase</h3>
+                    <p class="status-text" id="supabaseStatus">Connected</p>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h2>Webhook URL</h2>
+                <div class="webhook-url">
+                    <code id="webhookUrl">http://localhost:3000/webhook/whatsapp</code>
+                    <button class="btn-copy" onclick="copyWebhookUrl()">Copy</button>
+                </div>
+                <p class="hint">Use this URL in your WhatsApp webhook configuration</p>
+            </div>
+
+            <div class="info-section">
+                <h2>Quick Actions</h2>
+                <button class="btn-secondary" onclick="viewLogs()">📋 View Server Logs</button>
+                <button class="btn-secondary" onclick="testWebhook()">🧪 Send Test Message</button>
+                <button class="btn-secondary" onclick="refreshStatus()">🔄 Refresh Status</button>
+            </div>
+        </div>
+
+        <!-- Recent Messages Tab (NEW) -->
+        <div class="tab-content" id="messages">
+            <h2>Recent Conversations</h2>
+            <div class="controls">
+                <input type="text" id="messageFilter" placeholder="Filter by phone number..."
+                    style="padding: 8px; margin-bottom: 15px; width: 300px;">
+                <button class="btn-secondary" onclick="loadMessages()">🔄 Refresh</button>
+            </div>
+            <div id="messagesList" class="messages-container">
+                <p class="hint">Loading messages...</p>
+            </div>
+        </div>
+
+        <!-- Prompt Editor Tab (NEW) -->
+        <div class="tab-content" id="prompt">
+            <h2>AI System Prompt Editor</h2>
+            <p class="hint">Customize how the AI behaves. Changes require server restart.</p>
+
+            <div class="form-group">
+                <label for="systemPrompt">System Prompt</label>
+                <textarea id="systemPrompt" rows="20"
+                    style="font-family: monospace; font-size: 13px;">Loading...</textarea>
+                <small>Tip: You can adjust tone, instructions, and tool usage here</small>
+            </div>
+
+            <div class="prompt-actions">
+                <button class="btn-primary" onclick="savePrompt()">💾 Save Prompt</button>
+                <button class="btn-secondary" onclick="resetPrompt()">↺ Reset to Default</button>
+                <button class="btn-secondary" onclick="previewPrompt()">👁️ Preview</button>
+            </div>
+
+            <div class="alert" id="promptAlert" style="display: none;"></div>
+
+            <div class="info-section" style="margin-top: 20px;">
+                <h3>Available Variables</h3>
+                <ul style="margin-left: 20px;">
+                    <li><code>{phone}</code> - User's phone number</li>
+                    <li><code>{contactName}</code> - User's name</li>
+                    <li><code>{tenantId}</code> - Tenant identifier</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Configuration Tab -->
+        <div class="tab-content" id="config">
+            <h2>API Configuration</h2>
+            <form id="configForm">
+                <div class="form-group">
+                    <label for="openrouterKey">OpenRouter API Key (Required)</label>
+                    <input type="password" id="openrouterKey" placeholder="sk-or-...">
+                    <small>Used for Grok AI model</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="pineconeKey">Pinecone API Key (Optional)</label>
+                    <input type="password" id="pineconeKey" placeholder="pcsk_...">
+                    <small>For knowledge base search</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="ghlKey">GoHighLevel API Key (Optional)</label>
+                    <input type="password" id="ghlKey" placeholder="ghl_...">
+                    <small>For CRM data access</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="synthcoreKey">Synthcore WhatsApp API Key (Optional)</label>
+                    <input type="password" id="synthcoreKey" placeholder="synthcore_...">
+                    <small>For sending WhatsApp messages</small>
+                </div>
+
+                <button type="submit" class="btn-primary">Save Configuration</button>
+            </form>
+
+            <div class="alert" id="configAlert" style="display: none;"></div>
+        </div>
+
+        <!-- Test Webhook Tab -->
+        <div class="tab-content" id="test">
+            <h2>Test Your Webhook</h2>
+            <form id="testForm">
+                <div class="form-group">
+                    <label for="testPhone">Phone Number</label>
+                    <input type="text" id="testPhone" value="+911234567890" placeholder="+911234567890">
+                </div>
+
+                <div class="form-group">
+                    <label for="testName">Contact Name</label>
+                    <input type="text" id="testName" value="Test User" placeholder="John Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="testMessage">Message</label>
+                    <textarea id="testMessage" rows="4"
+                        placeholder="Hello, what are your pricing plans?">Hello, what are your pricing plans?</textarea>
+                </div>
+
+                <button type="submit" class="btn-primary">Send Test Message</button>
+                <p class="hint">Response will appear in Activity Logs after AI processes (~30-40s)</p>
+            </form>
+
+            <div class="response-section" id="responseSection" style="display: none;">
+                <h3>Response</h3>
+                <div class="response-box">
+                    <pre id="responseText"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Logs Tab -->
+        <div class="tab-content" id="logs">
+            <h2>Activity Logs</h2>
+            <div class="controls">
+                <button class="btn-secondary" onclick="loadServerLogs()">🔄 Refresh from server.log</button>
+                <button class="btn-secondary" onclick="clearLogDisplay()">🗑️ Clear Display</button>
+            </div>
+            <div class="logs-container" id="logsContainer">
+                <div class="log-entry">
+                    <span class="log-time">Loading...</span>
+                    <span class="log-type info">INFO</span>
+                    <span class="log-message">Fetching logs...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+
+</html>
