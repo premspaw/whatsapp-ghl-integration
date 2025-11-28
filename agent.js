@@ -46,7 +46,7 @@ Respond naturally and conversationally after using the tools to gather informati
 async function createAgent() {
     // Initialize the model (Google Gemini)
     const model = new ChatGoogleGenerativeAI({
-        modelName: "gemini-1.5-flash",
+        modelName: "gemini-pro",
         apiKey: process.env.GOOGLE_API_KEY,
         temperature: 0.7,
     });
