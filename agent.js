@@ -1,4 +1,4 @@
-const { ChatOpenAI } = require("@langchain/openai");
+const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
 const { AgentExecutor, createToolCallingAgent } = require("langchain/agents");
 const { ChatPromptTemplate } = require("@langchain/core/prompts");
 const { pineconeTool, ghlTool } = require("./tools");
@@ -44,13 +44,10 @@ The conversation history shows previous messages between you and this user. Use 
 Respond naturally and conversationally after using the tools to gather information.`;
 
 async function createAgent() {
-    // Initialize the model (Grok via OpenRouter)
-    const model = new ChatOpenAI({
-        modelName: "x-ai/grok-4.1-fast:free",
-        openAIApiKey: process.env.OPENROUTER_API_KEY,
-        configuration: {
-            baseURL: "https://openrouter.ai/api/v1",
-        },
+    // Initialize the model (Google Gemini)
+    const model = new ChatGoogleGenerativeAI({
+        modelName: "gemini-1.5-flash",
+        apiKey: process.env.GOOGLE_API_KEY,
         temperature: 0.7,
     });
 
