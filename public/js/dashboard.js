@@ -81,17 +81,24 @@ function setupEventListeners() {
 
     emojiBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+        const isVisible = emojiPicker.style.display === 'block';
+        emojiPicker.style.display = isVisible ? 'none' : 'block';
         document.getElementById('templatePicker').style.display = 'none';
     });
 
     emojiPicker.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent closing when clicking inside picker
         if (e.target.classList.contains('emoji-grid') || e.target.parentElement.classList.contains('emoji-grid')) {
-            const emoji = e.target.textContent.trim();
-            if (emoji) {
-                els.messageInput.value += emoji;
-                els.messageInput.focus();
-            }
+            // Clicked on grid background, do nothing
+            return;
+        }
+
+        // Check if clicked on an emoji (text node or element)
+        const emoji = e.target.textContent.trim();
+        // Simple regex to check if it's likely an emoji (non-ascii)
+        if (emoji && /[^\u0000-\u007F]+/.test(emoji)) {
+            els.messageInput.value += emoji;
+            els.messageInput.focus();
         }
     });
 
@@ -465,7 +472,7 @@ async function sendFile(file) {
         const uploadData = await uploadResponse.json();
 
         if (!uploadData.success) {
-            alert('Failed to upload file');
+            alert('Failed to upload file: ' + (uploadData.error || 'Unknown error'));
             return;
         }
 
@@ -475,7 +482,7 @@ async function sendFile(file) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 to: selectedConversation.phoneNumber || selectedConversation.id,
-                message: file.name,
+                message: file.name, // Caption
                 mediaUrl: uploadData.url,
                 mediaType: uploadData.mediaType
             })

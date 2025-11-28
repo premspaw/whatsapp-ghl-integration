@@ -1326,40 +1326,5 @@
         }
       ]
     }
-  },
-  "": {
-    "id": "",
-    "name": "Unknown Contact",
-    "contactName": "Unknown Contact",
-    "type": "whatsapp",
-    "channel": "whatsapp_private",
-    "messages": [
-      {
-        "id": "msg_1764178098387",
-        "from": "user",
-        "direction": "inbound",
-        "timestamp": 1764178098387,
-        "type": "text"
-      }
-    ],
-    "aiEnabled": true,
-    "syncToGHL": true,
-    "lastSyncedMessageId": 0,
-    "isRead": false,
-    "unreadCount": 1,
-    "createdAt": 1764178098387,
-    "updatedAt": 1764178098387,
-    "context": {
-      "type": "default",
-      "messages": [
-        {
-          "id": "msg_1764178098387",
-          "from": "user",
-          "direction": "inbound",
-          "timestamp": 1764178098387,
-          "type": "text"
-        }
-      ]
-    }
   }
 }

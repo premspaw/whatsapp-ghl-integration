@@ -1,9 +1,3 @@
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const path = require('path');
-const multer = require('multer');
 const axios = require('axios');
 const fs = require('fs');
 require('dotenv').config();
@@ -56,10 +50,10 @@ async function generateSimpleAIReply(message, contactName) {
       `Hi there! How can I make your day better today?`,
       `Hello! I'm here to provide excellent customer service. What can I do for you?`
     ];
-    
+
     // Simple keyword-based responses
     const lowerMessage = message.toLowerCase();
-    
+
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
       return `Hello ${contactName}! How can I help you today?`;
     } else if (lowerMessage.includes('help')) {
@@ -114,17 +108,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   // Add ngrok-skip-browser-warning header to all responses
   res.setHeader('ngrok-skip-browser-warning', 'true');
-  
+
   // Allow all origins for ngrok compatibility
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, ngrok-skip-browser-warning');
-  
+
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
-  
+
   next();
 });
 
@@ -155,7 +149,7 @@ try {
   const PDFProcessingService = require('./services/pdfProcessingService');
   const WebsiteScraperService = require('./services/websiteScraperService');
   const AnalyticsService = require('./services/analyticsService');
-  
+
   // Initialize the new services (assign to outer-scoped vars)
   pdfProcessingService = new PDFProcessingService(enhancedAIService.embeddings);
   websiteScraperService = new WebsiteScraperService(enhancedAIService.embeddings);
@@ -167,14 +161,14 @@ try {
   } catch (e) {
     console.warn('⚠️ InboundWebhookRelay initialization failed:', e.message);
   }
-  
+
   // Connect webhook cache invalidation to GHL service cache
   webhookService.onInvalidate = (contactId) => {
     try {
       if (ghlService && typeof ghlService.invalidateContactCache === 'function') {
         ghlService.invalidateContactCache(contactId);
       }
-    } catch (e) {}
+    } catch (e) { }
   };
   // Initialize Supabase (server-side) — resilient to invalid config
   try {
@@ -209,10 +203,10 @@ try {
     (async () => {
       try {
         await createHandoff({ phone: phoneNumber, conversationRef: conversationId, summary: message });
-      } catch (e) {}
+      } catch (e) { }
     })();
   });
-  
+
   console.log('✅ All services initialized successfully');
   console.log(`📱 WhatsApp Mode: ${useMockWhatsApp ? 'Mock' : 'Real'}`);
 
@@ -226,7 +220,7 @@ try {
       console.log('✅ GHL is configured and required: continuing with full sync.');
     }
   }
-  
+
   // Track AI conversation metrics for analytics
   enhancedAIService.on('conversation', (data) => {
     try {
@@ -242,7 +236,7 @@ try {
       console.error('Error logging conversation for analytics:', e);
     }
   });
-          } catch (error) {
+} catch (error) {
   console.error('❌ Error initializing services:', error.message);
   process.exit(1);
 }
@@ -291,7 +285,7 @@ app.post('/api/ghl/kb/website', async (req, res) => {
     const { url, websiteUrl, category = 'website', description = '', tenantId } = req.body || {};
     const targetUrl = (url || websiteUrl || '').trim();
     let resolvedTenant = tenantId || null;
-    try { resolvedTenant = resolvedTenant || (tenantService ? await tenantService.resolveTenantId({ req }) : null); } catch (_) {}
+    try { resolvedTenant = resolvedTenant || (tenantService ? await tenantService.resolveTenantId({ req }) : null); } catch (_) { }
 
     if (!targetUrl) {
       return res.status(400).json({ success: false, error: 'URL required' });
@@ -325,7 +319,7 @@ app.post('/api/ghl/kb/pdf', async (req, res) => {
     const { url, category = 'documents', description = '', tenantId } = req.body || {};
     const targetUrl = String(url || '').trim();
     let resolvedTenant = tenantId || null;
-    try { resolvedTenant = resolvedTenant || (tenantService ? await tenantService.resolveTenantId({ req }) : null); } catch (_) {}
+    try { resolvedTenant = resolvedTenant || (tenantService ? await tenantService.resolveTenantId({ req }) : null); } catch (_) { }
 
     if (!targetUrl) {
       return res.status(400).json({ success: false, error: 'PDF URL required' });
@@ -342,7 +336,7 @@ app.post('/api/ghl/kb/pdf', async (req, res) => {
 
     // Process and index PDF via pdfProcessingService if available
     if (!pdfProcessingService || typeof pdfProcessingService.addPDFToKnowledgeBase !== 'function') {
-      try { await fs.promises.unlink(tempPath); } catch (_) {}
+      try { await fs.promises.unlink(tempPath); } catch (_) { }
       return res.status(501).json({ success: false, error: 'PDF processing service unavailable' });
     }
 
@@ -350,7 +344,7 @@ app.post('/api/ghl/kb/pdf', async (req, res) => {
     const result = await pdfProcessingService.addPDFToKnowledgeBase(tempPath, category, description);
 
     // Clean up temp file
-    try { await fs.promises.unlink(tempPath); } catch (_) {}
+    try { await fs.promises.unlink(tempPath); } catch (_) { }
 
     return res.json({ success: true, mode: 'local_fallback', result });
   } catch (err) {
@@ -407,6 +401,49 @@ app.get('/api/system/status', (req, res) => {
   }
 });
 
+// --- File Upload Setup ---
+const multer = require('multer');
+const uploadDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, ''));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+// Upload Endpoint
+app.post('/api/media/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    const fileUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/uploads/${req.file.filename}`;
+    const mediaType = req.file.mimetype.startsWith('image/') ? 'image' :
+      req.file.mimetype.startsWith('video/') ? 'video' : 'document';
+
+    res.json({
+      success: true,
+      url: fileUrl,
+      filename: req.file.filename,
+      mediaType: mediaType
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Conversation utilities used by the WhatsApp tab
 app.post('/api/conversations/:id/mark-read', async (req, res) => {
   try {
@@ -427,7 +464,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
     const body = req.body || {};
     // Some GHL payloads send customData as a JSON string; parse safely
     if (body.customData && typeof body.customData === 'string') {
-      try { body.customData = JSON.parse(body.customData); } catch (_) {}
+      try { body.customData = JSON.parse(body.customData); } catch (_) { }
     }
     // Accept broader GHL payload shapes for phone
     let to = (
@@ -472,11 +509,11 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
     // Variables may arrive as string or nested in data/custom
     const rawVariables = (
       body.variables !== undefined ? body.variables :
-      body.customData?.variables !== undefined ? body.customData.variables :
-      body.data?.variables !== undefined ? body.data.variables :
-      body.custom?.variables !== undefined ? body.custom.variables :
-      req.query?.variables !== undefined ? req.query.variables :
-      {}
+        body.customData?.variables !== undefined ? body.customData.variables :
+          body.data?.variables !== undefined ? body.data.variables :
+            body.custom?.variables !== undefined ? body.custom.variables :
+              req.query?.variables !== undefined ? req.query.variables :
+                {}
     );
     const mediaUrl = body.mediaUrl || body.imageUrl || body.customData?.imageUrl || body.custom?.imageUrl || '';
     const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
@@ -490,7 +527,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
         variablesType: typeof rawVariables,
         hasMedia: !!mediaUrl
       });
-    } catch (_) {}
+    } catch (_) { }
 
     if (!to || (!templateName && !templateId)) {
       // Log body to help diagnose missing fields during configuration
@@ -499,7 +536,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
           resolved: { to, templateName, templateId },
           incoming: body
         });
-      } catch (_) {}
+      } catch (_) { }
       return res.status(400).json({ success: false, error: 'Required: phone/to and templateName or templateId' });
     }
 
@@ -518,7 +555,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
         const nameLower = String(templateName).toLowerCase();
         template = (all || []).find(t => String(t.name || '').toLowerCase() === nameLower);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (!template) {
       // Provide available template names to aid debugging
@@ -526,7 +563,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
       try {
         const all = await enhancedAIService.getAllTemplates();
         available = (all || []).map(t => t.name).filter(Boolean);
-      } catch (_) {}
+      } catch (_) { }
       return res.status(404).json({ success: false, error: `Template not found: ${templateName || templateId}`, availableTemplates: available });
     }
 
@@ -549,19 +586,19 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
         const re = new RegExp(`\\{${k}\\}`, 'g');
         text = text.replace(re, String(v));
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Apply known GHL-style variables (name, first_name, email, cf.*) and arbitrary {key}
     try {
       text = enhancedAIService.applyTemplateVariables(text, userProfile, vars);
-    } catch (_) {}
+    } catch (_) { }
 
     // Normalize phone to E.164 when possible (e.g., '081231 33382' -> '+918123133382')
     let normalizedTo = to;
     try {
       const { normalize } = require('./utils/phoneNormalizer');
       normalizedTo = normalize(String(to)) || to;
-    } catch (_) {}
+    } catch (_) { }
     // Format WhatsApp chat ID
     let chatId = String(normalizedTo || to);
     if (!chatId.includes('@c.us')) {
@@ -593,7 +630,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
       };
       await conversationManager.addMessage(messageData, chatId);
       res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
-    } catch (_) {}
+    } catch (_) { }
 
     // Best-effort GHL conversation sync
     try {
@@ -604,7 +641,7 @@ app.post('/api/whatsapp/send-template', async (req, res) => {
           await ghlService.addOutboundMessage(contact.id, { message: text, type: 'SMS', direction: 'outbound' });
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, message: 'Template message sent successfully', sentMessage: { to, template: template.name || template.id, content: text, id: result?.id?._serialized } });
   } catch (error) {
@@ -622,47 +659,47 @@ function readJsonSafe(file) {
   } catch (_) { return []; }
 }
 function writeJsonSafe(file, data) {
-  try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); } catch (_) {}
+  try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); } catch (_) { }
 }
 app.get('/api/activity/:conversationId', (req, res) => {
   const id = String(req.params.conversationId || '').trim();
-  const list = readJsonSafe(activitiesFile).filter(a => a.conversationId === id).sort((a,b)=>b.timestamp-a.timestamp);
+  const list = readJsonSafe(activitiesFile).filter(a => a.conversationId === id).sort((a, b) => b.timestamp - a.timestamp);
   res.json({ success: true, items: list, count: list.length });
 });
 app.post('/api/activity/log', (req, res) => {
   const body = req.body || {};
-  const item = { conversationId: String(body.conversationId||'').trim(), type: String(body.type||'').trim(), meta: body.meta||{}, timestamp: Date.now() };
-  if (!item.conversationId || !item.type) return res.status(400).json({ success:false, error:'conversationId and type required' });
+  const item = { conversationId: String(body.conversationId || '').trim(), type: String(body.type || '').trim(), meta: body.meta || {}, timestamp: Date.now() };
+  if (!item.conversationId || !item.type) return res.status(400).json({ success: false, error: 'conversationId and type required' });
   const list = readJsonSafe(activitiesFile);
   list.push(item);
   writeJsonSafe(activitiesFile, list);
-  res.json({ success:true, item });
+  res.json({ success: true, item });
 });
 app.post('/api/activity/create-link', (req, res) => {
   const body = req.body || {};
-  const url = String(body.url||'').trim();
-  const conversationId = String(body.conversationId||'').trim();
-  if (!url || !conversationId) return res.status(400).json({ success:false, error:'url and conversationId required' });
-  const token = Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+  const url = String(body.url || '').trim();
+  const conversationId = String(body.conversationId || '').trim();
+  if (!url || !conversationId) return res.status(400).json({ success: false, error: 'url and conversationId required' });
+  const token = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
   const links = readJsonSafe(linksFile);
   links.push({ token, url, conversationId, createdAt: Date.now() });
   writeJsonSafe(linksFile, links);
-  res.json({ success:true, link: `/r/${token}` });
+  res.json({ success: true, link: `/r/${token}` });
 });
 app.get('/r/:token', (req, res) => {
-  const token = String(req.params.token||'').trim();
+  const token = String(req.params.token || '').trim();
   const links = readJsonSafe(linksFile);
   const found = links.find(l => l.token === token);
   if (!found) return res.status(404).send('Not found');
   const list = readJsonSafe(activitiesFile);
-  list.push({ conversationId: found.conversationId, type:'link_clicked', meta:{ url: found.url, token }, timestamp: Date.now() });
+  list.push({ conversationId: found.conversationId, type: 'link_clicked', meta: { url: found.url, token }, timestamp: Date.now() });
   writeJsonSafe(activitiesFile, list);
   res.redirect(found.url);
 });
 app.get('/api/activity/recent', (req, res) => {
   const limit = Math.max(1, Math.min(200, Number(req.query.limit || 50)));
-  const list = readJsonSafe(activitiesFile).sort((a,b)=>b.timestamp-a.timestamp).slice(0, limit);
-  res.json({ success:true, items:list, count:list.length });
+  const list = readJsonSafe(activitiesFile).sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
+  res.json({ success: true, items: list, count: list.length });
 });
 
 app.get('/api/analytics/counters', (req, res) => {
@@ -684,9 +721,9 @@ app.get('/api/analytics/counters', (req, res) => {
     });
     const pricePerReplyInr = 0.20;
     const aiCostInr = Number((aiReplies * pricePerReplyInr).toFixed(2));
-    res.json({ success:true, messagesSent, templatesSent, aiReplies, pricePerReplyInr, aiCostInr });
+    res.json({ success: true, messagesSent, templatesSent, aiReplies, pricePerReplyInr, aiCostInr });
   } catch (e) {
-    res.status(500).json({ success:false, error:e.message });
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
@@ -717,7 +754,7 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
       if (imageUrl && whatsappService && typeof whatsappService.sendMediaFromUrl === 'function') {
         result = await whatsappService.sendMediaFromUrl(normalized, imageUrl, text || '', 'image');
       } else if (whatsappService && typeof whatsappService.sendMessage === 'function') {
-        const chatId = normalized.replace('+','') + '@c.us';
+        const chatId = normalized.replace('+', '') + '@c.us';
         result = await whatsappService.sendMessage(chatId, text || '');
       } else {
         return res.status(500).json({ success: false, error: 'WhatsApp service not available' });
@@ -741,11 +778,11 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
           mediaType: imageUrl ? 'image' : undefined
         });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       io.emit('ai_reply', { to: normalized, body: text || '', timestamp: Date.now(), id: result?.id?._serialized || `tpl_${Date.now()}` });
-    } catch (_) {}
+    } catch (_) { }
 
     // Sync to GHL for consistency
     try {
@@ -753,7 +790,7 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
       if (conv && ghlService && typeof ghlService.syncConversation === 'function') {
         await ghlService.syncConversation(conv);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     return res.json({ success: true, delivered: true });
   } catch (error) {
@@ -766,7 +803,7 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
   try {
     const body = req.body || {};
     if (body.customData && typeof body.customData === 'string') {
-      try { body.customData = JSON.parse(body.customData); } catch (_) {}
+      try { body.customData = JSON.parse(body.customData); } catch (_) { }
     }
     let to = (
       body.to ||
@@ -808,11 +845,11 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
     const templateId = body.templateId || body.customData?.templateId || body.data?.templateId || body.custom?.templateId;
     const rawVariables = (
       body.variables !== undefined ? body.variables :
-      body.customData?.variables !== undefined ? body.customData.variables :
-      body.data?.variables !== undefined ? body.data.variables :
-      body.custom?.variables !== undefined ? body.custom.variables :
-      req.query?.variables !== undefined ? req.query.variables :
-      {}
+        body.customData?.variables !== undefined ? body.customData.variables :
+          body.data?.variables !== undefined ? body.data.variables :
+            body.custom?.variables !== undefined ? body.custom.variables :
+              req.query?.variables !== undefined ? req.query.variables :
+                {}
     );
     const mediaUrl = body.mediaUrl || body.imageUrl || body.customData?.imageUrl || body.custom?.imageUrl || '';
     const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
@@ -825,7 +862,7 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
         variablesType: typeof rawVariables,
         hasMedia: !!mediaUrl
       });
-    } catch (_) {}
+    } catch (_) { }
 
     if (!to || (!templateName && !templateId)) {
       try {
@@ -833,7 +870,7 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
           resolved: { to, templateName, templateId },
           incoming: body
         });
-      } catch (_) {}
+      } catch (_) { }
       return res.status(400).json({ success: false, error: 'Required: phone/to and templateName or templateId' });
     }
 
@@ -852,14 +889,14 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
         const nameLower = String(templateName).toLowerCase();
         template = (all || []).find(t => String(t.name || '').toLowerCase() === nameLower);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (!template) {
       let available = [];
       try {
         const all = await enhancedAIService.getAllTemplates();
         available = (all || []).map(t => t.name).filter(Boolean);
-      } catch (_) {}
+      } catch (_) { }
       return res.status(404).json({ success: false, error: `Template not found: ${templateName || templateId}`, availableTemplates: available });
     }
 
@@ -882,12 +919,12 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
         const re = new RegExp(`\\{${k}\\}`, 'g');
         text = text.replace(re, String(v));
       }
-    } catch (_) {}
-    try { text = enhancedAIService.applyTemplateVariables(text, userProfile, vars); } catch (_) {}
+    } catch (_) { }
+    try { text = enhancedAIService.applyTemplateVariables(text, userProfile, vars); } catch (_) { }
 
     // Normalize phone and build chatId
     let normalizedTo = to;
-    try { const { normalize } = require('./utils/phoneNormalizer'); normalizedTo = normalize(String(to)) || to; } catch (_) {}
+    try { const { normalize } = require('./utils/phoneNormalizer'); normalizedTo = normalize(String(to)) || to; } catch (_) { }
     let chatId = String(normalizedTo || to);
     if (!chatId.includes('@c.us')) {
       chatId = chatId.replace(/[^\d+]/g, '');
@@ -918,7 +955,7 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
       };
       await conversationManager.addMessage(messageData, chatId);
       res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
-    } catch (_) {}
+    } catch (_) { }
 
     // Optional GHL sync
     try {
@@ -929,7 +966,7 @@ app.post('/api/whatsapp/template-send', async (req, res) => {
           await ghlService.addOutboundMessage(contact.id, { message: text, type: 'SMS', direction: 'outbound' });
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     return res.json({ success: true, message: 'Template sent', sentMessage: { to, template: template.name || template.id, content: text, id: result?.id?._serialized } });
   } catch (e) {
@@ -972,7 +1009,7 @@ async function sendWhatsappMessageHandler(req, res) {
 
     // Normalize to WhatsApp chat ID
     let normalizedTo = to;
-    try { const { normalize } = require('./utils/phoneNormalizer'); normalizedTo = normalize(String(to)) || to; } catch (_) {}
+    try { const { normalize } = require('./utils/phoneNormalizer'); normalizedTo = normalize(String(to)) || to; } catch (_) { }
     let chatId = String(normalizedTo || to);
     if (!chatId.includes('@c.us')) {
       // Strip all non-digit characters to form WhatsApp JID
@@ -1002,7 +1039,7 @@ async function sendWhatsappMessageHandler(req, res) {
       await conversationManager.addMessage(messageData, chatId);
       // Emit to frontend so live UI updates
       res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
-    } catch (_) {}
+    } catch (_) { }
 
     // Auto-sync the conversation to GHL
     try {
@@ -1067,9 +1104,9 @@ app.post('/webhooks/ghl', async (req, res) => {
       return res.status(401).json({ error: 'Invalid webhook secret' });
     }
     console.log('GHL Webhook received:', JSON.stringify(req.body, null, 2));
-    
+
     const { event, data } = req.body;
-    
+
     // Handle conversation message created events
     if (event === 'conversation.message.created' || event === 'message.created') {
       const message = data.message || data;
@@ -1082,7 +1119,7 @@ app.post('/webhooks/ghl', async (req, res) => {
         // Mark processed at the end of handler
         res.locals.__eventId = eventId;
       }
-      
+
       // Check if it's an outbound message (from GHL to contact)
       if (message.direction === 'outbound' || message.type === 'outbound') {
         const contactPhone = message.contact?.phone || message.phone;
@@ -1093,16 +1130,16 @@ app.post('/webhooks/ghl', async (req, res) => {
           const resolved = tenantService ? await tenantService.resolveTenantId({ phone: contactPhone, locationId: locId, req }) : null;
           if (resolved) res.locals.tenantId = resolved;
         } catch (e) { /* noop */ }
-        
+
         if (contactPhone && messageText) {
           console.log(`📤 Sending WhatsApp message to ${contactPhone}: ${messageText}`);
-          
+
           // Check rate limit and WhatsApp readiness
           if (securityService && !securityService.canSendToContact(contactPhone)) {
             console.log('⏱️ Rate limit hit for', contactPhone);
             return res.json({ success: true, message: 'Rate limited' });
           }
-          
+
           // Check if WhatsApp is ready
           if (whatsappService && whatsappService.isReady) {
             try {
@@ -1130,7 +1167,7 @@ app.post('/webhooks/ghl', async (req, res) => {
               throw new Error('WhatsApp client is not ready or connected');
             }
           }
-          
+
           // Log the sent message back to GHL conversation
           try {
             await ghlService.addOutboundMessage(
@@ -1150,7 +1187,7 @@ app.post('/webhooks/ghl', async (req, res) => {
         }
       }
     }
-    
+
     // Mark idempotent processed
     if (securityService && res.locals.__eventId) securityService.markEventProcessed(res.locals.__eventId);
     res.json({ success: true, message: 'Webhook processed' });
@@ -1212,17 +1249,17 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
         const re = new RegExp(`\\{${k}\\}`, 'g');
         text = text.replace(re, String(v));
       }
-    } catch (_) {}
+    } catch (_) { }
     try {
       text = enhancedAIService.applyTemplateVariables(text, userProfile, varsAugmented);
-    } catch (_) {}
+    } catch (_) { }
 
     // Normalize phone (e.g., local '081231 33382' -> '+918123133382')
     let normalizedTo = to;
     try {
       const { normalize } = require('./utils/phoneNormalizer');
       normalizedTo = normalize(String(to)) || to;
-    } catch (_) {}
+    } catch (_) { }
     // Format WhatsApp JID
     let chatId = String(normalizedTo || to);
     if (!chatId.includes('@c.us')) {
@@ -1254,7 +1291,7 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
       };
       await conversationManager.addMessage(messageData, chatId);
       res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
-    } catch (_) {}
+    } catch (_) { }
 
     // Optional GHL sync
     try {
@@ -1265,22 +1302,16 @@ app.post('/webhook/ghl/template-send', async (req, res) => {
           await ghlService.addOutboundMessage(contact.id, { message: text, type: 'TYPE_SMS', direction: 'outbound' });
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     return res.json({ success: true, message: 'Template sent', sentMessage: { to, template: template.name || template.id, content: text, id: result?.id?._serialized } });
   } catch (error) {
-    console.error('❌ Template webhook error:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// WhatsApp Provider inbound webhook (Option A compatible)
 app.post('/webhook/whatsapp', async (req, res) => {
   try {
-    // Verify shared secret if configured
-    if (securityService && !securityService.verifyHeaderSecret(req, securityService.whatsappSecret)) {
-      return res.status(401).json({ error: 'Invalid webhook secret' });
-    }
     // Ack quickly
     res.status(200).json({ success: true });
 
@@ -1424,7 +1455,7 @@ app.post('/webhooks/ghl-automation', async (req, res) => {
       const phone = body.data?.message?.contact?.phone || body.data?.contact?.phone || body.contact?.phone || null;
       tenantId = tenantService ? await tenantService.resolveTenantId({ phone, locationId: locId, req }) : null;
       if (tenantId) res.locals.tenantId = tenantId;
-    } catch (_) {}
+    } catch (_) { }
 
     // If webhook explicitly requests template sending, process here
     const evt = req.body?.event || '';
@@ -1517,10 +1548,10 @@ app.post('/webhooks/ghl-automation', async (req, res) => {
             const normalized = ghlService.normalizePhoneNumber(_to);
             const contact = await ghlService.findContactByPhone(normalized);
             if (contact) {
-          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'TYPE_SMS', direction: 'outbound' });
+              await ghlService.addOutboundMessage(contact.id, { message: text, type: 'TYPE_SMS', direction: 'outbound' });
             }
           }
-        } catch (_) {}
+        } catch (_) { }
 
         return res.json({ success: true, message: 'Automation template sent', sentMessage: { to: _to, template: template.name || template.id, content: text, id: result?.id?._serialized } });
       } catch (err) {
@@ -1530,7 +1561,7 @@ app.post('/webhooks/ghl-automation', async (req, res) => {
 
     // Process the webhook through our webhook service with tenant context
     await webhookService.processGHLWebhook(req.body, tenantId);
-    
+
     res.json({ success: true, message: 'Webhook processed successfully' });
   } catch (error) {
     console.error('❌ GHL Automation Webhook Error:', error.message);
@@ -1543,7 +1574,7 @@ app.post('/api/automation/setup', async (req, res) => {
   try {
     const { locationId } = req.body;
     const webhook = await webhookService.setupAutomationTriggers({ locationId });
-    
+
     res.json({
       success: true,
       webhook: webhook
@@ -1559,7 +1590,7 @@ app.get('/api/automation/webhooks', async (req, res) => {
   try {
     const { locationId } = req.query;
     const webhooks = await webhookService.getWebhooks(locationId);
-    
+
     res.json({
       success: true,
       webhooks: webhooks,
@@ -1577,7 +1608,7 @@ app.delete('/api/automation/webhooks/:webhookId', async (req, res) => {
     const { webhookId } = req.params;
     const { locationId } = req.query;
     await webhookService.deleteWebhook(webhookId, locationId);
-    
+
     res.json({
       success: true,
       message: 'Webhook deleted successfully'
@@ -1596,7 +1627,7 @@ const mediaStorage = multer.diskStorage({
     const dest = path.join(__dirname, 'public', 'uploads', 'media');
     try {
       fs.mkdirSync(dest, { recursive: true });
-    } catch (e) {}
+    } catch (e) { }
     cb(null, dest);
   },
   filename: function (req, file, cb) {
@@ -1758,631 +1789,10 @@ app.post('/api/settings/ai-enabled', (req, res) => {
   }
 });
 
-// Backward-compatible alias: '/api/settings/ai-enable' (without trailing 'd')
-app.get('/api/settings/ai-enable', (req, res) => {
-  try {
-    loadSettingsFromDisk();
-    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.post('/api/settings/ai-enable', (req, res) => {
-  try {
-    const { enabled, webhookUrl, pricing } = req.body || {};
-    saveSettings({ enabled, webhookUrl, pricing });
-    res.json({ success: true, message: 'Settings saved', enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Webhook to receive final WhatsApp reply payloads from n8n (moved before 404)
-app.post('/webhook/n8n/whatsapp-reply', async (req, res) => {
-  try {
-    const body = req.body || {};
-    let to = body.to || body.phone || body.contact?.phone || body.chatId;
-    const text = body.message || body.text || '';
-    const mediaUrl = body.mediaUrl || '';
-    const mediaType = body.mediaType || (mediaUrl ? 'image' : '');
-    const tenantId = body.tenantId || null;
-    const contactName = body.contactName || body.name || 'Unknown Contact';
-
-    if (!to || (!text && !mediaUrl)) {
-      return res.status(400).json({ success: false, error: 'Required: to/phone and message or mediaUrl' });
-    }
-
-    // Normalize to WhatsApp chat ID
-    let chatId = String(to);
-    try { const { normalize } = require('./utils/phoneNormalizer'); chatId = normalize(String(to)) || String(to); } catch (_) {}
-    if (!chatId.includes('@c.us')) {
-      chatId = chatId.replace(/\D/g, '') + '@c.us';
-    }
-
-    // Send message or media
-    let result;
-    if (mediaUrl && typeof whatsappService.sendMediaFromUrl === 'function') {
-      const mType = mediaType || 'image';
-      result = await whatsappService.sendMediaFromUrl(chatId, mediaUrl, text, mType);
-    } else {
-      result = await whatsappService.sendMessage(chatId, text);
-    }
-
-    // Store sent message locally and emit to frontend
-    try {
-      const messageData = {
-        id: `sent_${Date.now()}`,
-        from: 'ai',
-        body: text,
-        timestamp: Date.now(),
-        type: mediaUrl ? 'media' : 'text',
-        direction: 'outbound'
-      };
-      await conversationManager.addMessage(messageData, chatId, contactName);
-      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
-    } catch (_) {}
-
-    // Optional GHL sync
-    try {
-      if (ghlService && typeof ghlService.addOutboundMessage === 'function') {
-        const normalized = ghlService.normalizePhoneNumber(to);
-        const contact = await ghlService.findContactByPhone(normalized);
-        if (contact && contact.id) {
-          await ghlService.addOutboundMessage(contact.id, { message: text, type: 'SMS', direction: 'outbound' });
-        }
-      }
-    } catch (syncErr) {
-      console.warn('GHL sync after n8n reply failed:', syncErr && syncErr.message);
-    }
-
-    res.json({ success: true, message: 'Reply delivered', messageId: result });
-  } catch (error) {
-    console.error('Error handling n8n reply webhook:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// JSON error handler to avoid HTML error pages on parse errors
-app.use((err, req, res, next) => {
-  const status = err.status || err.statusCode || 500;
-  const isBodyParseError = err.type === 'entity.parse.failed' || (err instanceof SyntaxError && 'body' in err);
-  res.status(status).json({ success: false, error: isBodyParseError ? 'Invalid JSON payload' : (err.message || 'Internal Server Error') });
-});
-
-// 404 handler returning JSON (placed before server start)
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: 'Not Found', path: req.originalUrl });
-});
-
-// Start server
+// Initialize the service
+whatsappService.initialize();
 const PORT = process.env.PORT || 3000;
-// Global AI (n8n) toggle state loaded from settings file
-const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
-let aiN8nEnabled = false;
-let n8nWebhookUrlFromSettings = '';
-let aiN8nPricing = { pricePerReply: 0, currency: 'INR', freeReplies: 0, billingNote: '' };
-
-function sanitizeUrl(u) {
-  const s = String(u || '').trim();
-  return s.replace(/^`+|`+$/g, '');
-}
-
-function loadSettings() {
-  try {
-    const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
-    const json = JSON.parse(raw);
-    aiN8nEnabled = Boolean(json.aiN8nEnabled);
-    n8nWebhookUrlFromSettings = sanitizeUrl(json.n8nWebhookUrl || '');
-    const p = json.pricing || {};
-    aiN8nPricing = {
-      pricePerReply: Number(p.pricePerReply || 0),
-      currency: String(p.currency || 'INR'),
-      freeReplies: Number(p.freeReplies || 0),
-      billingNote: String(p.billingNote || '')
-    };
-  } catch (e) {
-    // Defaults if settings not present
-    aiN8nEnabled = false;
-    n8nWebhookUrlFromSettings = '';
-    aiN8nPricing = { pricePerReply: 0, currency: 'INR', freeReplies: 0, billingNote: '' };
-  }
-}
-
-function saveSettings({ enabled = aiN8nEnabled, webhookUrl = n8nWebhookUrlFromSettings, pricing = aiN8nPricing } = {}) {
-  const data = {
-    aiN8nEnabled: Boolean(enabled),
-    n8nWebhookUrl: sanitizeUrl(webhookUrl || ''),
-    pricing: {
-      pricePerReply: Number((pricing && pricing.pricePerReply) || 0),
-      currency: String((pricing && pricing.currency) || 'INR'),
-      freeReplies: Number((pricing && pricing.freeReplies) || 0),
-      billingNote: String((pricing && pricing.billingNote) || '')
-    },
-    updatedAt: Date.now()
-  };
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(data, null, 2));
-  aiN8nEnabled = data.aiN8nEnabled;
-  n8nWebhookUrlFromSettings = data.n8nWebhookUrl;
-  aiN8nPricing = data.pricing;
-}
-
-// Load settings from disk if present, otherwise fall back to environment
-function loadSettingsFromDisk() {
-  try {
-    if (fs.existsSync(SETTINGS_FILE)) {
-      const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
-      const json = JSON.parse(raw);
-      aiN8nEnabled = Boolean(json.aiN8nEnabled);
-      n8nWebhookUrlFromSettings = sanitizeUrl(json.n8nWebhookUrl || '');
-      aiN8nPricing = {
-        pricePerReply: Number((json.pricing && json.pricing.pricePerReply) || 0),
-        currency: String((json.pricing && json.pricing.currency) || 'INR'),
-        freeReplies: Number((json.pricing && json.pricing.freeReplies) || 0),
-        billingNote: String((json.pricing && json.pricing.billingNote) || '')
-      };
-    } else {
-      // Initialize from environment defaults
-      aiN8nEnabled = N8N_ENABLED;
-      n8nWebhookUrlFromSettings = N8N_AI_REPLY_URL;
-      aiN8nPricing = aiN8nPricing || { pricePerReply: 0, currency: 'INR', freeReplies: 0, billingNote: '' };
-      // Persist defaults once so UI can read them
-      saveSettings({ enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
-    }
-    console.log('[settings] Settings loaded', { enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings });
-  } catch (e) {
-    console.warn('[settings] Failed to load settings, using defaults:', e.message);
-  }
-}
-
-// Initialize settings at startup
-loadSettingsFromDisk();
-
-// Settings API to manage AI via n8n toggle and pricing
-// Place BEFORE error/404 handlers so routes are reachable
-app.get('/api/settings/ai-enabled', (req, res) => {
-  try {
-    loadSettingsFromDisk();
-    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.post('/api/settings/ai-enabled', (req, res) => {
-  try {
-    const { enabled, webhookUrl, pricing } = req.body || {};
-    saveSettings({ enabled, webhookUrl, pricing });
-    res.json({ success: true, message: 'Settings saved', enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Load settings at startup
-loadSettings();
-if (require.main === module) {
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  
-  // Initialize WhatsApp service after server starts
-  if (whatsappService && whatsappService.initialize) {
-    console.log('🔄 Initializing WhatsApp service...');
-    
-    // Set up event handlers
-    whatsappService.on('qr', (qr) => {
-      console.log('📱 QR Code received - scan with WhatsApp');
-      // Broadcast QR to frontend via Socket.IO for web display
-      try {
-        io.emit('qr_code', qr);
-      } catch (e) {
-        console.warn('Socket emit qr_code failed:', e && e.message ? e.message : e);
-      }
-    });
-
-    whatsappService.on('ready', () => {
-      console.log('✅ WhatsApp client is ready!');
-      // Notify frontend that WhatsApp is ready
-      try {
-        io.emit('whatsapp_ready', { ready: true });
-      } catch (e) {
-        console.warn('Socket emit whatsapp_ready failed:', e && e.message ? e.message : e);
-      }
-    });
-
-    whatsappService.on('disconnected', () => {
-      console.log('❌ WhatsApp client disconnected');
-      try {
-        io.emit('whatsapp_disconnected', { ready: false });
-      } catch (e) {
-        console.warn('Socket emit whatsapp_disconnected failed:', e && e.message ? e.message : e);
-      }
-    });
-
-    whatsappService.on('message', async (message) => {
-      try {
-        console.log('📨 Received message from:', message.from, 'Body:', message.body.substring(0, 50));
-        
-        // Suppress AI if this is our own outbound message (initiated by us)
-        if (message.fromMe === true) {
-          console.log('🤝 Handoff: Suppressing AI reply because message is fromMe (outbound initiated).');
-          return; // Do not store or respond to outbound echoes
-        }
-
-        // Skip group messages - only process individual customer conversations
-        if (process.env.FILTER_GROUP_MESSAGES !== 'false' && message.from.includes('@g.us')) {
-          console.log('🚫 Skipping group message from:', message.from);
-          return;
-        }
-        
-        // Skip messages from WhatsApp status/broadcast
-        if (process.env.FILTER_BROADCAST_MESSAGES !== 'false' && 
-            (message.from.includes('status@broadcast') || message.from.includes('@broadcast'))) {
-          console.log('🚫 Skipping broadcast message');
-          return;
-        }
-
-        console.log('New WhatsApp message:', message.body);
-
-        // Media suppression: if message contains media or non-chat type, we will store and sync but skip AI reply
-        const msgType = (message.type || '').toLowerCase();
-        const isMediaInbound = !!message.hasMedia || (msgType && msgType !== 'chat' && msgType !== 'text');
-
-        // Check GHL contacts first to get the proper name
-        let contactName = 'Unknown Contact';
-        try {
-          // First, check if this number exists in GHL contacts
-          const normalizedPhone = ghlService.normalizePhoneNumber(message.from);
-          if (normalizedPhone) {
-            const ghlContact = await ghlService.findContactByPhone(normalizedPhone);
-            if (ghlContact) {
-              contactName = ghlContact.firstName || ghlContact.name || 'Unknown Contact';
-              console.log('📞 Found in GHL contacts:', contactName);
-            } else {
-              // Not in GHL, try to get WhatsApp name as fallback
-              try {
-                const whatsappContact = await message.getContact();
-                contactName = whatsappContact.name || whatsappContact.pushname || 'Unknown Contact';
-                console.log('📞 Not in GHL, using WhatsApp name:', contactName);
-              } catch (whatsappError) {
-                console.log('📞 Not in GHL and no WhatsApp name, using Unknown Contact');
-              }
-            }
-          }
-        } catch (error) {
-          console.log('⚠️ Error checking GHL contacts, using Unknown Contact');
-        }
-        
-        // If inbound has media, download and attach data URL for UI
-        let mediaFields = {};
-        try {
-          if (message.hasMedia && typeof message.downloadMedia === 'function') {
-            const media = await message.downloadMedia();
-            if (media && media.data) {
-              const mime = media.mimetype || 'application/octet-stream';
-              const kind = mime.startsWith('image') ? 'image' : (mime.startsWith('video') ? 'video' : 'file');
-              mediaFields = {
-                hasMedia: true,
-                mediaUrl: `data:${mime};base64,${media.data}`,
-                mediaType: kind,
-                mimeType: mime,
-                fileName: media.filename || undefined,
-                caption: message.caption || undefined
-              };
-            }
-          }
-        } catch (mediaErr) {
-          console.warn('⚠️ Failed to download inbound media:', mediaErr && mediaErr.message);
-        }
-
-        // Store conversation with correct parameter order (conversationId, contactName)
-        await conversationManager.addMessage({
-          id: (message.id && message.id._serialized) || message.id,
-          from: message.from,
-          body: message.body,
-          timestamp: message.timestamp,
-          type: message.type,
-          ...mediaFields
-        }, message.from, contactName);
-        
-        // Emit to frontend (include media fields for immediate display)
-        io.to('whatsapp').emit('new_message', {
-          id: (message.id && message.id._serialized) || message.id,
-          from: message.from,
-          body: message.body,
-          timestamp: message.timestamp,
-          type: message.type,
-          contactName: contactName,
-          ...mediaFields
-        });
-
-        // FIRST: Sync the user's message to GHL immediately
-        try {
-          console.log('🔄 Auto-syncing user message to GHL...');
-          let conversation = await conversationManager.getConversation(message.from);
-          
-          // Ensure conversation exists and has required properties
-          if (!conversation) {
-            console.log('📝 Creating new conversation for:', message.from);
-            conversation = {
-              id: message.from,
-              phone: message.from,
-              contactName: contactName,
-              messages: [],
-              aiEnabled: true,
-              createdAt: new Date().toISOString()
-            };
-            await conversationManager.addConversation(conversation);
-          }
-          
-          // Update conversation with contact name if not already set
-          if (!conversation.contactName) {
-            conversation.contactName = contactName;
-            await conversationManager.updateConversation(conversation);
-          }
-          
-          // Ensure phone property exists
-          if (!conversation.phone) {
-            conversation.phone = message.from;
-          }
-          
-          await ghlService.syncConversation(conversation);
-          console.log('✅ User message auto-synced to GHL');
-        } catch (syncError) {
-          console.error('❌ Error auto-syncing user message to GHL:', syncError.message);
-        }
-
-        // External webhook relay to n8n only when AI toggle enabled
-        if (aiN8nEnabled) {
-          try {
-            const { normalize } = require('./utils/phoneNormalizer');
-            const normalizedPhone = normalize(message.from) || message.from;
-            const relayType = (() => {
-              const t = (message.type || '').toLowerCase();
-              if (isMediaInbound) return 'media';
-              if (t === 'chat' || t === 'text') return 'text';
-              if (t.includes('location')) return 'location';
-              if (t.includes('button')) return 'button';
-              if (t.includes('template')) return 'template';
-              return 'text';
-            })();
-            const attachments = (mediaFields && mediaFields.mediaUrl) ? [{
-              type: mediaFields.mediaType || 'document',
-              url: mediaFields.mediaUrl,
-              filename: mediaFields.fileName || undefined
-            }] : [];
-            const result = await inboundRelay.send({
-              phone: normalizedPhone,
-              fromName: contactName || 'Unknown Contact',
-              message: message.body || '',
-              messageType: relayType,
-              messageId: (message.id && message.id._serialized) || message.id || '',
-              integration: process.env.GHL_LOCATION_ID || 'default',
-              timestamp: message.timestamp || Date.now(),
-              replyToken: null,
-              attachments,
-              overrideUrl: n8nWebhookUrlFromSettings || undefined
-            });
-            if (result.delivered) {
-              console.log('📡 Inbound webhook delivered to n8n:', result.status, result.url || n8nWebhookUrlFromSettings);
-            } else {
-              console.warn('⚠️ Inbound webhook to n8n failed:', result.error, result.url || n8nWebhookUrlFromSettings);
-            }
-          } catch (relayErr) {
-            console.error('❌ Inbound webhook relay error:', relayErr && relayErr.message);
-          }
-          // Do not generate local AI, n8n will respond via webhook
-          return;
-        }
-
-        // If media was received or non-text content, do not generate AI reply
-        if (isMediaInbound) {
-          console.log('🤝 Handoff: Suppressing AI reply due to inbound media/non-text type:', message.type);
-          return;
-        }
-
-        // Check if AI reply is enabled for this conversation
-        console.log('🤖 Starting AI reply check for:', message.from);
-        let conversation = await conversationManager.getConversation(message.from);
-        console.log('🤖 Checking AI reply for conversation:', conversation ? 'found' : 'not found');
-        console.log('🤖 AI enabled:', conversation ? conversation.aiEnabled : 'N/A');
-        
-        // If conversation doesn't exist, create it for AI
-        if (!conversation) {
-          console.log('📝 Creating conversation for AI reply:', message.from);
-          conversation = {
-            id: message.from,
-            phone: message.from,
-            contactName: contactName,
-            messages: [],
-            aiEnabled: true,
-            createdAt: new Date().toISOString()
-          };
-          await conversationManager.addConversation(conversation);
-        } else {
-          // If conversation exists but AI is disabled, enable it
-          if (!conversation.aiEnabled) {
-            console.log('🤖 Enabling AI for existing conversation:', message.from);
-            conversation.aiEnabled = true;
-            await conversationManager.updateConversation(conversation);
-          }
-        }
-        
-        if (conversation && conversation.aiEnabled) {
-          console.log('🧠 Generating AI reply for:', message.body.substring(0, 50) + '...');
-          try {
-            // Helper: structured AI executor
-            async function generateStructuredAIReplyLocal({ text, from, contactName, tenantId }) {
-              try {
-                const PineconeMcpClient = require('./services/pineconeMcpClient');
-                const account = { location_id: tenantId || null, namespace: 'default' };
-                // Build conversation history
-                let conversation_history = [];
-                try {
-                  const convLocal = await conversationManager.getConversation(from);
-                  const msgs = Array.isArray(convLocal?.messages) ? convLocal.messages.slice(-5) : [];
-                  conversation_history = msgs.map(m => ({ from: m.from || 'user', body: m.body || '' }));
-                } catch (_) {}
-                // Plan
-                const plan = enhancedAIService.buildStructuredPlan({
-                  incoming_message: text,
-                  contact: { phone: from },
-                  account,
-                  conversation_history,
-                  pinecone_top_k: 5,
-                  ghl_lookup_result: null,
-                  uploaded_file_paths: []
-                });
-                // Execute: GHL lookup
-                let contactSummary = { name: contactName || 'Unknown', lead_stage: '', tags: [], last_interaction: '' };
-                try {
-                  if (ghlService && typeof ghlService.findContactByPhone === 'function') {
-                    const ghlContact = await ghlService.findContactByPhone(from);
-                    if (ghlContact) {
-                      contactSummary = {
-                        name: ghlContact.firstName || ghlContact.name || contactSummary.name,
-                        lead_stage: ghlContact?.leadStage || ghlContact?.leadStatus || '',
-                        tags: Array.isArray(ghlContact?.tags) ? ghlContact.tags : [],
-                        last_interaction: ghlContact?.lastActivity || ''
-                      };
-                    }
-                  }
-                } catch (e) { console.warn('GHL lookup failed in structured flow:', e.message); }
-                // Execute: Pinecone/Embeddings
-                let snippets = [];
-                try {
-                  const pc = new PineconeMcpClient();
-                  if (pc && pc.isConfigured()) {
-                    const items = await pc.getContext(text, { topK: 5, tenantId });
-                    snippets = (items || []).map(it => ({ text: it.content || '', source: it.source || 'pinecone', url_or_path: it.source || '' }));
-                  } else {
-                    const results = await enhancedAIService.embeddings.retrieve({ query: text, topK: 5, minSimilarity: 0.35, tenantId });
-                    snippets = (results || []).map(r => ({ text: r.content || r.text || '', source: r.source || r.category || 'kb', url_or_path: r.source || '' }));
-                  }
-                } catch (e) { console.warn('Pinecone/Embeddings retrieval failed:', e.message); }
-                // Compose
-                const businessName = enhancedAIService?.aiPersonality?.company || 'Your Business';
-                const ragPrompt = enhancedAIService.composeRagPrompt({
-                  incoming_message: text,
-                  business_name: businessName,
-                  account,
-                  snippets,
-                  contact_summary: contactSummary,
-                  conversation_history
-                });
-                // LLM
-                const context = { messages: conversation_history, type: 'support', llmTag: tenantId ? { tag: tenantId } : undefined };
-                const aiReplyLocal = await enhancedAIService.aiService.generateCustomReply(text, ragPrompt, context);
-                return aiReplyLocal || null;
-              } catch (err) {
-                console.error('❌ Structured AI executor error:', err.message);
-                return null;
-              }
-            }
-            // Use Enhanced AI Service with memory and automation
-            // Fix: avoid referencing undefined `req` in event context
-            // Enrich with contact tags to improve tenant resolution
-            let contactForTags = null;
-            try { contactForTags = await ghlService.findContactByPhone(message.from); } catch (_) {}
-            const tId = tenantService ? await tenantService.resolveTenantId({ phone: message.from, locationId: contactForTags?.locationId, tags: contactForTags?.tags || [] }) : null;
-            console.log('🏷️ Tenant resolution (device):', {
-              phone: message.from,
-              locationId: contactForTags?.locationId || null,
-              tags: contactForTags?.tags || [],
-              tenantId: tId
-            });
-            // n8n-first, then local EnhancedAI as fallback
-            let aiReply = await forwardToN8nAIReply({
-              text: message.body,
-              from: message.from,
-              contactName,
-              tenantId: tId,
-              conversationId: message.from,
-              messageType: 'text',
-              fromMe: false
-            });
-            if (!aiReply) {
-              aiReply = await generateStructuredAIReplyLocal({ text: message.body, from: message.from, contactName, tenantId: tId });
-              if (!aiReply) {
-                aiReply = await enhancedAIService.generateContextualReply(message.body, message.from, message.from, tId);
-              }
-            }
-          
-            if (aiReply) {
-              console.log('✅ AI generated reply:', aiReply.substring(0, 100) + '...');
-              // Send AI reply back to WhatsApp
-              await whatsappService.sendMessage(message.from, aiReply);
-              
-              // Store AI reply in conversation
-              await conversationManager.addMessage({
-                from: 'ai',
-                body: aiReply,
-                timestamp: Date.now(),
-                type: 'text'
-              }, message.from, conversation.contactName);
-              
-              // Emit AI reply to frontend
-              const aiTimestamp = Date.now();
-              io.to('whatsapp').emit('ai_reply', {
-                to: message.from,
-                body: aiReply,
-                timestamp: aiTimestamp
-              });
-
-              // SECOND: Sync the AI reply to GHL
-              try {
-                console.log('🔄 Auto-syncing AI reply to GHL...');
-                const updatedConversation = await conversationManager.getConversation(message.from);
-                await ghlService.syncConversation(updatedConversation);
-                console.log('✅ AI reply auto-synced to GHL');
-              } catch (syncError) {
-                console.error('❌ Error auto-syncing AI reply to GHL:', syncError.message);
-              }
-            } else {
-              console.log('❌ AI did not generate a reply');
-            }
-          } catch (aiError) {
-            console.error('❌ Error generating AI reply:', aiError.message);
-          }
-        } else {
-          console.log('❌ AI reply not enabled for this conversation');
-        }
-
-      } catch (error) {
-        console.error('❌ Error handling WhatsApp message:', error);
-      }
-    });
-
-    // Initialize the service
-    whatsappService.initialize();
-  }
-});
-}
-
-// Settings endpoints for AI toggle (n8n integration)
-app.get('/api/settings/ai-enabled', (req, res) => {
-  try {
-    loadSettings();
-    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
 });
 
-app.post('/api/settings/ai-enabled', (req, res) => {
-  try {
-    const enabled = Boolean(req.body?.enabled);
-    const webhookUrl = String(req.body?.webhookUrl || n8nWebhookUrlFromSettings || '').trim();
-    const pricingInput = req.body?.pricing || {};
-    const pricing = {
-      pricePerReply: Number(pricingInput.pricePerReply || 0),
-      currency: String(pricingInput.currency || 'INR'),
-      freeReplies: Number(pricingInput.freeReplies || 0),
-      billingNote: String(pricingInput.billingNote || '')
-    };
-    saveSettings({ enabled, webhookUrl, pricing });
-    res.json({ success: true, enabled: aiN8nEnabled, webhookUrl: n8nWebhookUrlFromSettings, pricing: aiN8nPricing });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
