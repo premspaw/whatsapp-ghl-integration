@@ -63,7 +63,7 @@ const pineconeTool = new DynamicStructuredTool({
 const ghlTool = new DynamicStructuredTool({
     name: "mcp_ghl",
     description: `Access GoHighLevel CRM data including contacts, tags, pipelines, tasks, opportunities, and conversations. 
-    Available actions: contacts_get-contact, contacts_add-tags, contacts_remove-tags, contacts_get-all-tasks, 
+    Available actions: contacts_get-contact, contacts_create, contacts_add-tags, contacts_remove-tags, contacts_get-all-tasks, 
     opportunities_search-opportunity, opportunities_get-pipelines, conversations_get-messages.`,
     schema: z.object({
         action: z.string().describe("The GHL action to perform (e.g., 'contacts_get-contact')"),
@@ -94,6 +94,19 @@ const ghlTool = new DynamicStructuredTool({
                         response = await axios.get(`${baseUrl}/contacts/?locationId=${locationId}&query=${params.email}`, config);
                     }
                     return JSON.stringify(response?.data?.contacts?.[0] || { message: "Contact not found" });
+
+                case 'contacts_create':
+                    if (!params.phone) return "Missing phone number";
+                    // Create contact payload
+                    const contactPayload = {
+                        phone: params.phone,
+                        firstName: params.firstName || '',
+                        lastName: params.lastName || '',
+                        email: params.email || '',
+                        tags: Array.isArray(params.tags) ? params.tags : (params.tags ? [params.tags] : [])
+                    };
+                    response = await axios.post(`${baseUrl}/contacts/`, contactPayload, config);
+                    return JSON.stringify(response.data);
 
                 case 'contacts_add-tags':
                     if (!params.contactId || !params.tags) return "Missing contactId or tags";

@@ -59,28 +59,61 @@ async function sendWhatsAppMessage(to, message) {
     const url = process.env.SYNTHCORE_WHATSAPP_URL || 'https://api.synthcore.in/api/whatsapp/send';
     const apiKey = process.env.SYNTHCORE_API_KEY;
 
-    const payload = formatWhatsAppRequest(to, message);
+    // Helper to split message into chunks
+    const splitMessage = (text, maxLength = 1000) => {
+        if (text.length <= maxLength) return [text];
 
-    console.log(`Sending WhatsApp message to ${to}...`);
+        const chunks = [];
+        let current = text;
 
-    try {
-        const response = await axios.post(url, payload, {
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+        while (current.length > 0) {
+            if (current.length <= maxLength) {
+                chunks.push(current);
+                break;
             }
-        });
 
-        console.log('WhatsApp message sent successfully:', response.data);
-        return response.data;
-    } catch (error) {
-        console.error('Error sending WhatsApp message:', error.message);
-        if (error.response) {
-            console.error('Response data:', error.response.data);
+            // Find split point (newline or space)
+            let splitIndex = current.lastIndexOf('\n', maxLength);
+            if (splitIndex === -1) splitIndex = current.lastIndexOf(' ', maxLength);
+            if (splitIndex === -1) splitIndex = maxLength; // Force split if no natural break
+
+            chunks.push(current.substring(0, splitIndex).trim());
+            current = current.substring(splitIndex).trim();
         }
-        // Don't throw, just return error so server doesn't crash
-        return { success: false, error: error.message };
+        return chunks;
+    };
+
+    const chunks = splitMessage(message);
+    const results = [];
+
+    console.log(`Sending WhatsApp message to ${to} (${chunks.length} chunks)...`);
+
+    for (const chunk of chunks) {
+        if (!chunk) continue;
+
+        const payload = formatWhatsAppRequest(to, chunk);
+
+        try {
+            const response = await axios.post(url, payload, {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            results.push(response.data);
+
+            // Small delay between chunks to ensure order
+            if (chunks.length > 1) await new Promise(r => setTimeout(r, 500));
+
+        } catch (error) {
+            console.error('Error sending WhatsApp chunk:', error.message);
+            results.push({ success: false, error: error.message });
+        }
     }
+
+    // Return success if at least one chunk sent
+    const success = results.some(r => r.success !== false);
+    return { success, results };
 }
 
 module.exports = {
