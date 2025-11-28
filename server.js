@@ -185,7 +185,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
         await db.saveMessage(phone, 'user', text);
 
         // Send immediate 200 OK to acknowledge receipt
-        res.status(200).send("OK");
+        res.status(200).json({ status: "ok" });
 
         // 2. Run AI Agent
         if (!agentExecutor) {
