@@ -76,8 +76,8 @@ class InboundWebhookRelay {
     overrideUrl = null,
     overrideSecret = null
   }) {
-    const urlToUse = (overrideUrl && this.isHttps(overrideUrl)) ? overrideUrl : this.webhookUrl;
-    if (!urlToUse || !this.isHttps(urlToUse)) {
+    const urlToUse = (overrideUrl && (this.isHttps(overrideUrl) || overrideUrl.startsWith('http://localhost'))) ? overrideUrl : this.webhookUrl;
+    if (!urlToUse || (!this.isHttps(urlToUse) && !urlToUse.startsWith('http://localhost'))) {
       console.warn('InboundWebhookRelay: invalid or non-HTTPS webhook URL. Skipping.', urlToUse);
       return { delivered: false, error: 'invalid_webhook_url' };
     }
