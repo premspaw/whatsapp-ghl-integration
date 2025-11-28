@@ -1039,11 +1039,19 @@ async function sendWhatsappMessageHandler(req, res) {
         body: text,
         timestamp: Date.now(),
         type: mediaUrl ? 'media' : 'text',
-        direction: 'outbound'
+        direction: 'outbound',
+        hasMedia: !!mediaUrl,
+        mediaUrl: mediaUrl || null
       };
       await conversationManager.addMessage(messageData, chatId);
       // Emit to frontend so live UI updates
-      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', { to: chatId, body: text, timestamp: messageData.timestamp });
+      res.app?.locals?.io?.to?.('whatsapp')?.emit?.('ai_reply', {
+        to: chatId,
+        body: text,
+        timestamp: messageData.timestamp,
+        hasMedia: !!mediaUrl,
+        mediaUrl: mediaUrl || null
+      });
     } catch (_) { }
 
     // Auto-sync the conversation to GHL

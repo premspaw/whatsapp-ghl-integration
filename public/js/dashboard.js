@@ -228,10 +228,23 @@ function renderMessages() {
         const time = formatTime(msg.timestamp);
         const status = isOutgoing ? '✓✓' : ''; // Simplified status
 
+        // Handle media messages
+        let mediaHtml = '';
+        if (msg.hasMedia && msg.mediaUrl) {
+            const isImage = msg.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+            if (isImage) {
+                mediaHtml = `<img src="${msg.mediaUrl}" style="max-width: 300px; border-radius: 8px; margin-bottom: 0.5rem;" alt="Image">`;
+            } else {
+                mediaHtml = `<a href="${msg.mediaUrl}" target="_blank" style="color: #2563eb;">📎 ${msg.body || 'Attachment'}</a>`;
+            }
+        }
+
         return `
             <div class="message ${isOutgoing ? 'outgoing' : 'incoming'}">
                 <div class="message-content">
-                    <div class="message-text">${msg.body || ''}</div>
+                    ${mediaHtml}
+                    ${msg.body && !mediaHtml ? `<div class="message-text">${msg.body || ''}</div>` : ''}
+                    ${msg.body && mediaHtml ? `<div class="message-text" style="margin-top: 0.5rem;">${msg.body}</div>` : ''}
                     <div class="message-meta">
                         <span class="message-time">${time}</span>
                         <span class="message-status">${status}</span>
