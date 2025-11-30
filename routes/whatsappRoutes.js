@@ -38,8 +38,8 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
   router.get('/qr-code', async (req, res) => {
     try {
       if (!currentQRCode) {
-        return res.json({ 
-          success: false, 
+        return res.json({
+          success: false,
           error: 'No QR code available',
           status: connectionStatus,
           message: connectionStatus === 'connected' ? 'WhatsApp is already connected' : 'QR code not generated yet'
@@ -64,10 +64,10 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
       });
     } catch (error) {
       console.error('Error generating QR code:', error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         error: 'Failed to generate QR code',
-        details: error.message 
+        details: error.message
       });
     }
   });
@@ -86,7 +86,7 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
     const displayName = clientInfo && (clientInfo.pushname || clientInfo.me && clientInfo.me.name)
       ? (clientInfo.pushname || clientInfo.me.name)
       : null;
-    
+
     res.json({
       success: true,
       status: actualStatus,
@@ -100,9 +100,9 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
         pushname: clientInfo.pushname,
         wid: clientInfo.wid
       } : null,
-      message: isReady ? 'WhatsApp is connected and ready' : 
-               currentQRCode ? 'Waiting for QR code scan' : 
-               'WhatsApp is not connected'
+      message: isReady ? 'WhatsApp is connected and ready' :
+        currentQRCode ? 'Waiting for QR code scan' :
+          'WhatsApp is not connected'
     });
   });
 
@@ -293,45 +293,47 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
 
         try {
           if (conversationManager && typeof conversationManager.addMessage === 'function') {
-            await conversationManager.addMessage(normalized, {
+            await conversationManager.addMessage({
               id: result?.id?._serialized || `sent_${Date.now()}`,
-              from: 'me',
+              from: 'ai', // Mark as AI/Bot for consistency if triggered via API
               body: caption || text || '',
               timestamp: Date.now(),
               type: mediaKind,
               hasMedia: true,
               mediaUrl,
               mediaType: mediaKind
-            });
+            }, normalized);
           }
-        } catch (_) {}
+        } catch (_) { }
       } else {
         if (!text) {
           return res.status(400).json({ success: false, error: 'Missing required fields: message' });
         }
-        const chatId = normalized.replace('+','') + '@c.us';
+        const chatId = normalized.replace('+', '') + '@c.us';
         result = await whatsappService.sendMessage(chatId, text);
 
         try {
           if (conversationManager && typeof conversationManager.addMessage === 'function') {
-            await conversationManager.addMessage(normalized, {
+            await conversationManager.addMessage({
               id: result?.id?._serialized || `sent_${Date.now()}`,
-              from: 'me',
+              from: 'ai', // Mark as AI/Bot for consistency if triggered via API
               body: text,
               timestamp: Date.now(),
               type: 'text'
-            });
+            }, normalized);
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
-      res.json({ success: true, result: {
-        id: result?.id?._serialized,
-        to: to,
-        body: text || caption || '',
-        mediaUrl: mediaUrl || null,
-        mediaType: mediaType || null
-      }});
+      res.json({
+        success: true, result: {
+          id: result?.id?._serialized,
+          to: to,
+          body: text || caption || '',
+          mediaUrl: mediaUrl || null,
+          mediaType: mediaType || null
+        }
+      });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
