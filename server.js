@@ -235,8 +235,11 @@ try {
           direction: 'inbound'
         }, message.from);
 
+        // Normalize phone for conversation ID matching in dashboard
+        const conversationId = phoneNormalizer.normalize(message.from);
+
         // Emit to socket for real-time dashboard update
-        io.emit('new_message', savedMsg);
+        io.emit('new_message', { ...savedMsg, conversationId });
 
         // Forward to inbound webhook relay (AI Agent)
         await inboundRelay.send({

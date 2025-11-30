@@ -365,7 +365,7 @@ function initializeSocket() {
 
 function handleIncomingMessage(msg) {
     // Find conversation
-    let conv = conversations.find(c => c.id === msg.from || c.id === msg.to);
+    let conv = conversations.find(c => c.id === msg.conversationId || c.id === msg.from || c.id === msg.to);
 
     if (!conv) {
         // New conversation logic would go here, for now just reload
