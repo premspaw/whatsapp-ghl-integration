@@ -224,6 +224,20 @@ try {
         // Extract phone from WhatsApp ID
         const phone = message.from.replace('@c.us', '');
 
+        // Save to conversation manager
+        const savedMsg = await conversationManager.addMessage({
+          from: message.from,
+          body: message.body,
+          timestamp: message.timestamp,
+          hasMedia: message.hasMedia,
+          mediaUrl: message.mediaUrl || null,
+          mediaType: message.type,
+          direction: 'inbound'
+        }, message.from);
+
+        // Emit to socket for real-time dashboard update
+        io.emit('new_message', savedMsg);
+
         // Forward to inbound webhook relay (AI Agent)
         await inboundRelay.send({
           phone: phone,
