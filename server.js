@@ -221,13 +221,17 @@ try {
       try {
         console.log('📨 Incoming WhatsApp message from:', message.from);
 
+        // Extract phone from WhatsApp ID
+        const phone = message.from.replace('@c.us', '');
+
         // Forward to inbound webhook relay (AI Agent)
-        await inboundRelay.forwardMessage({
-          from: message.from,
-          body: message.body,
-          hasMedia: message.hasMedia,
-          type: message.type,
-          timestamp: message.timestamp
+        await inboundRelay.send({
+          phone: phone,
+          fromName: message._data?.notifyName || 'Unknown',
+          message: message.body,
+          messageType: message.hasMedia ? 'media' : 'text',
+          messageId: message.id._serialized || message.id,
+          timestamp: message.timestamp * 1000
         });
       } catch (err) {
         console.error('❌ Error forwarding message to AI Agent:', err);
