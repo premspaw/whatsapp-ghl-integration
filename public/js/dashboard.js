@@ -222,16 +222,36 @@ function selectConversation(id) {
 function renderMessages() {
     if (!selectedConversation) return;
 
-    <div class="message-content">
-        ${mediaHtml}
-        ${msg.body && !mediaHtml ? `<div class="message-text">${msg.body || ''}</div>` : ''}
-        ${msg.body && mediaHtml ? `<div class="message-text" style="margin-top: 0.5rem;">${msg.body}</div>` : ''}
-        <div class="message-meta">
-            <span class="message-time">${time}</span>
-            <span class="message-status">${status}</span>
-        </div>
-    </div>
-            </div >
+    const msgs = selectedConversation.messages || [];
+    els.messagesArea.innerHTML = msgs.map(msg => {
+        const isOutgoing = msg.from === 'ai' || msg.from === 'bot' || msg.direction === 'outbound';
+        const time = formatTime(msg.timestamp);
+        const status = isOutgoing ? '✓✓' : ''; // Simplified status
+
+        // Handle media messages
+        let mediaHtml = '';
+        if (msg.hasMedia && msg.mediaUrl) {
+            // Check if it's an image (either by extension or data URL)
+            const isImage = msg.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) || msg.mediaUrl.startsWith('data:image/');
+            if (isImage) {
+                mediaHtml = `<img src="${msg.mediaUrl}" style="max-width: 300px; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer;" alt="Image" onclick="window.open('${msg.mediaUrl}', '_blank')">`;
+            } else {
+                mediaHtml = `<a href="${msg.mediaUrl}" target="_blank" style="color: #2563eb;">📎 ${msg.body || msg.fileName || 'Attachment'}</a>`;
+            }
+        }
+
+        return `
+            <div class="message ${isOutgoing ? 'outgoing' : 'incoming'}">
+                <div class="message-content">
+                    ${mediaHtml}
+                    ${msg.body && !mediaHtml ? `<div class="message-text">${msg.body || ''}</div>` : ''}
+                    ${msg.body && mediaHtml ? `<div class="message-text" style="margin-top: 0.5rem;">${msg.body}</div>` : ''}
+                    <div class="message-meta">
+                        <span class="message-time">${time}</span>
+                        <span class="message-status">${status}</span>
+                    </div>
+                </div>
+            </div>
         `;
     }).join('');
 }
