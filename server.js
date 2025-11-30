@@ -215,6 +215,28 @@ try {
   console.log('✅ All services initialized successfully');
   console.log(`📱 WhatsApp Mode: ${useMockWhatsApp ? 'Mock' : 'Real'}`);
 
+  // Set up WhatsApp message handler to forward to AI Agent
+  if (whatsappService && inboundRelay) {
+    whatsappService.on('message', async (message) => {
+      try {
+        console.log('📨 Incoming WhatsApp message from:', message.from);
+
+        // Forward to inbound webhook relay (AI Agent)
+        await inboundRelay.forwardMessage({
+          from: message.from,
+          body: message.body,
+          hasMedia: message.hasMedia,
+          type: message.type,
+          timestamp: message.timestamp
+        });
+      } catch (err) {
+        console.error('❌ Error forwarding message to AI Agent:', err);
+      }
+    });
+    console.log('✅ WhatsApp message handler connected to AI Agent relay');
+  }
+
+
   // Enforce GHL configuration when required
   const requireGHL = String(process.env.REQUIRE_GHL || '').toLowerCase() === 'true';
   if (requireGHL) {
