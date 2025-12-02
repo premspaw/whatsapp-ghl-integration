@@ -1,0 +1,38 @@
+{
+  "keywords": [
+    "human",
+    "agent",
+    "speak to person",
+    "talk to someone",
+    "real person",
+    "customer service",
+    "representative",
+    "manager",
+    "supervisor",
+    "not helpful",
+    "stop ai"
+  ],
+  "auto_handoff_topics": [
+    "payment",
+    "refund",
+    "cancel",
+    "complaint",
+    "urgent",
+    "emergency"
+  ],
+  "business_hours": {
+    "enabled": true,
+    "timezone": "Asia/Kolkata",
+    "auto_handoff_outside_hours": false
+  },
+  "priority_contacts": {
+    "enabled": true,
+    "ghl_tags": [
+      "VIP",
+      "Priority",
+      "Premium"
+    ]
+  },
+  "suppress_on_outbound_initiated": true,
+  "media_no_reply_types": ["image", "video", "document", "audio", "ptt", "sticker"]
+}

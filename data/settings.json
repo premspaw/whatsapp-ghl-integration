@@ -1,0 +1,11 @@
+{
+  "aiN8nEnabled": true,
+  "n8nWebhookUrl": "https://synthcore8.app.n8n.cloud/webhook/webhook/whatsapp",
+  "pricing": {
+    "pricePerReply": 0,
+    "currency": "INR",
+    "freeReplies": 0,
+    "billingNote": ""
+  },
+  "updatedAt": 1764090338619
+}
