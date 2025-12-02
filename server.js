@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
@@ -95,6 +96,11 @@ const phoneNormalizer = require('./utils/phoneNormalizer');
 const TenantService = require('./services/tenantService');
 
 const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public', 'public')));
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
@@ -1851,4 +1857,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
 
