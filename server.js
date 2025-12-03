@@ -303,110 +303,6 @@ app.use('/api/whatsapp', require('./routes/whatsappRoutes')(whatsappService, ghl
 // System metrics endpoint (simple health and code metrics)
 app.use('/api/system', require('./routes/metricsRoutes')());
 // Debug middleware to trace KB route handling order
-app.use('/api/ghl/kb', (req, res, next) => {
-  console.log(`[server.js] KB route hit: ${req.method} ${req.originalUrl}`);
-  next();
-});
-// Server-level aliases for GHL KB endpoints to ensure availability even if router gating fails
-app.get('/api/ghl/kb/list', async (req, res) => {
-  try {
-    const items = enhancedAIService.getKnowledgeBase();
-    const stats = enhancedAIService.getKnowledgeBaseStats();
-    res.json({ success: true, count: Array.isArray(items) ? items.length : 0, items, stats });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-app.post('/api/ghl/kb/search', async (req, res) => {
-  try {
-    const { query, limit = 5, minSimilarity = 0.35, tenantId } = req.body || {};
-    const resolvedTenant = tenantId || req.headers['x-tenant-id'] || null;
-    if (!query || typeof query !== 'string' || query.trim().length === 0) {
-      return res.status(400).json({ success: false, error: 'Query required' });
-    }
-    const results = await enhancedAIService.embeddings.retrieve({
-      query,
-      topK: Number(limit) || 5,
-      minSimilarity: Number(minSimilarity) || 0.35,
-      tenantId: resolvedTenant,
-    });
-    res.json({ success: true, count: Array.isArray(results) ? results.length : 0, items: results });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-// Server-level KB website upload alias to minimize confusion; falls back to local ingestion
-app.post('/api/ghl/kb/website', async (req, res) => {
-  try {
-    const { url, websiteUrl, category = 'website', description = '', tenantId } = req.body || {};
-    const targetUrl = (url || websiteUrl || '').trim();
-    let resolvedTenant = tenantId || null;
-    try { resolvedTenant = resolvedTenant || (tenantService ? await tenantService.resolveTenantId({ req }) : null); } catch (_) { }
-
-    if (!targetUrl) {
-      return res.status(400).json({ success: false, error: 'URL required' });
-    }
-
-    const result = await enhancedAIService.trainFromWebsite(
-      targetUrl,
-      description,
-      category || 'general',
-      resolvedTenant
-    );
-
-    if (result && result.success) {
-      return res.json({
-        success: true,
-        result: {
-          pagesProcessed: result.pagesProcessed || 0,
-          chunks: Array.isArray(result.chunks) ? result.chunks.length : (result.chunkCount || 0)
-        }
-      });
-    }
-    return res.status(500).json({ success: false, error: (result && result.error) || 'Website training failed' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Server-level KB PDF upload alias: accepts { url, category, description, tenantId }
-app.post('/api/ghl/kb/pdf', async (req, res) => {
-  try {
-    const { url, category = 'documents', description = '', tenantId } = req.body || {};
-    const targetUrl = String(url || '').trim();
-    let resolvedTenant = tenantId || null;
-    try { resolvedTenant = resolvedTenant || (tenantService ? await tenantService.resolveTenantId({ req }) : null); } catch (_) { }
-
-    if (!targetUrl) {
-      return res.status(400).json({ success: false, error: 'PDF URL required' });
-    }
-
-    // Download the PDF to a temporary file
-    const tempDir = path.join(__dirname, 'uploads', 'kb');
-    await fs.promises.mkdir(tempDir, { recursive: true });
-    const baseName = path.basename(new URL(targetUrl).pathname) || 'document.pdf';
-    const tempPath = path.join(tempDir, `${Date.now()}-${baseName}`);
-
-    const response = await axios.get(targetUrl, { responseType: 'arraybuffer' });
-    await fs.promises.writeFile(tempPath, response.data);
-
-    // Process and index PDF via pdfProcessingService if available
-    if (!pdfProcessingService || typeof pdfProcessingService.addPDFToKnowledgeBase !== 'function') {
-      try { await fs.promises.unlink(tempPath); } catch (_) { }
-      return res.status(501).json({ success: false, error: 'PDF processing service unavailable' });
-    }
-
-    const meta = { source: targetUrl, category, description, tenantId: resolvedTenant };
-    const result = await pdfProcessingService.addPDFToKnowledgeBase(tempPath, category, description);
-
-    // Clean up temp file
-    try { await fs.promises.unlink(tempPath); } catch (_) { }
-
-    return res.json({ success: true, mode: 'local_fallback', result });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 app.use('/api/ghl', require('./routes/ghlRoutes')(ghlService));
 // Debug: ensure /api/ghl path is reachable beyond router
 app.get('/api/ghl/server-test', (req, res) => {
@@ -416,6 +312,48 @@ app.use('/api/analytics', require('./routes/analyticsRoutes')(analyticsService, 
 // Simple ping for debugging
 app.get('/api/ping', (req, res) => {
   res.json({ success: true, message: 'pong' });
+});
+
+// Alias OAuth callback to match external app config
+app.get('/api/oauth/callback', (req, res) => {
+  const code = req.query.code || '';
+  const state = req.query.state || '';
+  const url = `/api/ghl/oauth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
+  res.redirect(302, url);
+});
+
+// Conversation Provider outbound webhook
+app.get('/provider/outbound', (req, res) => {
+  res.json({ success: true, message: 'Use POST with JSON body to deliver outbound messages' });
+});
+app.post('/provider/outbound', async (req, res) => {
+  try {
+    if (securityService && !securityService.verifyHeaderSecret(req, securityService.ghlSecret)) {
+      return res.status(401).json({ success: false, error: 'Invalid webhook secret' });
+    }
+    const body = req.body || {};
+    const contactPhone = body.contact?.phone || body.phone || body.to || '';
+    const messageText = body.message?.text || body.message || body.text || '';
+    if (!contactPhone || !messageText) {
+      return res.status(400).json({ success: false, error: 'Required: contact phone and message text' });
+    }
+    if (!whatsappService || !whatsappService.isReady) {
+      return res.status(503).json({ success: false, error: 'WhatsApp client not ready' });
+    }
+    await whatsappService.sendMessage(contactPhone, messageText);
+    try {
+      if (ghlService && typeof ghlService.addOutboundMessage === 'function') {
+        const normalized = ghlService.normalizePhoneNumber(contactPhone);
+        const contact = await ghlService.findContactByPhone(normalized);
+        if (contact) {
+          await ghlService.addOutboundMessage(contact.id, { message: messageText, type: 'TYPE_SMS', direction: 'outbound' });
+        }
+      }
+    } catch (_) {}
+    res.json({ success: true, delivered: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 // Root health endpoint for unified checks
 app.get('/api/health', (req, res) => {

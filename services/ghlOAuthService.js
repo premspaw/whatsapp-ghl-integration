@@ -11,6 +11,8 @@ class GHLOAuthService {
     // Allow overriding endpoints via env if needed
     this.authBase = process.env.GHL_OAUTH_AUTH_BASE || 'https://marketplace.gohighlevel.com/oauth/authorize';
     this.tokenUrl = process.env.GHL_OAUTH_TOKEN_URL || 'https://marketplace.gohighlevel.com/oauth/token';
+    this.versionId = process.env.GHL_OAUTH_VERSION_ID || '';
+    this.extraParams = process.env.GHL_OAUTH_EXTRA_PARAMS || '';
     this.storageFile = path.join(__dirname, '..', 'data', 'ghl-oauth.json');
     this.tokens = this._loadTokens();
   }
@@ -46,8 +48,14 @@ class GHLOAuthService {
       scope: scopeStr,
       state: state || ''
     });
+    if (this.versionId) {
+      params.set('version_id', this.versionId);
+    }
+    const baseUrl = `${this.authBase}?${params.toString()}`;
+    // Append any extra params if provided (pre-encoded key=value pairs joined by &)
+    const extra = String(this.extraParams || '').trim();
+    const url = extra ? `${baseUrl}&${extra}` : baseUrl;
     // Some providers use query params on base authorize URL; keep flexible
-    const url = `${this.authBase}?${params.toString()}`;
     return url;
   }
 

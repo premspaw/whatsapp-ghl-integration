@@ -86,6 +86,36 @@ module.exports = (ghlService) => {
     }
   });
 
+  router.post('/test', async (req, res) => {
+    try {
+      const apiKey = (req.body?.apiKey || '').trim();
+      const locationId = (req.body?.locationId || '').trim();
+      if (!apiKey || !locationId) {
+        return res.status(400).json({ success: false, error: 'API key and locationId required' });
+      }
+      const axios = require('axios');
+      const baseUrl = process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com';
+      const client = axios.create({
+        baseURL: baseUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Version': '2021-07-28',
+          Authorization: `Bearer ${apiKey}`
+        }
+      });
+      try {
+        const response = await client.get('/contacts/', { params: { locationId } });
+        const count = Array.isArray(response.data?.contacts) ? response.data.contacts.length : 0;
+        return res.json({ success: true, reachable: true, sampleCount: count });
+      } catch (e) {
+        const msg = (e.response && (e.response.data?.message || e.response.data?.error)) || e.message;
+        return res.json({ success: false, reachable: false, error: msg });
+      }
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   // Contacts: safe fallback route
   // Returns an empty list when GHL is not configured to avoid 404s in dashboards/tests
   router.get('/contacts', async (req, res) => {
@@ -100,134 +130,7 @@ module.exports = (ghlService) => {
     }
   });
 
-  // Optional: Knowledge Base proxy endpoints (use env-configured URLs)
-  let GHLKnowledgeService;
-  try {
-    GHLKnowledgeService = require('../services/ghlKnowledgeService');
-    // Normalize different export shapes (CommonJS vs ESM or named export)
-    if (GHLKnowledgeService && typeof GHLKnowledgeService !== 'function') {
-      if (typeof GHLKnowledgeService.default === 'function') {
-        GHLKnowledgeService = GHLKnowledgeService.default;
-      } else if (typeof GHLKnowledgeService.GHLKnowledgeService === 'function') {
-        GHLKnowledgeService = GHLKnowledgeService.GHLKnowledgeService;
-      }
-    }
-  } catch (e) {
-    console.warn('⚠️ ghlKnowledgeService not found, using no-op fallback:', e.message);
-    GHLKnowledgeService = class {
-      constructor() { this.kbSearchUrl = null; this.kbListUrl = null; }
-      isConfigured() { return false; }
-      async search() { return []; }
-      async list() { return []; }
-    };
-  }
-  let kbService;
-  try {
-    console.log('[ghlRoutes] typeof GHLKnowledgeService =', typeof GHLKnowledgeService);
-    kbService = new GHLKnowledgeService(ghlService);
-  } catch (err) {
-    console.warn('⚠️ GHLKnowledgeService not constructible, using no-op fallback:', err.message);
-    const FallbackKB = class {
-      constructor() { this.kbSearchUrl = null; this.kbListUrl = null; }
-      isConfigured() { return false; }
-      async search() { return []; }
-      async list() { return []; }
-    };
-    kbService = new FallbackKB();
-  }
-  console.log('[ghlRoutes] GHLKnowledgeService initialized, isConfigured:', typeof kbService.isConfigured === 'function' ? kbService.isConfigured() : false);
-  // Simple test endpoint to verify router wiring under /api/ghl/kb/test
-  router.get('/kb/test', (req, res) => {
-    console.log('[ghlRoutes] /kb/test hit');
-    res.json({ success: true, message: 'kb test ok' });
-  });
-  // Debug KB adapter config
-  router.get('/kb/debug', (req, res) => {
-    res.json({
-      success: true,
-      kbSearchUrl: kbService.kbSearchUrl,
-      kbListUrl: kbService.kbListUrl,
-      isConfigured: kbService.isConfigured()
-    });
-  });
-  // Search KB
-  router.post('/kb/search', async (req, res) => {
-    console.log('[ghlRoutes] /kb/search mounted');
-    try {
-      console.log('[ghlRoutes] KB config (search):', {
-        kbSearchUrl: kbService.kbSearchUrl,
-        kbListUrl: kbService.kbListUrl,
-        configured: kbService.isConfigured()
-      });
-      const query = String(req.body?.query || '').trim();
-      if (!query) return res.status(400).json({ success: false, error: 'Query required' });
-      if (!kbService.kbSearchUrl) return res.status(400).json({ success: false, error: 'KB search URL not configured' });
-      const items = await kbService.search(query, { locationId: req.body?.locationId || process.env.GHL_LOCATION_ID });
-      res.json({ success: true, count: items.length, items });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-  // List KB items
-  router.get('/kb/list', async (req, res) => {
-    console.log('[ghlRoutes] /kb/list mounted');
-    try {
-      console.log('[ghlRoutes] KB config (list):', {
-        kbSearchUrl: kbService.kbSearchUrl,
-        kbListUrl: kbService.kbListUrl,
-        configured: kbService.isConfigured()
-      });
-      if (!kbService.kbListUrl) return res.status(400).json({ success: false, error: 'KB list URL not configured' });
-      const items = await kbService.list({ locationId: req.query?.locationId || process.env.GHL_LOCATION_ID });
-      res.json({ success: true, count: Array.isArray(items) ? items.length : 0, items });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-
-  // Upload website into KB (GHL endpoint if configured, else local fallback)
-  router.post('/kb/website', async (req, res) => {
-    console.log('[ghlRoutes] /kb/website mounted');
-    try {
-      const url = String(req.body?.url || req.body?.websiteUrl || '').trim();
-      const maxDepth = req.body?.maxDepth;
-      const category = req.body?.category || 'website';
-      const tags = req.body?.tags || [];
-      const locationId = req.body?.locationId || process.env.GHL_LOCATION_ID;
-
-      if (!url) return res.status(400).json({ success: false, error: 'URL required' });
-
-      const result = await kbService.uploadWebsite(url, { maxDepth, category, tags, locationId });
-      if (!result.success) {
-        return res.status(500).json({ success: false, error: result.error || 'Upload failed' });
-      }
-      res.json({ success: true, result });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-
-  // Upload PDF into KB (by URL) — uses GHL endpoint if configured, else local fallback
-  router.post('/kb/pdf', async (req, res) => {
-    console.log('[ghlRoutes] /kb/pdf mounted');
-    try {
-      const url = String(req.body?.url || req.body?.pdfUrl || '').trim();
-      const category = req.body?.category || 'documents';
-      const tags = req.body?.tags || [];
-      const description = req.body?.description || '';
-      const locationId = req.body?.locationId || process.env.GHL_LOCATION_ID;
-
-      if (!url) return res.status(400).json({ success: false, error: 'PDF URL required' });
-
-      const result = await kbService.uploadPdf(url, { category, tags, description, locationId });
-      if (!result.success) {
-        return res.status(500).json({ success: false, error: result.error || 'PDF upload failed' });
-      }
-      res.json({ success: true, result });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
+  
 
   // Contact metadata by phone (normalized). Includes basic GHL details.
   router.get('/contact/:phone', async (req, res) => {

@@ -361,6 +361,13 @@
                         <i class="fas fa-vial"></i> Test GHL Connection
                     </button>
                     <small id="ghlTestResult" class="ms-2"></small>
+
+                    <div class="mt-3">
+                        <div id="oauthStatus" class="text-muted mb-2">OAuth status: checking...</div>
+                        <button class="btn btn-success btn-sm" onclick="connectGHLApp()">
+                            <i class="fas fa-link"></i> Connect GHL App (OAuth)
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -450,6 +457,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             selectConnectionType('business');
+            updateOAuthStatus();
         });
 
         function nextStep() {
@@ -610,6 +618,37 @@
                 }
             } catch (error) {
                 resultElement.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> Error testing connection</span>';
+            }
+        }
+
+        async function updateOAuthStatus() {
+            const el = document.getElementById('oauthStatus');
+            try {
+                const resp = await fetch('/api/ghl/oauth/status');
+                const data = await resp.json();
+                if (data && data.success && data.status) {
+                    const s = data.status;
+                    const locs = Array.isArray(s.locations) ? s.locations.length : 0;
+                    el.textContent = `OAuth configured: ${s.configured ? 'yes' : 'no'} | redirect: ${s.redirectUri || '-'} | tokens: ${locs}`;
+                } else {
+                    el.textContent = 'OAuth status: unavailable';
+                }
+            } catch (_) {
+                el.textContent = 'OAuth status: error';
+            }
+        }
+
+        async function connectGHLApp() {
+            try {
+                const resp = await fetch('/api/ghl/oauth/authorize');
+                const data = await resp.json();
+                if (data && data.success && data.authorizeUrl) {
+                    window.location.href = data.authorizeUrl;
+                } else {
+                    alert('Unable to start OAuth: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error starting OAuth');
             }
         }
 
