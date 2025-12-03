@@ -323,9 +323,12 @@
 <body>
     <div class="container">
         <div class="header">
-            <button id="backButton" style="position: absolute; top: 20px; left: 20px; background: white; border: 2px solid #667eea; color: #667eea; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; display: none;">
-                ← Back to WhatsApp
-            </button>
+            <a id="backLink" href="/ghl-whatsapp-tab.html" style="position: absolute; top: 20px; left: 20px; background: white; border: 2px solid #667eea; color: #667eea; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block;">
+                ← Back to Dashboard
+            </a>
+            <a id="viewTemplatesLink" href="/templates.html" style="position: absolute; top: 20px; right: 20px; background: white; border: 2px solid #28a745; color: #28a745; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block;">
+                📋 View Templates
+            </a>
             <h1>📝 WhatsApp Template Creator</h1>
             <p>Create templates with GHL variables and images</p>
         </div>
@@ -823,17 +826,13 @@ GHL Mapping Examples:
             setTimeout(() => el.style.display = 'none', 5000);
         }
         
-        // Handle back button
+        // Optional dynamic back target via ?return=...
         window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const returnUrl = urlParams.get('return');
-            
-            if (returnUrl) {
-                const backButton = document.getElementById('backButton');
-                backButton.style.display = 'block';
-                backButton.addEventListener('click', () => {
-                    window.location.href = '/' + returnUrl;
-                });
+            const params = new URLSearchParams(window.location.search);
+            const ret = params.get('return');
+            if (ret) {
+                const backLink = document.getElementById('backLink');
+                backLink.href = '/' + ret;
             }
         });
         

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synthcore WhatsApp AI</title>
+    <title>WhatsApp AI</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,14 +20,15 @@
     <header class="ghl-header">
         <div class="header-left">
             <h1>
-                <div class="whatsapp-icon">📱</div>
-                Synthcore AI
+                <div class="whatsapp-icon">🟢</div>
+                WhatsApp AI
             </h1>
         </div>
         <div class="header-actions">
             <button class="header-btn" id="refreshBtn" title="Refresh">🔄</button>
             <button class="header-btn" id="templatesBtn" title="Templates">📋</button>
             <button class="header-btn" id="settingsBtn" title="Settings">⚙️</button>
+            <div id="connectionStatus" class="connection-status disconnected">Disconnected</div>
         </div>
     </header>
 
@@ -60,10 +61,7 @@
 
         <!-- Chat Area -->
         <main class="chat-area">
-            <!-- Connection Status -->
-            <div id="connectionStatus" class="connection-status disconnected">
-                Connecting...
-            </div>
+            
 
             <!-- Chat Header -->
             <div class="chat-header" id="chatHeader" style="display: none;">
@@ -79,8 +77,9 @@
             <!-- Messages -->
             <div class="messages-area" id="messagesArea">
                 <div class="empty-state" id="emptyState">
-                    <h3>Welcome to Synthcore AI</h3>
-                    <p>Select a conversation to start chatting</p>
+                    <h3>Welcome</h3>
+                    <p>Start a chat to see AI-powered WhatsApp features:</p>
+                    <p style="margin-top: 0.5rem; color:#25d366; font-weight:500;">• Instant replies • Template messaging • GHL sync • Live updates</p>
                 </div>
             </div>
 

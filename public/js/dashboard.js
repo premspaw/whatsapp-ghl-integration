@@ -1,5 +1,7 @@
 // Dashboard Logic
-const API_BASE = window.location.origin;
+const ORIGIN = window.location.origin;
+const IS_DEV_5173 = ORIGIN.includes('localhost:5173');
+const API_BASE = IS_DEV_5173 ? ORIGIN.replace(':5173', ':3000') : ORIGIN;
 const apiUrl = (path) => `${API_BASE}${path}`;
 
 // State
@@ -70,9 +72,17 @@ function setupEventListeners() {
         checkWhatsAppStatus();
     });
 
-    // Templates Button - Navigate to templates page
+    // Templates Button - Navigate to template creator page
     document.getElementById('templatesBtn').addEventListener('click', () => {
-        window.location.href = '/templates.html';
+        window.location.href = '/template-creator.html?return=ghl-whatsapp-tab.html';
+    });
+
+    // Settings Button - Navigate to WhatsApp AI dashboard
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+        const params = new URLSearchParams(window.location.search);
+        const integration = params.get('integration');
+        const target = integration ? `/automation-dashboard.html?integration=${integration}` : '/automation-dashboard.html';
+        window.location.href = target;
     });
 
     // Emoji Picker
@@ -341,7 +351,7 @@ function updateStats() {
 
 // --- Socket.IO ---
 function initializeSocket() {
-    socket = io();
+    socket = io(API_BASE);
 
     socket.on('connect', () => {
         isConnected = true;
@@ -394,11 +404,29 @@ function handleIncomingMessage(msg) {
 function checkWhatsAppStatus() {
     fetch(apiUrl('/api/whatsapp/status'))
         .then(r => r.json())
-        .then(data => {
-            if (data.status === 'connected') updateConnectionStatus('connected');
-            else updateConnectionStatus('disconnected');
+        .then(async data => {
+            if (data.status === 'connected' || data.isReady) {
+                updateConnectionStatus('connected');
+                renderWelcome();
+            } else {
+                updateConnectionStatus('disconnected');
+                if (data.hasQRCode) {
+                    try {
+                        const qrResp = await fetch(apiUrl('/api/whatsapp/qr-code'));
+                        const qrData = await qrResp.json();
+                        renderQr(qrData.qrCode, qrData.message || 'Scan this QR to connect WhatsApp');
+                    } catch (_) {
+                        renderConnecting();
+                    }
+                } else {
+                    renderConnecting();
+                }
+            }
         })
-        .catch(() => updateConnectionStatus('disconnected'));
+        .catch(() => {
+            updateConnectionStatus('disconnected');
+            renderConnecting();
+        });
 }
 
 function updateConnectionStatus(status) {
@@ -410,6 +438,29 @@ function updateConnectionStatus(status) {
         el.textContent = 'Disconnected';
         el.className = 'connection-status disconnected';
     }
+}
+
+function renderWelcome() {
+    els.emptyState.innerHTML = `
+        <h3>Welcome</h3>
+        <p>Start a chat to see AI-powered WhatsApp features:</p>
+        <p style="margin-top: 0.5rem; color:#25d366; font-weight:500;">• Instant replies • Template messaging • GHL sync • Live updates</p>
+    `;
+}
+
+function renderQr(dataUrl, message) {
+    els.emptyState.innerHTML = `
+        <img src="${dataUrl}" alt="WhatsApp QR" style="max-width:240px; border-radius:8px; box-shadow: var(--shadow-md);"/>
+        <p style="margin-top:0.75rem; color:#41525d;">${message}</p>
+        <p style="margin-top:0.25rem; color:#64748b;">Open WhatsApp → Linked Devices → Link a device</p>
+    `;
+}
+
+function renderConnecting() {
+    els.emptyState.innerHTML = `
+        <h3>Connecting...</h3>
+        <p>Please wait while the WhatsApp client initializes.</p>
+    `;
 }
 
 // --- Template Functions ---
@@ -435,10 +486,10 @@ function renderTemplates(templates) {
     }
 
     templateList.innerHTML = templates.map(template => `
-        < div class="template-item" onclick = "sendTemplate('${template.id}')" >
-            <div class="template-name">${template.name}</div>
-            <div class="template-preview">${template.content.substring(0, 50)}...</div>
-        </div >
+            <div class="template-item" onclick="sendTemplate('${template.id}')">
+                <div class="template-name">${template.name}</div>
+                <div class="template-preview">${template.content.substring(0, 50)}...</div>
+            </div>
         `).join('');
 }
 

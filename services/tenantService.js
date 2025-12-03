@@ -3,11 +3,9 @@ const phoneNormalizer = require('../utils/phoneNormalizer');
 
 class TenantService {
   constructor(supabase = null) {
-    // Allow injection of an existing Supabase client or create one
-    this.supabase = supabase || createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || ''
-    );
+    const url = process.env.SUPABASE_URL || '';
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+    this.supabase = supabase || ((/^https?:\/\//.test(url) && key) ? createClient(url, key) : null);
 
     // Optional static mappings via env JSON
     this.phoneMap = this.safeParseEnvJSON(process.env.TENANT_MAP_PHONE);
