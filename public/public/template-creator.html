@@ -326,6 +326,12 @@
             <button id="backButton" style="position: absolute; top: 20px; left: 20px; background: white; border: 2px solid #667eea; color: #667eea; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; display: none;">
                 ← Back to WhatsApp
             </button>
+            <button id="backDashboardButton" style="position: absolute; top: 20px; left: 220px; background: white; border: 2px solid #667eea; color: #667eea; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                ← Back to Dashboard
+            </button>
+            <a href="/templates.html" style="position: absolute; top: 20px; right: 20px; background: white; border: 2px solid #ddd; color: #111; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none;">
+                View Templates
+            </a>
             <h1>📝 WhatsApp Template Creator</h1>
             <p>Create templates with GHL variables and images</p>
         </div>
@@ -835,6 +841,11 @@ GHL Mapping Examples:
                     window.location.href = '/' + returnUrl;
                 });
             }
+
+            const backDashboardButton = document.getElementById('backDashboardButton');
+            backDashboardButton.addEventListener('click', () => {
+                window.location.href = '/whatsapp-dashboard.html';
+            });
         });
         
         // Load templates on page load

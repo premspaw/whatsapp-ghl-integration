@@ -20,14 +20,16 @@
     <header class="ghl-header">
         <div class="header-left">
             <h1>
-                <div class="whatsapp-icon">📱</div>
-                Synthcore AI
+                <div class="whatsapp-icon">💬</div>
+                WhatsApp AI
             </h1>
         </div>
         <div class="header-actions">
             <button class="header-btn" id="refreshBtn" title="Refresh">🔄</button>
             <button class="header-btn" id="templatesBtn" title="Templates">📋</button>
             <button class="header-btn" id="settingsBtn" title="Settings">⚙️</button>
+            <button class="header-btn" id="switchNumberBtn" title="Switch Number">🔁</button>
+            <span id="connectionBadge" style="margin-left:8px;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:600;background:#eee;color:#333;">Disconnected</span>
         </div>
     </header>
 
@@ -79,8 +81,22 @@
             <!-- Messages -->
             <div class="messages-area" id="messagesArea">
                 <div class="empty-state" id="emptyState">
-                    <h3>Welcome to Synthcore AI</h3>
-                    <p>Select a conversation to start chatting</p>
+                    <div id="qrInline" style="display:none;margin-top:12px;background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;max-width:420px">
+                        <p id="qrInlineStatus" style="margin:0 0 10px;color:#555;font-size:14px">Scan this QR with WhatsApp to connect</p>
+                        <input id="locationInput" type="text" placeholder="GHL Location ID (optional)" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;font-size:14px" />
+                        <img id="qrImageInline" alt="WhatsApp QR" style="width:300px;height:300px;object-fit:contain;border:1px solid #eee;border-radius:8px;margin-bottom:12px" />
+                        <div style="display:flex;gap:10px;justify-content:flex-start">
+                            <button id="qrInlineConnect" class="header-btn" style="font-size:0.95rem">Connect</button>
+                            <button id="qrInlineRefresh" class="header-btn" style="font-size:0.95rem">Refresh QR</button>
+                        </div>
+                    </div>
+                    <div id="connectedInfo" style="display:none;margin-top:12px;background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;max-width:420px">
+                        <p style="margin:0 0 8px;color:#111;font-weight:600">WhatsApp AI is active</p>
+                        <p style="margin:0 0 10px;color:#555;font-size:14px">Your AI agent can:
+                        <br>• Auto-reply with your latest templates
+                        <br>• Use knowledge base answers
+                        <br>• Log chats to GHL conversations</p>
+                    </div>
                 </div>
             </div>
 
@@ -121,6 +137,7 @@
     <!-- Scripts -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="js/dashboard.js"></script>
+    <!-- Inline QR replaces modal -->
 </body>
 
 </html>

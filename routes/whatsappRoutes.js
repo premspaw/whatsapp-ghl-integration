@@ -72,6 +72,22 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
     }
   });
 
+  // QR code as PNG image endpoint (robust fallback for UI img src)
+  router.get('/qr-code-image', async (req, res) => {
+    try {
+      if (!currentQRCode) {
+        // Indicate status via 204 No Content if not available yet
+        return res.status(204).end();
+      }
+      const png = await QRCode.toBuffer(currentQRCode, { type: 'png', width: 300, margin: 2 });
+      res.set('Content-Type', 'image/png');
+      res.send(png);
+    } catch (error) {
+      console.error('Error generating QR PNG:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate QR PNG', details: error.message });
+    }
+  });
+
   // Get connection status
   router.get('/status', (req, res) => {
     const isReady = whatsappService ? whatsappService.isReady : false;
@@ -129,9 +145,10 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
 
       // Initialize regardless, so a fresh QR is generated
       if (typeof whatsappService.initialize === 'function') {
+        const locationId = (req.body && req.body.locationId) || req.query.locationId || null;
         setTimeout(() => {
           try {
-            whatsappService.initialize();
+            whatsappService.initialize(locationId);
           } catch (initErr) {
             console.error('Initialize failed during reconnect:', initErr);
           }
@@ -163,8 +180,9 @@ module.exports = (whatsappService, ghlService, enhancedAIService, conversationMa
 
       // Initialize if possible
       if (typeof whatsappService.initialize === 'function') {
-        whatsappService.initialize();
-        return res.json({ success: true, message: 'Initializing WhatsApp; QR code will be available shortly' });
+        const locationId = (req.body && req.body.locationId) || req.query.locationId || null;
+        whatsappService.initialize(locationId);
+        return res.json({ success: true, message: 'Initializing WhatsApp; QR code will be available shortly', locationId });
       }
 
       return res.status(500).json({ success: false, error: 'Initialize method not available on WhatsApp service' });

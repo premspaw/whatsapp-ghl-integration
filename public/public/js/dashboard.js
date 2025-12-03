@@ -8,6 +8,8 @@ let selectedConversation = null;
 let filteredConversations = [];
 let socket = null;
 let isConnected = false;
+let qrTimer = null;
+let qrVisible = false;
 
 // DOM Elements
 const els = {
@@ -70,9 +72,90 @@ function setupEventListeners() {
         checkWhatsAppStatus();
     });
 
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            window.location.href = '/';
+        });
+    }
+
+    const switchNumberBtn = document.getElementById('switchNumberBtn');
+    const qrInline = document.getElementById('qrInline');
+    const qrInlineConnect = document.getElementById('qrInlineConnect');
+    const qrInlineRefresh = document.getElementById('qrInlineRefresh');
+    if (qrInlineConnect) {
+        qrInlineConnect.addEventListener('click', async () => {
+            try {
+                const loc = document.getElementById('locationInput')?.value || '';
+                await fetch(apiUrl('/api/whatsapp/connect'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locationId: loc })
+                });
+                updateConnectionStatus('disconnected');
+                fetchInlineQr();
+            } catch (_) {}
+        });
+    }
+    if (qrInlineRefresh) {
+        qrInlineRefresh.addEventListener('click', async () => {
+            try {
+                const loc = document.getElementById('locationInput')?.value || '';
+                await fetch(apiUrl('/api/whatsapp/reconnect'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locationId: loc })
+                });
+                fetchInlineQr();
+            } catch (_) {}
+        });
+    }
+    if (switchNumberBtn) {
+        switchNumberBtn.addEventListener('click', async () => {
+            try { await fetch(apiUrl('/api/whatsapp/disconnect'), { method: 'POST' }); } catch (_) {}
+            try {
+                const loc = document.getElementById('locationInput')?.value || '';
+                await fetch(apiUrl('/api/whatsapp/connect'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locationId: loc })
+                });
+            } catch (_) {}
+            updateConnectionStatus('disconnected');
+            fetchInlineQr();
+        });
+    }
+
+    const badge = document.getElementById('connectionBadge');
+    if (badge) {
+        badge.style.cursor = 'pointer';
+        badge.title = 'Click to switch number';
+        badge.addEventListener('click', async () => {
+            try {
+                const connected = /Connected/i.test(badge.textContent || '');
+                if (connected) {
+                    await fetch(apiUrl('/api/whatsapp/disconnect'), { method: 'POST' });
+                    updateConnectionStatus('disconnected');
+                    fetchInlineQr();
+                } else {
+                    const loc = document.getElementById('locationInput')?.value || '';
+                    await fetch(apiUrl('/api/whatsapp/connect'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ locationId: loc })
+                    });
+                    updateConnectionStatus('disconnected');
+                    fetchInlineQr();
+                }
+            } catch (_) {}
+        });
+    }
+
+    // Inline QR replaces modal; no close handler needed
+
     // Templates Button - Navigate to templates page
     document.getElementById('templatesBtn').addEventListener('click', () => {
-        window.location.href = '/templates.html';
+        window.location.href = '/template-creator.html?return=whatsapp-dashboard.html';
     });
 
     // Emoji Picker
@@ -403,13 +486,79 @@ function checkWhatsAppStatus() {
 
 function updateConnectionStatus(status) {
     const el = els.connectionStatus;
+    const badge = document.getElementById('connectionBadge');
+    const qrInlineEl = document.getElementById('qrInline');
+    const connectedInfoEl = document.getElementById('connectedInfo');
     if (status === 'connected') {
         el.textContent = 'Connected';
         el.className = 'connection-status connected';
+        if (badge) {
+            badge.textContent = 'Connected';
+            badge.style.background = '#d1fae5';
+            badge.style.color = '#065f46';
+        }
+        if (qrInlineEl) qrInlineEl.style.display = 'none';
+        if (connectedInfoEl) connectedInfoEl.style.display = 'block';
     } else {
         el.textContent = 'Disconnected';
         el.className = 'connection-status disconnected';
+        if (badge) {
+            badge.textContent = 'Disconnected';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#7f1d1d';
+        }
+        if (qrInlineEl) qrInlineEl.style.display = 'block';
+        if (connectedInfoEl) connectedInfoEl.style.display = 'none';
+        fetchInlineQr();
     }
+    // Hide floating status bar to avoid overlap; rely on header badge
+    if (el) el.style.display = 'none';
+}
+
+function showQrModal() {
+    if (qrVisible) return;
+    qrVisible = true;
+    const m = document.getElementById('qrModal');
+    if (m) m.style.display = 'flex';
+    fetchQrCode();
+}
+
+function hideQrModal() {
+    qrVisible = false;
+    const m = document.getElementById('qrModal');
+    if (m) m.style.display = 'none';
+    const img = document.getElementById('qrImage');
+    const st = document.getElementById('qrStatus');
+    if (img) img.src = '';
+    if (st) st.textContent = 'Scan this QR with WhatsApp';
+    if (qrTimer) { clearTimeout(qrTimer); qrTimer = null; }
+}
+
+async function fetchInlineQr() {
+    try {
+        const res = await fetch(apiUrl('/api/whatsapp/status'));
+        const data = await res.json();
+        const img = document.getElementById('qrImageInline');
+        const st = document.getElementById('qrInlineStatus');
+        if (data.status === 'connected') {
+            if (qrInline) qrInline.style.display = 'none';
+            return;
+        }
+        if (data.hasQRCode) {
+            if (img) {
+                img.style.display = 'block';
+                img.src = apiUrl(`/api/whatsapp/qr-code-image?ts=${Date.now()}`);
+            }
+            if (st) st.textContent = 'Scan this QR with WhatsApp';
+        } else {
+            if (img) {
+                img.style.display = 'none';
+                img.src = '';
+            }
+            if (st) st.textContent = (data.message || 'Waiting for QR code...');
+        }
+    } catch (_) {}
+    qrTimer = setTimeout(fetchInlineQr, 5000);
 }
 
 // --- Template Functions ---

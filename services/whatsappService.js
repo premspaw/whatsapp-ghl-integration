@@ -9,7 +9,7 @@ class WhatsAppService extends EventEmitter {
     this.isReady = false;
   }
 
-  initialize() {
+  initialize(sessionName) {
     console.log('Initializing WhatsApp client...');
     
     // Prevent double initialization when a client already exists
@@ -47,9 +47,10 @@ class WhatsAppService extends EventEmitter {
       console.log(`Puppeteer executablePath set to: ${execPath}`);
     }
 
+    const resolvedSession = sessionName || process.env.WHATSAPP_SESSION_NAME || 'Mywhatsapp';
     this.client = new Client({
       authStrategy: new LocalAuth({
-        clientId: process.env.WHATSAPP_SESSION_NAME || 'Mywhatsapp'
+        clientId: resolvedSession
       }),
       puppeteer: puppeteerOptions
     });
