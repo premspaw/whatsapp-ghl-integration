@@ -317,8 +317,11 @@ app.get('/api/ping', (req, res) => {
 // Alias OAuth callback to match external app config
 app.get('/api/oauth/callback', (req, res) => {
   const code = req.query.code || '';
-  const state = req.query.state || '';
-  const url = `/api/ghl/oauth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
+  const state = req.query.state;
+  let url = `/api/ghl/oauth/callback?code=${encodeURIComponent(code)}`;
+  if (state && String(state).length > 0) {
+    url += `&state=${encodeURIComponent(state)}`;
+  }
   res.redirect(302, url);
 });
 

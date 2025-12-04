@@ -45,9 +45,11 @@ class GHLOAuthService {
       response_type: 'code',
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
-      scope: scopeStr,
-      state: state || ''
+      scope: scopeStr
     });
+    if (state && String(state).length > 0) {
+      params.set('state', state);
+    }
     if (this.versionId) {
       params.set('version_id', this.versionId);
     }
@@ -67,8 +69,9 @@ class GHLOAuthService {
       client_secret: this.clientSecret,
       redirect_uri: this.redirectUri
     };
-    const resp = await axios.post(this.tokenUrl, payload, {
-      headers: { 'Content-Type': 'application/json' }
+    const params = new URLSearchParams(payload);
+    const resp = await axios.post(this.tokenUrl, params.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
     const tokenData = resp.data || {};
     // Store by locationId if provided, else use 'default'
@@ -95,8 +98,9 @@ class GHLOAuthService {
       client_id: this.clientId,
       client_secret: this.clientSecret
     };
-    const resp = await axios.post(this.tokenUrl, payload, {
-      headers: { 'Content-Type': 'application/json' }
+    const params = new URLSearchParams(payload);
+    const resp = await axios.post(this.tokenUrl, params.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
     const tokenData = resp.data || {};
     this.tokens[locationId] = {
