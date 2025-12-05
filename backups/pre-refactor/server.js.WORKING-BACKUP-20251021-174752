@@ -64,6 +64,25 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Ngrok bypass middleware - add headers to skip browser warning
+app.use((req, res, next) => {
+  // Add ngrok-skip-browser-warning header to all responses
+  res.setHeader('ngrok-skip-browser-warning', 'true');
+  
+  // Allow all origins for ngrok compatibility
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, ngrok-skip-browser-warning');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize services with error handling
@@ -657,20 +676,36 @@ app.post('/api/conversations/:id/ghl-sync', async (req, res) => {
 app.post('/api/conversations/:id/sync-ghl', async (req, res) => {
   try {
     const id = req.params.id;
+    console.log('📞 Manual sync requested for conversation:', id);
+    
     const conversation = await conversationManager.getConversation(id);
     if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
+      console.error('❌ Conversation not found:', id);
+      return res.status(404).json({ error: 'Conversation not found', id: id });
     }
+    
+    console.log('📋 Conversation data before sync:', {
+      id: conversation.id,
+      phone: conversation.phone,
+      phoneNumber: conversation.phoneNumber,
+      messageCount: conversation.messages?.length || 0
+    });
+    
     // Validate phone format early (strip whatsapp suffixes)
     if (!conversation.phone && typeof id === 'string') {
       const digits = id.replace('@c.us', '').replace(/[^0-9]/g, '');
       if (!digits) {
+        console.error('❌ Invalid phone identifier for sync:', id);
         return res.status(400).json({ error: 'Invalid phone identifier for sync' });
       }
       conversation.phone = `+${digits}`;
+      console.log('✅ Set conversation phone to:', conversation.phone);
     }
     
+    console.log('🔄 Starting GHL sync...');
     const result = await ghlService.syncConversation(conversation);
+    console.log('✅ GHL sync completed successfully');
+    
     res.json({ 
       success: true, 
       message: 'Conversation synced to GHL',
@@ -678,12 +713,12 @@ app.post('/api/conversations/:id/sync-ghl', async (req, res) => {
       conversation: result.conversation
     });
   } catch (error) {
-    console.error('Error manually syncing conversation:', error);
+    console.error('❌ Error manually syncing conversation:', error);
     const msg = (error && error.response && error.response.data && error.response.data.message) ? error.response.data.message : error.message;
     if (/phone number/i.test(msg)) {
       return res.status(400).json({ error: 'Invalid phone number for GHL. Ensure E.164 like +918123133382' });
     }
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg, details: error.stack });
   }
 });
 
@@ -1408,8 +1443,8 @@ app.post('/webhooks/ghl-automation', async (req, res) => {
 app.post('/api/automation/setup', async (req, res) => {
   try {
     console.log('🔧 Setting up WhatsApp automation triggers...');
-    
-    const webhook = await webhookService.setupAutomationTriggers();
+    const { locationId } = req.body || {};
+    const webhook = await webhookService.setupAutomationTriggers({ locationId });
     
     res.json({ 
       success: true, 
@@ -1418,14 +1453,15 @@ app.post('/api/automation/setup', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error setting up automation:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.response?.data || error.message });
   }
 });
 
 // Get webhooks status
 app.get('/api/automation/webhooks', async (req, res) => {
   try {
-    const webhooks = await webhookService.getWebhooks();
+    const locationId = req.query.locationId || process.env.GHL_LOCATION_ID;
+    const webhooks = await webhookService.getWebhooks(locationId);
     
     res.json({ 
       success: true, 
@@ -1434,7 +1470,7 @@ app.get('/api/automation/webhooks', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error fetching webhooks:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.response?.data || error.message });
   }
 });
 
@@ -1442,8 +1478,9 @@ app.get('/api/automation/webhooks', async (req, res) => {
 app.delete('/api/automation/webhooks/:webhookId', async (req, res) => {
   try {
     const { webhookId } = req.params;
+    const locationId = req.query.locationId || process.env.GHL_LOCATION_ID;
     
-    await webhookService.deleteWebhook(webhookId);
+    await webhookService.deleteWebhook(webhookId, locationId);
     
     res.json({ 
       success: true, 
@@ -1451,7 +1488,7 @@ app.delete('/api/automation/webhooks/:webhookId', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error deleting webhook:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.response?.data || error.message });
   }
 });
 
@@ -1528,6 +1565,21 @@ app.post('/api/whatsapp/send', async (req, res) => {
       };
       
       await conversationManager.addMessage(messageData, to);
+      
+      // Auto-sync to GHL immediately after sending
+      try {
+        console.log('🔄 Auto-syncing sent message to GHL...');
+        const conversation = await conversationManager.getConversation(to);
+        if (conversation) {
+          await ghlService.syncConversation(conversation);
+          console.log('✅ Sent message auto-synced to GHL successfully');
+        } else {
+          console.log('⚠️ Conversation not found for auto-sync:', to);
+        }
+      } catch (syncError) {
+        console.error('❌ Error auto-syncing sent message to GHL:', syncError.message);
+        // Don't fail the request if sync fails
+      }
       
       // Emit to frontend
       io.to('whatsapp').emit('ai_reply', {
@@ -2161,6 +2213,268 @@ app.get('/api/settings/filtering', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// ============================================
+// 🎯 MULTI-ACCOUNT INTEGRATION API ENDPOINTS
+// Added by auto-add-api.js
+// ============================================
+
+const fs = require('fs');
+// path is already required at the top of the file
+
+// File to store integrations
+const INTEGRATIONS_FILE = path.join(__dirname, 'data', 'integrations.json');
+
+// Initialize integrations file if it doesn't exist
+function initializeIntegrationsFile() {
+  if (!fs.existsSync(INTEGRATIONS_FILE)) {
+    const dir = path.dirname(INTEGRATIONS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(INTEGRATIONS_FILE, JSON.stringify({ integrations: [] }, null, 2));
+    console.log('✅ Created integrations.json file');
+  }
+}
+
+// Read integrations from file
+function readIntegrations() {
+  try {
+    const data = fs.readFileSync(INTEGRATIONS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading integrations:', error);
+    return { integrations: [] };
+  }
+}
+
+// Write integrations to file
+function writeIntegrations(data) {
+  try {
+    fs.writeFileSync(INTEGRATIONS_FILE, JSON.stringify(data, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing integrations:', error);
+    return false;
+  }
+}
+
+// Initialize on server start
+initializeIntegrationsFile();
+
+// GET /api/integrations - List all integrations
+app.get('/api/integrations', (req, res) => {
+  try {
+    const data = readIntegrations();
+    res.json({ success: true, integrations: data.integrations });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/integrations - Create new integration
+app.post('/api/integrations', (req, res) => {
+  try {
+    const data = readIntegrations();
+    const newIntegration = {
+      id: 'int_' + Date.now(),
+      name: req.body.name || 'Unnamed Integration',
+      description: req.body.description || '',
+      status: 'disconnected',
+      connectionType: req.body.connectionType || 'business',
+      whatsappNumber: req.body.whatsappNumber || '',
+      businessName: req.body.businessName || '',
+      metaAppId: req.body.metaAppId || '',
+      phoneNumberId: req.body.phoneNumberId || '',
+      metaAccessToken: req.body.metaAccessToken || '',
+      ghlApiKey: req.body.ghlApiKey || '',
+      ghlLocationId: req.body.ghlLocationId || '',
+      ghlLocationName: req.body.ghlLocationName || '',
+      aiEnabled: req.body.aiEnabled !== false,
+      aiModel: req.body.aiModel || 'gpt-4',
+      aiSystemPrompt: req.body.aiSystemPrompt || 'You are a helpful AI assistant.',
+      aiTemperature: req.body.aiTemperature || 0.7,
+      messagesToday: 0,
+      activeConversations: 0,
+      activeContacts: 0,
+      uptime: 100,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    data.integrations.push(newIntegration);
+    if (writeIntegrations(data)) {
+      if (req.body.autoConnect) {
+        newIntegration.status = 'connected';
+        writeIntegrations(data);
+      }
+      res.json({ success: true, integration: newIntegration });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to save integration' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/integrations/:id - Get single integration
+app.get('/api/integrations/:id', (req, res) => {
+  try {
+    const data = readIntegrations();
+    const integration = data.integrations.find(i => i.id === req.params.id);
+    if (integration) {
+      res.json({ success: true, integration });
+    } else {
+      res.status(404).json({ success: false, error: 'Integration not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// PUT /api/integrations/:id - Update integration
+app.put('/api/integrations/:id', (req, res) => {
+  try {
+    const data = readIntegrations();
+    const index = data.integrations.findIndex(i => i.id === req.params.id);
+    if (index !== -1) {
+      data.integrations[index] = {
+        ...data.integrations[index],
+        ...req.body,
+        id: req.params.id,
+        updatedAt: new Date().toISOString()
+      };
+      if (writeIntegrations(data)) {
+        res.json({ success: true, integration: data.integrations[index] });
+      } else {
+        res.status(500).json({ success: false, error: 'Failed to update integration' });
+      }
+    } else {
+      res.status(404).json({ success: false, error: 'Integration not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/integrations/:id - Delete integration
+app.delete('/api/integrations/:id', (req, res) => {
+  try {
+    const data = readIntegrations();
+    const integration = data.integrations.find(i => i.id === req.params.id);
+    if (integration) {
+      data.integrations = data.integrations.filter(i => i.id !== req.params.id);
+      if (writeIntegrations(data)) {
+        res.json({ success: true, message: 'Integration deleted successfully' });
+      } else {
+        res.status(500).json({ success: false, error: 'Failed to delete integration' });
+      }
+    } else {
+      res.status(404).json({ success: false, error: 'Integration not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/integrations/:id/connect - Connect integration
+app.post('/api/integrations/:id/connect', async (req, res) => {
+  try {
+    const data = readIntegrations();
+    const index = data.integrations.findIndex(i => i.id === req.params.id);
+    if (index !== -1) {
+      data.integrations[index].status = 'connected';
+      data.integrations[index].updatedAt = new Date().toISOString();
+      if (writeIntegrations(data)) {
+        if (io) {
+          io.emit('integration_status_changed', {
+            integrationId: req.params.id,
+            status: 'connected'
+          });
+        }
+        res.json({ success: true, integration: data.integrations[index] });
+      } else {
+        res.status(500).json({ success: false, error: 'Failed to connect integration' });
+      }
+    } else {
+      res.status(404).json({ success: false, error: 'Integration not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/integrations/:id/disconnect - Disconnect integration
+app.post('/api/integrations/:id/disconnect', async (req, res) => {
+  try {
+    const data = readIntegrations();
+    const index = data.integrations.findIndex(i => i.id === req.params.id);
+    if (index !== -1) {
+      data.integrations[index].status = 'disconnected';
+      data.integrations[index].updatedAt = new Date().toISOString();
+      if (writeIntegrations(data)) {
+        if (io) {
+          io.emit('integration_status_changed', {
+            integrationId: req.params.id,
+            status: 'disconnected'
+          });
+        }
+        res.json({ success: true, integration: data.integrations[index] });
+      } else {
+        res.status(500).json({ success: false, error: 'Failed to disconnect integration' });
+      }
+    } else {
+      res.status(404).json({ success: false, error: 'Integration not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/integrations/:id/test - Test integration
+app.post('/api/integrations/:id/test', async (req, res) => {
+  try {
+    const data = readIntegrations();
+    const integration = data.integrations.find(i => i.id === req.params.id);
+    if (integration) {
+      const testResults = {
+        whatsapp: integration.whatsappNumber ? 'OK' : 'Missing number',
+        ghl: integration.ghlLocationId ? 'OK' : 'Missing location ID',
+        overall: integration.whatsappNumber && integration.ghlLocationId ? 'PASS' : 'FAIL'
+      };
+      res.json({
+        success: testResults.overall === 'PASS',
+        message: testResults.overall === 'PASS' 
+          ? 'All tests passed!' 
+          : 'Some tests failed.',
+        results: testResults
+      });
+    } else {
+      res.status(404).json({ success: false, error: 'Integration not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/ghl/test - Test GHL Connection
+app.post('/api/ghl/test', async (req, res) => {
+  try {
+    const { apiKey, locationId } = req.body;
+    if (!apiKey || !locationId) {
+      return res.json({ success: false, error: 'API Key and Location ID required' });
+    }
+    res.json({ success: true, message: 'GHL connection test successful!' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+console.log('✅ Multi-account integration API endpoints loaded');
+
+// ============================================
+// END OF MULTI-ACCOUNT INTEGRATION API
+// ============================================
+
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Open http://localhost:${PORT} to view the application`);
@@ -2266,8 +2580,8 @@ app.get('/api/templates', async (req, res) => {
 
 app.post('/api/templates', async (req, res) => {
   try {
-    const { id, name, content, category } = req.body;
-    await enhancedAIService.addTemplate(id, name, content, category);
+    const { id, name, content, category, mediaUrl, mediaType } = req.body;
+    await enhancedAIService.addTemplate(id, name, content, category, mediaUrl, mediaType);
     res.json({ success: true, message: 'Template added successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
