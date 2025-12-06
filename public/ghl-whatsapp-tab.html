@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp AI</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="ghl-header">
+        <div class="header-left">
+            <h1>
+                <div class="whatsapp-icon">🟢</div>
+                WhatsApp AI
+            </h1>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" id="refreshBtn" title="Refresh">🔄</button>
+            <button class="header-btn" id="templatesBtn" title="Templates">📋</button>
+            <button class="header-btn" id="settingsBtn" title="Settings">⚙️</button>
+            <div id="connectionStatus" class="connection-status disconnected">Disconnected</div>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <input type="text" class="search-box" id="searchBox" placeholder="Search conversations...">
+            </div>
+
+            <div class="filter-section">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="unread">Unread</button>
+                <button class="filter-btn" data-filter="read">Read</button>
+            </div>
+
+            <div class="conversation-list" id="conversationList">
+                <!-- Conversations will be injected here -->
+                <div class="loading" style="padding: 2rem; text-align: center; color: #94a3b8;">
+                    Loading...
+                </div>
+            </div>
+
+            <div class="sidebar-footer"
+                style="padding: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.8rem; color: #94a3b8; text-align: center;">
+                <span id="totalConversations">0</span> conversations • <span id="activeToday">0</span> active
+            </div>
+        </aside>
+
+        <!-- Chat Area -->
+        <main class="chat-area">
+            
+
+            <!-- Chat Header -->
+            <div class="chat-header" id="chatHeader" style="display: none;">
+                <div class="chat-contact">
+                    <div class="contact-avatar" id="chatAvatar">?</div>
+                    <div class="chat-info">
+                        <h3 id="chatContactName">Select a contact</h3>
+                        <p id="chatContactPhone">...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages-area" id="messagesArea">
+                <div class="empty-state" id="emptyState">
+                    <h3>Welcome</h3>
+                    <p>Start a chat to see AI-powered WhatsApp features:</p>
+                    <p style="margin-top: 0.5rem; color:#25d366; font-weight:500;">• Instant replies • Template messaging • GHL sync • Live updates</p>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="message-input-area" id="messageInputArea" style="display: none; position: relative;">
+                <div class="input-actions">
+                    <button id="emojiBtn" title="Emoji">😊</button>
+                    <button id="templateSendBtn" title="Send Template">📝</button>
+                    <button id="attachBtn" title="Attach File">📎</button>
+                    <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*,application/pdf">
+                </div>
+                <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                <button class="send-button" id="sendButton">➤</button>
+
+                <!-- Emoji Picker -->
+                <div id="emojiPicker" class="emoji-picker" style="display: none;">
+                    <div class="emoji-grid">
+                        😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚
+                        😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 ☹️ 😣
+                        😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗
+                        🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐
+                        👍 👎 👌 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ ✋ 🤚 🖐 🖖 👋 🤝 💪
+                        🙏 ✍️ 💅 🤳 💃 🕺 👯 🧘 🛀 🛌 🕴 🗣 👤 👥 🫂 👣 🦴 🦷 👀
+                        ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟
+                        ✅ ❌ ⭐ 🎉 🎊 🎁 🎈 🎂 🎀 🏆 🥇 🥈 🥉 🏅 🎖 🏵 🎗 🎫 🎟
+                    </div>
+                </div>
+
+                <!-- Template Picker -->
+                <div id="templatePicker" class="template-picker" style="display: none;">
+                    <div class="template-header">Select Template</div>
+                    <div id="templateList" class="template-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>
