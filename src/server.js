@@ -22,6 +22,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/webhooks', require('./routes/webhooks'));
+app.use('/api/whatsapp', require('./routes/whatsapp'));
 
 // Initialize Services
 const whatsappClient = require('./services/whatsapp/client');
