@@ -58,7 +58,7 @@ class WhatsAppGHLSync {
                 messageText += ' [Media Message]';
             }
 
-            await ghlConversations.sendMessage(conversation.id, messageText, 'SMS', contact.id);
+            await ghlConversations.sendMessage(conversation.id, messageText, 'SMS', contact.id, 'inbound');
 
             logger.info('✅ Message synced to GHL', {
                 conversationId: conversation.id,
