@@ -68,17 +68,26 @@ class GHLConversationsService {
     async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound') {
         logger.info('Sending message to conversation', { conversationId, type, direction });
 
+        const endpoint = direction === 'inbound'
+            ? '/conversations/messages/inbound'
+            : '/conversations/messages';
+
+        // Construct payload based on direction
         const payload = {
             type,
             message,
-            conversationId,
-            contactId,
-            direction // 'inbound' or 'outbound'
+            conversationId
         };
 
+        if (direction === 'inbound') {
+            payload.status = 'unread';
+        } else {
+            payload.contactId = contactId;
+        }
+
         try {
-            const data = await this._makeRequest('POST', '/conversations/messages', payload);
-            logger.info('✅ Message sent', { messageId: data.messageId });
+            const data = await this._makeRequest('POST', endpoint, payload);
+            logger.info('✅ Message sent', { messageId: data.messageId, direction });
             return data;
         } catch (error) {
             logger.error('Failed to send message', { conversationId, error: error.message });
