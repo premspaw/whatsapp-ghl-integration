@@ -88,7 +88,8 @@ class GHLContactsService {
             email: contactData.email || '',
             source: 'WhatsApp Integration',
             tags: contactData.tags || ['whatsapp'],
-            customFields: contactData.customFields || []
+            customFields: contactData.customFields || [],
+            locationId: this.locationId
         };
 
         try {
