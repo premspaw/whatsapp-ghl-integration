@@ -29,6 +29,12 @@ class GHLContactsService {
                 config.data = data;
             }
 
+            logger.info(`📡 GHL Request: ${method} ${endpoint}`, {
+                locationId: this.locationId,
+                params: config.params,
+                url: config.url
+            });
+
             const response = await axios(config);
             return response.data;
 
