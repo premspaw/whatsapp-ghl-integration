@@ -43,13 +43,26 @@ router.get('/conversations', async (req, res) => {
 
         // Format chats for dashboard
         const conversations = await Promise.all(chats.map(async (chat) => {
-            const contact = await chat.getContact();
+            let contactName = chat.name;
+            let phoneNumber = chat.id.user;
+
+            try {
+                const contact = await chat.getContact();
+                contactName = contactName || contact.pushname || contact.name || contact.number;
+                phoneNumber = contact.number;
+            } catch (err) {
+                // Ignore contact fetching errors
+            }
+
+            // Fallback if name is still empty
+            if (!contactName) contactName = `+${phoneNumber}`;
+
             const messages = await chat.fetchMessages({ limit: 20 });
 
             return {
                 id: chat.id._serialized,
-                name: chat.name || contact.pushname || contact.number,
-                phoneNumber: contact.number,
+                name: contactName,
+                phoneNumber: phoneNumber,
                 unreadCount: chat.unreadCount,
                 timestamp: chat.timestamp,
                 updatedAt: chat.timestamp * 1000,
