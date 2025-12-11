@@ -75,7 +75,7 @@ class GHLConversationsService {
         };
 
         try {
-            const data = await this._makeRequest('POST', `/conversations/${conversationId}/messages`, payload);
+            const data = await this._makeRequest('POST', '/conversations/messages', payload);
             logger.info('✅ Message sent', { messageId: data.messageId });
             return data;
         } catch (error) {
