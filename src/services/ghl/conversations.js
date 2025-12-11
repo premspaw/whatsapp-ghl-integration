@@ -65,13 +65,14 @@ class GHLConversationsService {
     /**
      * Send a message to a conversation
      */
-    async sendMessage(conversationId, message, type = 'Plain') {
+    async sendMessage(conversationId, message, type = 'Plain', contactId = null) {
         logger.info('Sending message to conversation', { conversationId, type });
 
         const payload = {
             type,
             message,
-            conversationId
+            conversationId,
+            contactId // Required by GHL API
         };
 
         try {
