@@ -54,21 +54,29 @@ class GHLContactsService {
     async searchContactByPhone(phone) {
         logger.info('Searching for contact', { phone });
 
-        // Normalize phone (remove +, spaces, dashes)
-        const normalizedPhone = phone.replace(/[\s\-+]/g, '');
-
         try {
-            const data = await this._makeRequest('GET', '/contacts/', null, {
-                query: normalizedPhone
+            // 1. Try searching with exact phone (e.g. +91...)
+            let data = await this._makeRequest('GET', '/contacts/', null, {
+                query: phone
             });
 
-            // Filter contacts that match the phone
-            const contacts = data.contacts || [];
-            const match = contacts.find(c =>
-                c.phone?.replace(/[\s\-+]/g, '') === normalizedPhone
-            );
+            if (data.contacts && data.contacts.length > 0) {
+                return data.contacts[0];
+            }
 
-            return match || null;
+            // 2. If not found, try normalized (remove +, spaces, dashes)
+            const normalizedPhone = phone.replace(/[\s\-+]/g, '');
+            if (normalizedPhone !== phone) {
+                data = await this._makeRequest('GET', '/contacts/', null, {
+                    query: normalizedPhone
+                });
+
+                if (data.contacts && data.contacts.length > 0) {
+                    return data.contacts[0];
+                }
+            }
+
+            return null;
         } catch (error) {
             logger.error('Failed to search contact by phone', { phone, error: error.message });
             return null;
