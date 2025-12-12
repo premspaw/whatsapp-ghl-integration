@@ -91,6 +91,9 @@ class WhatsAppGHLSync {
                 messageText = 'Media Attachment';
             }
 
+            // Provide the Custom Provider ID (from logs) to link this SMS to your app
+            const providerId = '69306e4ed1e0a0573cdc2207';
+
             await ghlConversations.sendMessage(
                 conversation.id,
                 messageText,
