@@ -65,7 +65,7 @@ class GHLConversationsService {
     /**
      * Send a message to a conversation
      */
-    async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound') {
+    async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null) {
         logger.info('Sending message to conversation', { conversationId, type, direction });
 
         const endpoint = direction === 'inbound'
@@ -81,6 +81,12 @@ class GHLConversationsService {
 
         if (direction === 'inbound') {
             payload.status = 'unread';
+            // Add timestamp if provided (convert UNIX to ISO if needed, or assume ISO)
+            if (timestamp) {
+                // WhatsApp provides unix seconds, GHL wants ISO string
+                const dateObj = typeof timestamp === 'number' ? new Date(timestamp * 1000) : new Date(timestamp);
+                payload.date = dateObj.toISOString();
+            }
         } else {
             payload.contactId = contactId;
         }
