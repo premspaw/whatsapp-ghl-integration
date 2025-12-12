@@ -42,9 +42,16 @@ router.post('/ghl/message', async (req, res) => {
  */
 router.post('/ghl/conversation', async (req, res) => {
     try {
+        logger.info('📨 GHL Conversation webhook received');
+        logger.info('Headers:', JSON.stringify(req.headers, null, 2));
+        logger.info('Body:', JSON.stringify(req.body, null, 2));
+
         const { event, data } = req.body;
 
-        logger.info('📨 GHL Conversation webhook', JSON.stringify(req.body, null, 2));
+        if (!event || !data) {
+            logger.warn('⚠️ Webhook received but event or data is missing', req.body);
+            return res.json({ success: false, reason: 'missing_event_or_data' });
+        }
 
         // Handle different conversation events
         switch (event) {
@@ -77,7 +84,7 @@ router.post('/ghl/conversation', async (req, res) => {
 
                     if (targetPhone) {
                         try {
-                            await whatsappClient.sendMessage(targetPhone, data.body);
+                            await whatsappClient.sendMessage(targetPhone, messageBody);
                             logger.info('✅ AI Message sent to WhatsApp', { phone: targetPhone });
                         } catch (err) {
                             logger.error('Failed to send AI message', err);
