@@ -60,7 +60,7 @@ class WhatsAppGHLSync {
 
             // Provide the Custom Provider ID (from logs) to link this SMS to your app
             const providerId = '69306e4ed1e0a0573cdc2207';
-            await ghlConversations.sendMessage(conversation.id, messageText, 'SMS', contact.id, 'inbound', timestamp, providerId);
+            await ghlConversations.sendMessage(conversation.id, messageText, 'Custom', contact.id, 'inbound', timestamp, providerId);
 
             logger.info('✅ Message synced to GHL', {
                 conversationId: conversation.id,
