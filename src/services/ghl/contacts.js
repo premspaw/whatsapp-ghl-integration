@@ -127,21 +127,6 @@ class GHLContactsService {
     }
 
     /**
-     * Get contact by ID
-     */
-    async getContact(contactId) {
-        logger.info('Getting contact', { contactId });
-
-        try {
-            const data = await this._makeRequest('GET', `/contacts/${contactId}`);
-            return data.contact;
-        } catch (error) {
-            logger.error('Failed to get contact', { contactId, error: error.message });
-            throw error;
-        }
-    }
-
-    /**
      * Get or create contact by phone
      */
     async getOrCreateContact(phone, name = null) {

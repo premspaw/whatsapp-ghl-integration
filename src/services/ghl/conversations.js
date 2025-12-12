@@ -81,7 +81,6 @@ class GHLConversationsService {
 
         if (direction === 'inbound') {
             payload.status = 'unread';
-            payload.contactId = contactId; // Restore contactId
         } else {
             payload.contactId = contactId;
         }
@@ -124,23 +123,6 @@ class GHLConversationsService {
             return data.conversations || [];
         } catch (error) {
             logger.error('Failed to get conversations', { contactId, error: error.message });
-            return [];
-        }
-    }
-
-    /**
-     * Get messages for a conversation
-     */
-    async getMessages(conversationId, limit = 20) {
-        logger.info('Getting messages for conversation', { conversationId });
-
-        try {
-            const data = await this._makeRequest('GET', `/conversations/${conversationId}/messages`, null, {
-                limit
-            });
-            return data.messages || [];
-        } catch (error) {
-            logger.error('Failed to get messages', { conversationId, error: error.message });
             return [];
         }
     }
