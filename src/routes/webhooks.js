@@ -10,18 +10,41 @@ const logger = require('../utils/logger');
  */
 router.post('/ghl/message', async (req, res) => {
     try {
-        const { phone, message, conversationId, contactId } = req.body;
+        const { phone, message, conversationId, contactId, attachments } = req.body;
 
         if (!phone || !message) {
             return res.status(400).json({ error: 'Phone and message are required' });
         }
 
-        logger.info('📤 Outbound message from GHL', { phone, conversationId });
+        logger.info('📤 Outbound message from GHL', { phone, conversationId, hasAttachments: !!attachments });
 
-        // Send message via WhatsApp
-        const result = await whatsappClient.sendMessage(phone, message);
+        let result;
 
-        logger.info('✅ Message sent via WhatsApp', { phone, messageId: result.id._serialized });
+        // Check if there are attachments
+        if (attachments && attachments.length > 0) {
+            // Import MessageMedia for handling media
+            const { MessageMedia } = require('whatsapp-web.js');
+
+            // For now, send the first attachment (WhatsApp supports one media per message typically)
+            const attachmentUrl = attachments[0];
+
+            try {
+                logger.info('📎 Downloading media from URL', { url: attachmentUrl });
+                const media = await MessageMedia.fromUrl(attachmentUrl);
+
+                // Send message with media (caption is the message text)
+                result = await whatsappClient.sendMessage(phone, media, { caption: message });
+                logger.info('✅ Media message sent via WhatsApp', { phone, messageId: result.id._serialized });
+            } catch (mediaError) {
+                logger.error('❌ Failed to send media, falling back to text', { error: mediaError.message });
+                // Fallback to text message if media fails
+                result = await whatsappClient.sendMessage(phone, message + '\n\n[Attachment: ' + attachmentUrl + ']');
+            }
+        } else {
+            // Send regular text message
+            result = await whatsappClient.sendMessage(phone, message);
+            logger.info('✅ Message sent via WhatsApp', { phone, messageId: result.id._serialized });
+        }
 
         res.json({
             success: true,

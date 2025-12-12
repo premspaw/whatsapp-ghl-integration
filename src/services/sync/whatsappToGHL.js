@@ -81,8 +81,8 @@ class WhatsAppGHLSync {
                         }
                     }
                 } catch (err) {
-                    logger.error('Error handling media', err);
-                    messageText += ' [Media Download Failed]';
+                    logger.error('Error handling media', { error: err.message, stack: err.stack });
+                    messageText += ' [Media Download Failed: ' + err.message + ']';
                 }
             }
 
