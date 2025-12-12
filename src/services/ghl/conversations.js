@@ -65,8 +65,8 @@ class GHLConversationsService {
     /**
      * Send a message to a conversation
      */
-    async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null, conversationProviderId = null) {
-        logger.info('Sending message to conversation', { conversationId, type, direction, conversationProviderId });
+    async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null, conversationProviderId = null, attachments = []) {
+        logger.info('Sending message to conversation', { conversationId, type, direction, conversationProviderId, hasAttachments: attachments.length > 0 });
 
         const endpoint = direction === 'inbound'
             ? '/conversations/messages/inbound'
@@ -83,6 +83,10 @@ class GHLConversationsService {
             message,
             conversationId
         };
+
+        if (attachments && attachments.length > 0) {
+            payload.attachments = attachments;
+        }
 
         if (direction === 'inbound') {
             payload.status = 'unread';

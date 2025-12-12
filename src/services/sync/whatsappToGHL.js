@@ -54,13 +54,53 @@ class WhatsAppGHLSync {
             // Step 3: Send message to conversation
             let messageText = body;
 
+            let attachments = [];
             if (hasMedia) {
-                messageText += ' [Media Message]';
+                try {
+                    const media = await whatsappMessage.downloadMedia();
+                    if (media) {
+                        // Upload to Supabase/S3 to get a public URL
+                        const { supabase } = require('../../config/supabase');
+                        const filename = `${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
+
+                        const { data, error } = await supabase.storage
+                            .from('whatsapp-media')
+                            .upload(filename, Buffer.from(media.data, 'base64'), {
+                                contentType: media.mimetype
+                            });
+
+                        if (!error && data) {
+                            const { data: publicUrlData } = supabase.storage
+                                .from('whatsapp-media')
+                                .getPublicUrl(filename);
+
+                            attachments.push(publicUrlData.publicUrl);
+                            logger.info('📸 Media uploaded', { url: publicUrlData.publicUrl });
+                        } else {
+                            logger.error('Failed to upload media', error);
+                        }
+                    }
+                } catch (err) {
+                    logger.error('Error handling media', err);
+                    messageText += ' [Media Download Failed]';
+                }
             }
 
-            // Provide the Custom Provider ID (from logs) to link this SMS to your app
-            const providerId = '69306e4ed1e0a0573cdc2207';
-            await ghlConversations.sendMessage(conversation.id, messageText, 'Custom', contact.id, 'inbound', timestamp, providerId);
+            // If text is empty but has attachments, provide a placeholder or use caption
+            if (!messageText && attachments.length > 0) {
+                messageText = 'Media Attachment';
+            }
+
+            await ghlConversations.sendMessage(
+                conversation.id,
+                messageText,
+                'Custom',
+                contact.id,
+                'inbound',
+                timestamp,
+                providerId,
+                attachments // Pass attachments
+            );
 
             logger.info('✅ Message synced to GHL', {
                 conversationId: conversation.id,
