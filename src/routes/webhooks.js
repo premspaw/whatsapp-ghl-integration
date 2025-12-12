@@ -66,7 +66,11 @@ router.post('/ghl/conversation', async (req, res) => {
     try {
         const { event, data } = req.body;
 
-        logger.info('📨 GHL Conversation webhook', { event });
+        logger.info('📨 GHL Conversation webhook', {
+            event,
+            fullBody: JSON.stringify(req.body),
+            headers: req.headers
+        });
 
         // Handle different conversation events
         switch (event) {
@@ -80,7 +84,7 @@ router.post('/ghl/conversation', async (req, res) => {
                 break;
 
             default:
-                logger.info('Unhandled conversation event', { event });
+                logger.info('Unhandled conversation event', { event, body: req.body });
         }
 
         res.json({ success: true });
