@@ -57,28 +57,34 @@ class WhatsAppGHLSync {
             let attachments = [];
             if (hasMedia) {
                 try {
-                    const media = await whatsappMessage.downloadMedia();
-                    if (media) {
-                        // Upload to Supabase/S3 to get a public URL
-                        const { supabase } = require('../../config/supabase');
-                        const filename = `${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
+                    // Check if downloadMedia exists (version compatibility)
+                    if (typeof whatsappMessage.downloadMedia === 'function') {
+                        const media = await whatsappMessage.downloadMedia();
+                        if (media) {
+                            // Upload to Supabase/S3 to get a public URL
+                            const { supabase } = require('../../config/supabase');
+                            const filename = `${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
 
-                        const { data, error } = await supabase.storage
-                            .from('whatsapp-media')
-                            .upload(filename, Buffer.from(media.data, 'base64'), {
-                                contentType: media.mimetype
-                            });
-
-                        if (!error && data) {
-                            const { data: publicUrlData } = supabase.storage
+                            const { data, error } = await supabase.storage
                                 .from('whatsapp-media')
-                                .getPublicUrl(filename);
+                                .upload(filename, Buffer.from(media.data, 'base64'), {
+                                    contentType: media.mimetype
+                                });
 
-                            attachments.push(publicUrlData.publicUrl);
-                            logger.info('📸 Media uploaded', { url: publicUrlData.publicUrl });
-                        } else {
-                            logger.error('Failed to upload media', error);
+                            if (!error && data) {
+                                const { data: publicUrlData } = supabase.storage
+                                    .from('whatsapp-media')
+                                    .getPublicUrl(filename);
+
+                                attachments.push(publicUrlData.publicUrl);
+                                logger.info('📸 Media uploaded', { url: publicUrlData.publicUrl });
+                            } else {
+                                logger.error('Failed to upload media', error);
+                            }
                         }
+                    } else {
+                        logger.warn('downloadMedia not available, media sync skipped');
+                        messageText += ' [Media - Download Not Supported]';
                     }
                 } catch (err) {
                     logger.error('Error handling media', { error: err.message, stack: err.stack });
