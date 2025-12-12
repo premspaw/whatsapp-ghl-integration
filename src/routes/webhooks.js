@@ -11,16 +11,40 @@ const ghlContacts = require('../services/ghl/contacts');
  */
 router.post('/ghl/message', async (req, res) => {
     try {
-        const { phone, message, conversationId, contactId } = req.body;
+        logger.info('📤 Outbound Webhook received', JSON.stringify(req.body, null, 2));
 
-        if (!phone || !message) {
-            return res.status(400).json({ error: 'Phone and message are required' });
+        let { phone, message, body, conversationId, contactId } = req.body;
+
+        // GHL sends 'body' for the message content in ProviderOutboundMessage
+        const messageContent = message || body;
+
+        if (!messageContent) {
+            return res.status(400).json({ error: 'Message content is required' });
         }
 
-        logger.info('📤 Outbound message from GHL', { phone, conversationId });
+        // If phone is missing (common in GHL webhooks), fetch it using contactId
+        if (!phone && contactId) {
+            try {
+                logger.info('Fetching contact to get phone number', { contactId });
+                const contact = await ghlContacts.getContact(contactId);
+                if (contact && contact.phone) {
+                    phone = contact.phone;
+                    logger.info('Resolved phone number from contact', { phone });
+                }
+            } catch (err) {
+                logger.error('Failed to fetch contact details', err);
+            }
+        }
+
+        if (!phone) {
+            logger.error('Phone number missing and could not be resolved', { contactId });
+            return res.status(400).json({ error: 'Phone number is required' });
+        }
+
+        logger.info('📤 Sending Outbound message', { phone, conversationId });
 
         // Send message via WhatsApp
-        const result = await whatsappClient.sendMessage(phone, message);
+        const result = await whatsappClient.sendMessage(phone, messageContent);
 
         logger.info('✅ Message sent via WhatsApp', { phone, messageId: result.id._serialized });
 
@@ -57,14 +81,22 @@ router.post('/ghl/conversation', async (req, res) => {
         switch (event) {
             case 'conversation.message.created':
                 // New message in GHL
-                logger.info('New message event received', data);
+                logger.info('New message event received', {
+                    direction: data.direction,
+                    type: data.type,
+                    body: data.body,
+                    message: data.message,
+                    contactId: data.contactId
+                });
 
                 // Check if it's an outbound message (sent by GHL/AI)
-                // GHL payload usually has 'direction' or 'type'
                 const isOutbound = data.direction === 'outbound' || data.type === 'OutboundMessage';
+                const messageBody = data.body || data.message;
 
-                if (isOutbound && data.body) {
-                    logger.info('🤖 Detected AI/Manual Outbound Message', { body: data.body });
+                logger.info('Debug Checks:', { isOutbound, hasMessageBody: !!messageBody });
+
+                if (isOutbound && messageBody) {
+                    logger.info('🤖 Detected AI/Manual Outbound Message', { body: messageBody });
 
                     let targetPhone = data.phone || data.contactPhone;
 
