@@ -127,6 +127,11 @@ class GHLOAuthService {
             return data.access_token;
         } catch (error) {
             logger.error('❌ GHL Token Refresh Failed', { error: error.message });
+            
+            if (error.response?.data?.error === 'invalid_grant') {
+                logger.error('🚨 CRITICAL: GHL REFRESH TOKEN INVALID. PLEASE RE-AUTHENTICATE USING THE LINK.');
+            }
+            
             throw error;
         }
     }
