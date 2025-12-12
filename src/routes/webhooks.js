@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const whatsappClient = require('../services/whatsapp/client');
 const logger = require('../utils/logger');
+const ghlContacts = require('../services/ghl/contacts');
 
 /**
  * Webhook endpoint for GHL to send messages via WhatsApp
@@ -58,16 +59,21 @@ router.post('/ghl/conversation', async (req, res) => {
                 if (isOutbound && data.body) {
                     logger.info('🤖 Detected AI/Manual Outbound Message', { body: data.body });
 
-                    // Extract phone number (might need to fetch contact if not in payload)
-                    // Usually data.contactId is present.
-                    // For now, we try to find the phone from the contact details if available, 
-                    // or we might need to query GHL if phone is missing.
+                    let targetPhone = data.phone || data.contactPhone;
 
-                    // NOTE: The payload might not have the phone number directly.
-                    // We might need to fetch the contact to get the phone.
-                    // But often GHL sends 'phone' or 'contactPhone' in the payload.
-
-                    const targetPhone = data.phone || data.contactPhone;
+                    // If phone is missing, fetch contact from GHL
+                    if (!targetPhone && data.contactId) {
+                        try {
+                            logger.info('Fetching contact details for', { contactId: data.contactId });
+                            const contact = await ghlContacts.getContact(data.contactId);
+                            if (contact && contact.phone) {
+                                targetPhone = contact.phone;
+                                logger.info('Found phone number from contact', { phone: targetPhone });
+                            }
+                        } catch (err) {
+                            logger.error('Failed to fetch contact', err);
+                        }
+                    }
 
                     if (targetPhone) {
                         try {
@@ -78,7 +84,6 @@ router.post('/ghl/conversation', async (req, res) => {
                         }
                     } else {
                         logger.warn('⚠️ Could not find phone number in message event', data);
-                        // Optional: Fetch contact details using data.contactId if needed
                     }
                 }
                 break;
