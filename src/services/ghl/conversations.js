@@ -81,7 +81,7 @@ class GHLConversationsService {
 
         if (direction === 'inbound') {
             payload.status = 'unread';
-            // payload.contactId = contactId; // Removed as it might cause issues
+            payload.contactId = contactId; // Restore contactId
         } else {
             payload.contactId = contactId;
         }
