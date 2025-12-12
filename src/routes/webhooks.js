@@ -5,6 +5,8 @@ const logger = require('../utils/logger');
 const ghlContacts = require('../services/ghl/contacts');
 const ghlConversations = require('../services/ghl/conversations');
 
+const sentMessages = new Set(); // Simple in-memory cache to prevent duplicates
+
 /**
  * Webhook endpoint for GHL to send messages via WhatsApp
  * POST /api/webhooks/ghl/message
@@ -95,18 +97,22 @@ router.post('/ghl/conversation', async (req, res) => {
                         if (messages && messages.length > 0) {
                             const lastMsg = messages[0];
 
-                            // Check if it's outbound and very recent (e.g. last 15 seconds)
+                            // Check if it's outbound and very recent (e.g. last 30 seconds)
                             const msgTime = new Date(lastMsg.dateAdded).getTime();
                             const now = new Date().getTime();
-                            const isRecent = (now - msgTime) < 15000; // 15 seconds window
+                            const isRecent = (now - msgTime) < 30000; // 30 seconds window
 
                             if (lastMsg.direction === 'outbound' && isRecent) {
+
+                                if (sentMessages.has(lastMsg.id)) {
+                                    logger.info('⚠️ Message already sent, skipping', { id: lastMsg.id });
+                                    break;
+                                }
+
                                 logger.info('🤖 Found recent AI/Manual Outbound Message', {
                                     body: lastMsg.body,
                                     id: lastMsg.id
                                 });
-
-                                // Check if we already sent this? (Ideally we need a cache, but for now rely on recent check)
 
                                 let targetPhone = data.phone || data.contactPhone;
 
@@ -120,6 +126,13 @@ router.post('/ghl/conversation', async (req, res) => {
                                 if (targetPhone && lastMsg.body) {
                                     await whatsappClient.sendMessage(targetPhone, lastMsg.body);
                                     logger.info('✅ AI Message sent to WhatsApp via Polling', { phone: targetPhone });
+
+                                    sentMessages.add(lastMsg.id);
+                                    // Cleanup cache (optional, remove older IDs to prevent memory leak)
+                                    if (sentMessages.size > 1000) {
+                                        const it = sentMessages.values();
+                                        sentMessages.delete(it.next().value);
+                                    }
                                 }
                             }
                         }
