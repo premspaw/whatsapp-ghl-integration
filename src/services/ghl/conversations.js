@@ -81,12 +81,7 @@ class GHLConversationsService {
 
         if (direction === 'inbound') {
             payload.status = 'unread';
-            // Add timestamp if provided (convert UNIX to ISO if needed, or assume ISO)
-            if (timestamp) {
-                // WhatsApp provides unix seconds, GHL wants ISO string
-                const dateObj = typeof timestamp === 'number' ? new Date(timestamp * 1000) : new Date(timestamp);
-                payload.date = dateObj.toISOString();
-            }
+            // Let GHL use current server time to ensure session window is open NOW
         } else {
             payload.contactId = contactId;
         }
