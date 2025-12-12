@@ -58,7 +58,16 @@ class WhatsAppGHLSync {
                 messageText += ' [Media Message]';
             }
 
-            await ghlConversations.sendMessage(conversation.id, messageText, 'SMS', contact.id, 'inbound');
+            // Try sending as WhatsApp first
+            try {
+                await ghlConversations.sendMessage(conversation.id, messageText, 'WhatsApp', contact.id, 'inbound');
+                logger.info('✅ Message synced as WhatsApp');
+            } catch (error) {
+                logger.warn('Failed to sync as WhatsApp, retrying as SMS', { error: error.message });
+                // Fallback to SMS
+                await ghlConversations.sendMessage(conversation.id, messageText, 'SMS', contact.id, 'inbound');
+                logger.info('✅ Message synced as SMS');
+            }
 
             logger.info('✅ Message synced to GHL', {
                 conversationId: conversation.id,

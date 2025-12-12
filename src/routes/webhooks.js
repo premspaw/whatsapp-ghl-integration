@@ -97,10 +97,22 @@ router.post('/ghl/conversation', async (req, res) => {
                         if (messages && messages.length > 0) {
                             const lastMsg = messages[0];
 
-                            // Check if it's outbound and very recent (e.g. last 30 seconds)
-                            const msgTime = new Date(lastMsg.dateAdded).getTime();
+                            // Check if it's outbound and very recent (e.g. last 5 minutes to be safe)
+                            const msgDate = new Date(lastMsg.dateAdded);
+                            const msgTime = msgDate.getTime();
                             const now = new Date().getTime();
-                            const isRecent = (now - msgTime) < 30000; // 30 seconds window
+                            const timeDiff = now - msgTime;
+                            const isRecent = timeDiff < 300000; // 5 minutes window
+
+                            logger.info('📊 Polling Check:', {
+                                id: lastMsg.id,
+                                direction: lastMsg.direction,
+                                type: lastMsg.type,
+                                body: lastMsg.body,
+                                dateAdded: lastMsg.dateAdded,
+                                timeDiffSeconds: timeDiff / 1000,
+                                isRecent
+                            });
 
                             if (lastMsg.direction === 'outbound' && isRecent) {
 
