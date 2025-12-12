@@ -49,7 +49,7 @@ class WhatsAppGHLSync {
                 return false;
             }
 
-            logger.info('✅ Conversation synced', { conversationId: conversation.id });
+            logger.info('✅ Conversation synced', { conversation });
 
             // Step 3: Send message to conversation
             let messageText = body;
