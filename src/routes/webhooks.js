@@ -3,6 +3,7 @@ const router = express.Router();
 const whatsappClient = require('../services/whatsapp/client');
 const logger = require('../utils/logger');
 const ghlContacts = require('../services/ghl/contacts');
+const ghlConversations = require('../services/ghl/conversations');
 
 /**
  * Webhook endpoint for GHL to send messages via WhatsApp
@@ -79,50 +80,51 @@ router.post('/ghl/conversation', async (req, res) => {
 
         // Handle different conversation events
         switch (event) {
+            case 'ConversationUnreadUpdate':
             case 'conversation.message.created':
-                // New message in GHL
-                logger.info('New message event received', {
-                    direction: data.direction,
-                    type: data.type,
-                    body: data.body,
-                    message: data.message,
-                    contactId: data.contactId
-                });
+                // New message in GHL (or unread count update which happens on new message)
+                logger.info('Event received:', { event, data });
 
-                // Check if it's an outbound message (sent by GHL/AI)
-                const isOutbound = data.direction === 'outbound' || data.type === 'OutboundMessage';
-                const messageBody = data.body || data.message;
+                // We need to check if there is a new OUTBOUND message
+                // Since AI messages might not trigger standard events, we fetch the latest message
+                if (data.id || data.conversationId) {
+                    const convId = data.id || data.conversationId;
 
-                logger.info('Debug Checks:', { isOutbound, hasMessageBody: !!messageBody });
+                    try {
+                        const messages = await ghlConversations.getMessages(convId, 1);
+                        if (messages && messages.length > 0) {
+                            const lastMsg = messages[0];
 
-                if (isOutbound && messageBody) {
-                    logger.info('🤖 Detected AI/Manual Outbound Message', { body: messageBody });
+                            // Check if it's outbound and very recent (e.g. last 15 seconds)
+                            const msgTime = new Date(lastMsg.dateAdded).getTime();
+                            const now = new Date().getTime();
+                            const isRecent = (now - msgTime) < 15000; // 15 seconds window
 
-                    let targetPhone = data.phone || data.contactPhone;
+                            if (lastMsg.direction === 'outbound' && isRecent) {
+                                logger.info('🤖 Found recent AI/Manual Outbound Message', {
+                                    body: lastMsg.body,
+                                    id: lastMsg.id
+                                });
 
-                    // If phone is missing, fetch contact from GHL
-                    if (!targetPhone && data.contactId) {
-                        try {
-                            logger.info('Fetching contact details for', { contactId: data.contactId });
-                            const contact = await ghlContacts.getContact(data.contactId);
-                            if (contact && contact.phone) {
-                                targetPhone = contact.phone;
-                                logger.info('Found phone number from contact', { phone: targetPhone });
+                                // Check if we already sent this? (Ideally we need a cache, but for now rely on recent check)
+
+                                let targetPhone = data.phone || data.contactPhone;
+
+                                // If phone missing in event, fetch from contact
+                                if (!targetPhone && (data.contactId || lastMsg.contactId)) {
+                                    const cId = data.contactId || lastMsg.contactId;
+                                    const contact = await ghlContacts.getContact(cId);
+                                    if (contact) targetPhone = contact.phone;
+                                }
+
+                                if (targetPhone && lastMsg.body) {
+                                    await whatsappClient.sendMessage(targetPhone, lastMsg.body);
+                                    logger.info('✅ AI Message sent to WhatsApp via Polling', { phone: targetPhone });
+                                }
                             }
-                        } catch (err) {
-                            logger.error('Failed to fetch contact', err);
                         }
-                    }
-
-                    if (targetPhone) {
-                        try {
-                            await whatsappClient.sendMessage(targetPhone, messageBody);
-                            logger.info('✅ AI Message sent to WhatsApp', { phone: targetPhone });
-                        } catch (err) {
-                            logger.error('Failed to send AI message', err);
-                        }
-                    } else {
-                        logger.warn('⚠️ Could not find phone number in message event', data);
+                    } catch (err) {
+                        logger.error('Failed to process conversation update', err);
                     }
                 }
                 break;
