@@ -65,14 +65,19 @@ class GHLConversationsService {
     /**
      * Send a message to a conversation
      */
-    async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null) {
-        logger.info('Sending message to conversation', { conversationId, type, direction });
+    async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null, conversationProviderId = null) {
+        logger.info('Sending message to conversation', { conversationId, type, direction, conversationProviderId });
 
         const endpoint = direction === 'inbound'
             ? '/conversations/messages/inbound'
             : '/conversations/messages';
 
         // Construct payload based on direction
+        // We strip custom fields like providerId if not supported by outbound, 
+        // but for inbound, we can try passing undocumented params or rely on type match.
+        // Actually, let's try sending type: 'WhatsApp' again but assume the issue was purely timing.
+        // Wait, the user wants to try linking provider.
+
         const payload = {
             type,
             message,
@@ -81,7 +86,10 @@ class GHLConversationsService {
 
         if (direction === 'inbound') {
             payload.status = 'unread';
-            // Let GHL use current server time to ensure session window is open NOW
+            // Let GHL use current server time
+            if (conversationProviderId) {
+                payload.conversationProviderId = conversationProviderId;
+            }
         } else {
             payload.contactId = contactId;
         }
