@@ -38,7 +38,11 @@ class WhatsAppClient extends EventEmitter {
                 clientId: 'whatsapp-client',
                 dataPath: './data/.wwebjs_auth'
             }),
-            puppeteer: puppeteerOptions
+            puppeteer: puppeteerOptions,
+            // Disable web cache to avoid corruption issues
+            webVersionCache: {
+                type: 'none'
+            }
         });
 
         this._setupEvents();
