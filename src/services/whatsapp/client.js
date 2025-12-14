@@ -50,15 +50,21 @@ class WhatsAppClient extends EventEmitter {
     }
 
     _setupEvents() {
-        this.client.on('qr', (qr) => {
+        this.client.on('qr', async (qr) => {
             logger.info('QR Code received');
             qrcode.generate(qr, { small: true });
+
+            // Store QR as data URL for dashboard
+            const QRCode = require('qrcode');
+            this.qrCode = await QRCode.toDataURL(qr);
+
             this.emit('qr', qr);
         });
 
         this.client.on('ready', () => {
             logger.info('✅ WhatsApp client is ready!');
             this.isReady = true;
+            this.qrCode = null; // Clear QR code when connected
             this.emit('ready');
         });
 
