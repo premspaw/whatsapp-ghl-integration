@@ -31,22 +31,8 @@ class WhatsAppGHLSync {
 
             logger.info('📨 Syncing WhatsApp message to GHL', { from: phone, type });
 
-            // Get contact name from WhatsApp (use only first name)
-            let contactName = phone; // Default to phone if no name available
-            try {
-                const whatsappContact = await whatsappMessage.getContact();
-                if (whatsappContact) {
-                    // Use pushname (the name user set) or name from contact
-                    const fullName = whatsappContact.pushname || whatsappContact.name || '';
-                    // Extract just the first name (before first space)
-                    contactName = fullName.split(' ')[0] || phone;
-                }
-            } catch (err) {
-                logger.warn('Could not get WhatsApp contact name', { error: err.message });
-            }
-
             // Step 1: Get or create contact
-            const contact = await ghlContacts.getOrCreateContact(phone, contactName);
+            const contact = await ghlContacts.getOrCreateContact(phone, from);
 
             if (!contact) {
                 logger.error('Failed to get/create contact', { phone });
