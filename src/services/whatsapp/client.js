@@ -61,12 +61,22 @@ class WhatsAppClient extends EventEmitter {
             this.emit('qr', qr);
         });
 
+        // CRITICAL: Handle 'authenticated' event (fires BEFORE 'ready')
+        // This allows us to mark as ready even if Chrome crashes before 'ready' fires
+        this.client.on('authenticated', () => {
+            logger.info('🔐 WhatsApp authenticated! Setting ready state...');
+            this.isReady = true;
+            this.qrCode = null;
+            logger.info('✅ Client marked as ready after authentication');
+        });
+
         this.client.on('ready', () => {
             logger.info('✅ WhatsApp client is ready!');
             this.isReady = true;
             this.qrCode = null; // Clear QR code when connected
             this.emit('ready');
         });
+
 
         this.client.on('message', async (message) => {
             logger.info(`📨 Message from ${message.from}: ${message.body.substring(0, 50)}...`);

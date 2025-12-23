@@ -24,7 +24,8 @@
     "socket.io": "^4.7.2",
     "twilio": "^4.19.0",
     "uuid": "^9.0.1",
-    "whatsapp-web.js": "github:pedroslopez/whatsapp-web.js#main"
+    "whatsapp-web.js": "^1.23.0",
+    "puppeteer": "^21.5.0"
   },
   "engines": {
     "node": ">=18.0.0"
