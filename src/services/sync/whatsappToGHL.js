@@ -31,8 +31,22 @@ class WhatsAppGHLSync {
 
             logger.info('📨 Syncing WhatsApp message to GHL', { from: phone, type });
 
+            // Get contact name from WhatsApp (use only first name)
+            let contactName = phone; // Default to phone if no name available
+            try {
+                const whatsappContact = await whatsappMessage.getContact();
+                if (whatsappContact) {
+                    // Use pushname (the name user set) or name from contact
+                    const fullName = whatsappContact.pushname || whatsappContact.name || '';
+                    // Extract just the first name (before first space)
+                    contactName = fullName.split(' ')[0] || phone;
+                }
+            } catch (err) {
+                logger.warn('Could not get WhatsApp contact name', { error: err.message });
+            }
+
             // Step 1: Get or create contact
-            const contact = await ghlContacts.getOrCreateContact(phone, from);
+            const contact = await ghlContacts.getOrCreateContact(phone, contactName);
 
             if (!contact) {
                 logger.error('Failed to get/create contact', { phone });
@@ -100,48 +114,21 @@ class WhatsAppGHLSync {
             // Provide the Custom Provider ID (from logs) to link this SMS to your app
             const providerId = '69306e4ed1e0a0573cdc2207';
 
-            try {
-                await ghlConversations.sendMessage(
-                    conversation.id,
-                    messageText,
-                    'Custom',
-                    contact.id,
-                    'inbound',
-                    timestamp,
-                    providerId,
-                    attachments // Pass attachments
-                );
+            await ghlConversations.sendMessage(
+                conversation.id,
+                messageText,
+                'Custom',
+                contact.id,
+                'inbound',
+                timestamp,
+                providerId,
+                attachments // Pass attachments
+            );
 
-                logger.info('✅ Message synced to GHL', {
-                    conversationId: conversation.id,
-                    contactId: contact.id
-                });
-            } catch (error) {
-                // If conversation was deleted/not found, create a new one
-                if (error.message && error.message.includes('Conversation not found')) {
-                    logger.warn('Conversation deleted, creating new one', { oldConversationId: conversation.id });
-
-                    const newConversation = await ghlConversations.createConversation(contact.id);
-
-                    await ghlConversations.sendMessage(
-                        newConversation.id,
-                        messageText,
-                        'Custom',
-                        contact.id,
-                        'inbound',
-                        timestamp,
-                        providerId,
-                        attachments
-                    );
-
-                    logger.info('✅ Message synced to new conversation', {
-                        conversationId: newConversation.id,
-                        contactId: contact.id
-                    });
-                } else {
-                    throw error; // Re-throw if it's a different error
-                }
-            }
+            logger.info('✅ Message synced to GHL', {
+                conversationId: conversation.id,
+                contactId: contact.id
+            });
 
             return {
                 success: true,
