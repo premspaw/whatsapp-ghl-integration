@@ -25,7 +25,9 @@ class WhatsAppClient extends EventEmitter {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-gpu'
+                '--single-process',  // Prevent crashes on auth
+                '--disable-gpu',
+                '--disable-web-security'  // Allow cross-origin for WhatsApp
             ]
         };
 
