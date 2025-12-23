@@ -100,21 +100,48 @@ class WhatsAppGHLSync {
             // Provide the Custom Provider ID (from logs) to link this SMS to your app
             const providerId = '69306e4ed1e0a0573cdc2207';
 
-            await ghlConversations.sendMessage(
-                conversation.id,
-                messageText,
-                'Custom',
-                contact.id,
-                'inbound',
-                timestamp,
-                providerId,
-                attachments // Pass attachments
-            );
+            try {
+                await ghlConversations.sendMessage(
+                    conversation.id,
+                    messageText,
+                    'Custom',
+                    contact.id,
+                    'inbound',
+                    timestamp,
+                    providerId,
+                    attachments // Pass attachments
+                );
 
-            logger.info('✅ Message synced to GHL', {
-                conversationId: conversation.id,
-                contactId: contact.id
-            });
+                logger.info('✅ Message synced to GHL', {
+                    conversationId: conversation.id,
+                    contactId: contact.id
+                });
+            } catch (error) {
+                // If conversation was deleted/not found, create a new one
+                if (error.message && error.message.includes('Conversation not found')) {
+                    logger.warn('Conversation deleted, creating new one', { oldConversationId: conversation.id });
+
+                    const newConversation = await ghlConversations.createConversation(contact.id);
+
+                    await ghlConversations.sendMessage(
+                        newConversation.id,
+                        messageText,
+                        'Custom',
+                        contact.id,
+                        'inbound',
+                        timestamp,
+                        providerId,
+                        attachments
+                    );
+
+                    logger.info('✅ Message synced to new conversation', {
+                        conversationId: newConversation.id,
+                        contactId: contact.id
+                    });
+                } else {
+                    throw error; // Re-throw if it's a different error
+                }
+            }
 
             return {
                 success: true,
