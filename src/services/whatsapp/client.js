@@ -69,6 +69,11 @@ class WhatsAppClient extends EventEmitter {
         });
 
         this.client.on('message', async (message) => {
+            // Ignore Group Messages (@g.us) and Status Updates (status@broadcast)
+            if (message.from.includes('@g.us') || message.from.includes('status@broadcast')) {
+                return;
+            }
+
             logger.info(`📨 Message from ${message.from}: ${message.body.substring(0, 50)}...`);
 
             // Sync to GHL automatically
