@@ -659,7 +659,7 @@
                 }
 
                 const payload = {
-                    to,
+                    to: to,
                     templateName: name,
                     variables: { first_name: 'Prem', name: 'Prem' },
                     mediaUrl: imageUrl || undefined,
@@ -799,8 +799,8 @@
                                 <h4>${t.name}</h4>
                                 <p>${t.content.substring(0, 100)}${t.content.length > 100 ? '...' : ''}</p>
                                 <div style="margin-bottom: 8px;">
-                                    ${t.mediaUrl ? `<span style="color: #667eea; font-size: 12px; margin-right: 10px;">📦 ${t.mediaType || 'media'}</span>` : ''}
-                                    ${t.buttons ? `<span style="color: #28a745; font-size: 12px;">🔘 ${t.buttons.length} Buttons</span>` : ''}
+                                    ${t.mediaUrl ? ('<span style="color: #667eea; font-size: 12px; margin-right: 10px;">📦 ' + (t.mediaType || 'media') + '</span>') : ''}
+                                    ${t.buttons ? ('<span style="color: #28a745; font-size: 12px;">🔘 ' + t.buttons.length + ' Buttons</span>') : ''}
                                 </div>
                                 <div style="margin-top: 8px; font-size: 12px; color: #999;">
                                     Category: ${t.category || 'general'} | Created: ${t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A'}
@@ -826,33 +826,7 @@
                 return;
             }
 
-            const config = `Method: POST
-URL: ${window.location.origin}/api/whatsapp/send-template
-
-Headers:
-Content-Type: application/json
-
-Custom Data:
-┌──────────────┬────────────────────────────────────────┐
-│ to           │ {{contact.phone}}                      │
-├──────────────┼────────────────────────────────────────┤
-│ templateName │ ${templateName}                        │
-├──────────────┼────────────────────────────────────────┤
-│ variables    │ {"first_name":"{{contact.first_name}}"} │
-└──────────────┴────────────────────────────────────────┘
-
-Template Variables:
-- Use placeholders in content like {first_name}, {email}, {phone}
-- For custom fields, use {cf.amount} or {cf_amount}
-
-GHL Mapping Examples:
-- "first_name": "{{contact.first_name}}"
-- "email": "{{contact.email}}"
-- "phone": "{{contact.phone}}"
-- "company": "{{contact.company_name}}"
-- "date": "{{appointment.start_date}}"
-- "time": "{{appointment.start_time}}"
-- "amount": "{{custom_values.amount}}"`;
+            const config = "Method: POST\nURL: " + window.location.origin + "/api/whatsapp/send-template\n\nHeaders:\nContent-Type: application/json\n\nCustom Data:\n┌──────────────┬────────────────────────────────────────┐\n│ to           │ {{contact.phone}}                      │\n├──────────────┼────────────────────────────────────────┤\n│ templateName │ " + templateName + "                        │\n├──────────────┼────────────────────────────────────────┤\n│ variables    │ {\"first_name\":\"{{contact.first_name}}\"} │\n└──────────────┴────────────────────────────────────────┘\n\nTemplate Variables:\n- Use placeholders in content like {first_name}, {email}, {phone}\n- For custom fields, use {cf.amount} or {cf_amount}\n\nGHL Mapping Examples:\n- \"first_name\": \"{{contact.first_name}}\"\n- \"email\": \"{{contact.email}}\"\n- \"phone\": \"{{contact.phone}}\"\n- \"company\": \"{{contact.company_name}}\"\n- \"date\": \"{{appointment.start_date}}\"\n- \"time\": \"{{appointment.start_time}}\"\n- \"amount\": \"{{custom_values.amount}}\"";
 
             document.getElementById('webhookConfig').innerHTML = '<pre>' + config + '</pre>';
         }
@@ -895,11 +869,11 @@ GHL Mapping Examples:
         // Tracking script generator
         document.getElementById('trackingId').addEventListener('input', () => {
             const id = document.getElementById('trackingId').value.trim();
-            const scriptCode = `<script src="https://link.msgsndr.com/js/external-tracking.js" data-tracking-id="${id || 'tk_d1b811ce710841eea4de029cd043bac6'}"></script>
-    `;
-    document.getElementById('trackingScriptBox').innerHTML = '
-    <pre>' + scriptCode.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
-    });
+            const usedId = id || 'tk_d1b811ce710841eea4de029cd043bac6';
+            const scriptCode = '<script src="https://link.msgsndr.com/js/external-tracking.js" data-tracking-id="' + usedId + '"></script>';
+            document.getElementById('trackingScriptBox').innerHTML = '<pre>' + scriptCode.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
+        });
+
     function copyTrackingScript() {
     const txt = document.getElementById('trackingScriptBox').textContent;
     navigator.clipboard.writeText(txt).then(() => alert('✅ Tracking script copied'));
