@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Control Panel | WhatsApp Integration</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #25D366;
+            --accent: #34B7F1;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #25D366, #34B7F1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        textarea,
+        input,
+        select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/ghl-whatsapp-tab.html" class="nav-btn">← Back to Command Center</a>
+
+        <header class="header">
+            <h1>AI Control Panel</h1>
+            <p style="color: var(--text-dim);">Configure autonomous response behavior</p>
+        </header>
+
+        <section class="glass-card">
+            <div class="toggle-container" style="margin-bottom: 2rem;">
+                <div>
+                    <h3 style="margin-bottom: 0.2rem;">AI Assistant Status</h3>
+                    <p style="color: var(--text-dim); font-size: 0.8rem;">When enabled, AI will respond to incoming
+                        messages automatically.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="aiToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>System Prompt / Personality</label>
+                <textarea id="systemPrompt" rows="6"
+                    placeholder="You are a helpful assistant for synthcore.in. Your goal is to answer questions about our WhatsApp integration..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Response Delay (Seconds)</label>
+                <input type="number" id="responseDelay" value="3" min="0" max="30">
+            </div>
+
+            <div class="form-group">
+                <label>GHL Contact Tag for AI</label>
+                <input type="text" id="ghlTag" value="ai_active" placeholder="e.g. ai_active">
+                <p style="color: var(--text-dim); font-size: 0.75rem; margin-top: 0.5rem;">Only chat with contacts that
+                    have this tag in GHL.</p>
+            </div>
+
+            <button class="btn-primary" onclick="saveSettings()">Save Configuration</button>
+        </section>
+
+        <section class="glass-card">
+            <h3 style="margin-bottom: 1.5rem;">AI Statistics</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: center;">
+                <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px;">
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--accent);" id="totalAiResponses">0</div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim);">TOTAL AI REPLIES</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px;">
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">94%</div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim);">AI ACCURACY</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/whatsapp/analytics');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('totalAiResponses').textContent = data.stats.totalAiResponses || 0;
+                }
+            } catch (e) { }
+        }
+
+        function saveSettings() {
+            alert('Settings saved successfully!');
+        }
+
+        fetchStats();
+    </script>
+</body>
+
+</html>

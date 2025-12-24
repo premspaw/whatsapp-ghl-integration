@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const whatsappClient = require('../services/whatsapp/client');
 const logger = require('../utils/logger');
+const statsService = require('../services/stats');
 
 // GET /api/whatsapp/status
 router.get('/status', (req, res) => {
@@ -96,6 +97,7 @@ router.post('/send', async (req, res) => {
         }
 
         await whatsappClient.sendMessage(to, message, mediaUrl, mediaType);
+        statsService.incrementStat('totalMessagesSent');
         res.json({ success: true });
     } catch (error) {
         logger.error('Error sending message', error);
@@ -164,9 +166,21 @@ router.post('/send-template', async (req, res) => {
         const finalMediaType = mediaType || template.mediaType;
 
         await whatsappClient.sendMessage(to, content, finalMediaUrl, finalMediaType);
+        statsService.incrementStat('totalMessagesSent');
+        statsService.incrementStat('totalTemplatesSent');
         res.json({ success: true, message: 'Template sent', to, templateName });
     } catch (error) {
         logger.error('Error sending template', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/whatsapp/analytics
+router.get('/analytics', (req, res) => {
+    try {
+        const stats = statsService.getStats();
+        res.json({ success: true, stats });
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });

@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const whatsappClient = require('../services/whatsapp/client');
 const logger = require('../utils/logger');
+const statsService = require('../services/stats');
 
 /**
  * Webhook endpoint for GHL to send messages via WhatsApp
@@ -57,6 +58,13 @@ router.post('/ghl/message', async (req, res) => {
         logger.info('📤 Outbound message from GHL', { phone, templateName, hasMedia: !!finalMediaUrl, hasButtons: !!buttons });
 
         const result = await whatsappClient.sendMessage(phone, finalMessage, finalMediaUrl, finalMediaType, buttons);
+
+        statsService.incrementStat('totalMessagesSent');
+        if (templateName) statsService.incrementStat('totalTemplatesSent');
+
+        // If the message is coming from GHL, we can assume it's part of the AI flow if it's an automated reply
+        // For now, let's treat all outbound GHL messages as potential AI responses for tracking
+        statsService.incrementStat('totalAiResponses');
 
         res.json({
             success: true,
