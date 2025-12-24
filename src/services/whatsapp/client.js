@@ -116,9 +116,28 @@ class WhatsAppClient extends EventEmitter {
             let result;
 
             if (mediaUrl) {
-                const media = await MessageMedia.fromUrl(mediaUrl);
-                result = await this.client.sendMessage(chatId, media, { caption: message });
-                logger.info(`📤 Media message sent to ${chatId}`);
+                logger.info(`📸 Attempting to send media: ${mediaType}`, { url: mediaUrl });
+                try {
+                    // Download media. use unsafeMime: true for URLs without extensions
+                    const media = await MessageMedia.fromUrl(mediaUrl, { unsafeMime: true });
+
+                    // Send media with message as caption
+                    result = await this.client.sendMessage(chatId, media, {
+                        caption: message || ''
+                    });
+
+                    logger.info(`✅ Media message sent to ${chatId}`);
+                } catch (mediaError) {
+                    logger.error(`❌ Media download failed: ${mediaError.message}. Falling back to text.`, { url: mediaUrl });
+
+                    // If media fails, at least send the text if it exists
+                    if (message) {
+                        result = await this.client.sendMessage(chatId, message);
+                        logger.info(`📤 Text fallback sent after media error`);
+                    } else {
+                        throw mediaError;
+                    }
+                }
             } else {
                 result = await this.client.sendMessage(chatId, message);
                 logger.info(`📤 Text message sent to ${chatId}`);
