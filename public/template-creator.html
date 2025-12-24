@@ -534,13 +534,16 @@
         // Insert variable at cursor position
         function insertVariable(variable) {
             const textarea = document.getElementById('templateContent');
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
+            const start = textarea.selectionStart || 0;
+            const end = textarea.selectionEnd || 0;
             const text = textarea.value;
 
             textarea.value = text.substring(0, start) + variable + text.substring(end);
+
+            // Set cursor position after the inserted variable
+            const newPos = start + variable.length;
+            textarea.setSelectionRange(newPos, newPos);
             textarea.focus();
-            textarea.selectionStart = textarea.selectionEnd = start + variable.length;
 
             updatePreview();
         }
@@ -824,7 +827,7 @@
             }
 
             const config = `Method: POST
-URL: http://localhost:3000/api/whatsapp/send-template
+URL: ${window.location.origin}/api/whatsapp/send-template
 
 Headers:
 Content-Type: application/json
