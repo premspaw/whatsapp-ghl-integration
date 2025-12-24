@@ -108,13 +108,22 @@ class WhatsAppClient extends EventEmitter {
         });
     }
 
-    async sendMessage(to, message) {
+    async sendMessage(to, message, mediaUrl = null, mediaType = 'image') {
         if (!this.isReady) throw new Error('WhatsApp client is not ready');
 
         try {
             const chatId = this._formatChatId(to);
-            const result = await this.client.sendMessage(chatId, message);
-            logger.info(`📤 Message sent to ${chatId}`);
+            let result;
+
+            if (mediaUrl) {
+                const media = await MessageMedia.fromUrl(mediaUrl);
+                result = await this.client.sendMessage(chatId, media, { caption: message });
+                logger.info(`📤 Media message sent to ${chatId}`);
+            } else {
+                result = await this.client.sendMessage(chatId, message);
+                logger.info(`📤 Text message sent to ${chatId}`);
+            }
+
             return result;
         } catch (error) {
             logger.error('Failed to send message', { to, error: error.message });

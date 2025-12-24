@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 const whatsappClient = require('../services/whatsapp/client');
 const logger = require('../utils/logger');
 
@@ -88,15 +90,57 @@ router.get('/conversations', async (req, res) => {
 // POST /api/whatsapp/send
 router.post('/send', async (req, res) => {
     try {
-        const { to, message } = req.body;
-        if (!to || !message) {
-            return res.status(400).json({ error: 'Missing to or message' });
+        const { to, message, mediaUrl, mediaType } = req.body;
+        if (!to || (!message && !mediaUrl)) {
+            return res.status(400).json({ error: 'Missing to or message/media' });
         }
 
-        await whatsappClient.sendMessage(to, message);
+        await whatsappClient.sendMessage(to, message, mediaUrl, mediaType);
         res.json({ success: true });
     } catch (error) {
         logger.error('Error sending message', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/whatsapp/send-template
+router.post('/send-template', async (req, res) => {
+    try {
+        const { to, templateName, variables, mediaUrl, mediaType } = req.body;
+        if (!to || !templateName) {
+            return res.status(400).json({ error: 'Missing to or templateName' });
+        }
+
+        // Load templates
+        const TEMPLATES_FILE = path.join(process.cwd(), 'data', 'templates.json');
+        let templates = {};
+        if (fs.existsSync(TEMPLATES_FILE)) {
+            templates = JSON.parse(fs.readFileSync(TEMPLATES_FILE, 'utf8') || '{}');
+        }
+
+        // Find template by name
+        const template = Object.values(templates).find(t => t.name === templateName);
+        if (!template) {
+            return res.status(404).json({ error: 'Template not found' });
+        }
+
+        // Replace variables
+        let content = template.content;
+        if (variables) {
+            Object.entries(variables).forEach(([key, value]) => {
+                const regex = new RegExp(`{${key}}`, 'g');
+                content = content.replace(regex, value);
+            });
+        }
+
+        // Use media from template if not provided in payload
+        const finalMediaUrl = mediaUrl || template.mediaUrl;
+        const finalMediaType = mediaType || template.mediaType;
+
+        await whatsappClient.sendMessage(to, content, finalMediaUrl, finalMediaType);
+        res.json({ success: true, message: 'Template sent' });
+    } catch (error) {
+        logger.error('Error sending template', error);
         res.status(500).json({ error: error.message });
     }
 });
