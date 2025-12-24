@@ -115,12 +115,25 @@ class WhatsAppClient extends EventEmitter {
 
         try {
             const chatId = this._formatChatId(to);
+            logger.info(`📤 Preparing to send message to ${chatId}`);
+
+            // Pre-verify contact to avoid "t" error on non-existent numbers
+            try {
+                const isRegistered = await this.client.isRegisteredUser(chatId);
+                if (!isRegistered) {
+                    throw new Error(`The number ${to} is not registered on WhatsApp.`);
+                }
+            } catch (err) {
+                logger.warn(`Contact verification failed for ${chatId}: ${err.message}`);
+                // Continue anyway if it's just a protocol error, but block if clearly not registered
+                if (err.message.includes('not registered')) throw err;
+            }
+
             let result;
 
             // Handle Buttons if provided
             if (buttons && Array.isArray(buttons) && buttons.length > 0) {
                 const { Buttons } = require('whatsapp-web.js');
-                // buttons should be array of strings like ["Yes", "No"]
                 const formattedButtons = buttons.map(btn => ({ body: btn }));
                 const buttonMessage = new Buttons(
                     message || '',
@@ -134,22 +147,21 @@ class WhatsAppClient extends EventEmitter {
             }
 
             if (mediaUrl) {
-                logger.info(`📸 Sending ${mediaType}: ${mediaUrl}`);
+                logger.info(`📸 Sending media (${mediaType}) to ${chatId}: ${mediaUrl}`);
                 try {
                     const media = await MessageMedia.fromUrl(mediaUrl, { unsafeMime: true });
 
                     const options = {};
                     if (message) options.caption = message;
 
-                    // If it's a document/pdf, we can try to set a filename
                     if (mediaType === 'document' || mediaType === 'pdf') {
                         options.sendMediaAsDocument = true;
                     }
 
                     result = await this.client.sendMessage(chatId, media, options);
-                    logger.info(`✅ ${mediaType} sent successfully`);
+                    logger.info(`✅ ${mediaType} sent successfully to ${chatId}`);
                 } catch (mediaError) {
-                    logger.error(`❌ Media failed (${mediaError.message}), falling back to text`);
+                    logger.error(`❌ Media failed for ${chatId} (${mediaError.message}), falling back to text`);
                     if (message) {
                         result = await this.client.sendMessage(chatId, message);
                     } else {
@@ -169,7 +181,23 @@ class WhatsAppClient extends EventEmitter {
     }
 
     _formatChatId(number) {
-        const cleaned = number.replace(/[^\d]/g, '');
+        if (!number) return '';
+
+        // Remove all non-numeric characters
+        let cleaned = number.toString().replace(/[^\d]/g, '');
+
+        // Handle common formatting issues
+        // If it starts with 0 and is 11 digits (like 08123133382), it's likely an Indian number missing 91
+        if (cleaned.startsWith('0') && cleaned.length === 11) {
+            cleaned = '91' + cleaned.substring(1);
+        }
+
+        // If it's 10 digits and doesn't have 91, assume India
+        if (cleaned.length === 10) {
+            cleaned = '91' + cleaned;
+        }
+
+        // Ensure it ends with @c.us
         return cleaned.includes('@c.us') ? cleaned : `${cleaned}@c.us`;
     }
 }
