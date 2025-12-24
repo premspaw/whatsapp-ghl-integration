@@ -106,10 +106,35 @@ router.post('/send', async (req, res) => {
 // POST /api/whatsapp/send-template
 router.post('/send-template', async (req, res) => {
     try {
-        logger.info('Incoming send-template request:', { body: req.body, headers: req.headers });
-        const { to, templateName, variables, mediaUrl, mediaType } = req.body;
+        const payload = req.body;
+        logger.info('Incoming send-template request:', { body: payload, headers: req.headers });
+
+        // Extract from root or from GHL's customData
+        let to = payload.to || (payload.customData ? payload.customData.to : null);
+        let templateName = payload.templateName || (payload.customData ? payload.customData.templateName : null);
+        let variables = payload.variables || (payload.customData ? payload.customData.variables : null);
+        let mediaUrl = payload.mediaUrl || (payload.customData ? payload.customData.mediaUrl : null);
+        let mediaType = payload.mediaType || (payload.customData ? payload.customData.mediaType : null);
+
+        // Clean up data
+        if (to) to = to.toString().replace(/\s+/g, '');
+        if (templateName) templateName = templateName.toString().trim();
+
+        // Handle JSON string variables (GHL often sends them as strings)
+        if (typeof variables === 'string') {
+            try {
+                variables = JSON.parse(variables);
+            } catch (e) {
+                // Not JSON, keep as is
+            }
+        }
+
         if (!to || !templateName) {
-            return res.status(400).json({ error: 'Missing to or templateName', received: { to, templateName } });
+            return res.status(400).json({
+                error: 'Missing to or templateName',
+                received: { to, templateName },
+                hint: 'Ensure keys are in root or customData object'
+            });
         }
 
         // Load templates
@@ -122,7 +147,7 @@ router.post('/send-template', async (req, res) => {
         // Find template by name
         const template = Object.values(templates).find(t => t.name === templateName);
         if (!template) {
-            return res.status(404).json({ error: 'Template not found' });
+            return res.status(404).json({ error: `Template "${templateName}" not found` });
         }
 
         // Replace variables
@@ -134,12 +159,12 @@ router.post('/send-template', async (req, res) => {
             });
         }
 
-        // Use media from template if not provided in payload
+        // Use media from payload, then from template
         const finalMediaUrl = mediaUrl || template.mediaUrl;
         const finalMediaType = mediaType || template.mediaType;
 
         await whatsappClient.sendMessage(to, content, finalMediaUrl, finalMediaType);
-        res.json({ success: true, message: 'Template sent' });
+        res.json({ success: true, message: 'Template sent', to, templateName });
     } catch (error) {
         logger.error('Error sending template', error);
         res.status(500).json({ error: error.message });
