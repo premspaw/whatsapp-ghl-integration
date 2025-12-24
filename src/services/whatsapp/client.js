@@ -39,9 +39,10 @@ class WhatsAppClient extends EventEmitter {
                 dataPath: './data/.wwebjs_auth'
             }),
             puppeteer: puppeteerOptions,
-            // Disable web cache to avoid corruption issues
+            // Use a stable web version to avoid 'Evaluation failed: t' errors
             webVersionCache: {
-                type: 'none'
+                type: 'remote',
+                remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2413.51.html'
             }
         });
 
