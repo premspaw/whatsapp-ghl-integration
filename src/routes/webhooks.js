@@ -22,28 +22,22 @@ router.post('/ghl/message', async (req, res) => {
 
         // Check if there are attachments
         if (attachments && attachments.length > 0) {
-            // Import MessageMedia for handling media
-            const { MessageMedia } = require('whatsapp-web.js');
-
             // For now, send the first attachment (WhatsApp supports one media per message typically)
             const attachmentUrl = attachments[0];
 
             try {
-                logger.info('📎 Downloading media from URL', { url: attachmentUrl });
-                const media = await MessageMedia.fromUrl(attachmentUrl);
-
-                // Send message with media (caption is the message text)
-                result = await whatsappClient.sendMessage(phone, media, { caption: message });
-                logger.info('✅ Media message sent via WhatsApp', { phone, messageId: result.id._serialized });
+                logger.info('📎 GHL sending media with message', { url: attachmentUrl });
+                // Pass mediaUrl to our unified sendMessage function
+                result = await whatsappClient.sendMessage(phone, message, attachmentUrl);
             } catch (mediaError) {
-                logger.error('❌ Failed to send media, falling back to text', { error: mediaError.message });
+                logger.error('❌ Failed to send media from GHL, falling back to text', { error: mediaError.message });
                 // Fallback to text message if media fails
                 result = await whatsappClient.sendMessage(phone, message + '\n\n[Attachment: ' + attachmentUrl + ']');
             }
         } else {
             // Send regular text message
             result = await whatsappClient.sendMessage(phone, message);
-            logger.info('✅ Message sent via WhatsApp', { phone, messageId: result.id._serialized });
+            logger.info('✅ Text message sent via WhatsApp', { phone, messageId: result.id._serialized });
         }
 
         res.json({
