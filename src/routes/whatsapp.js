@@ -106,9 +106,10 @@ router.post('/send', async (req, res) => {
 // POST /api/whatsapp/send-template
 router.post('/send-template', async (req, res) => {
     try {
+        logger.info('Incoming send-template request:', { body: req.body, headers: req.headers });
         const { to, templateName, variables, mediaUrl, mediaType } = req.body;
         if (!to || !templateName) {
-            return res.status(400).json({ error: 'Missing to or templateName' });
+            return res.status(400).json({ error: 'Missing to or templateName', received: { to, templateName } });
         }
 
         // Load templates
