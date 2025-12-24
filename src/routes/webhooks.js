@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
  */
 router.post('/ghl/message', async (req, res) => {
     try {
-        const { phone, message, templateName, variables, attachments } = req.body;
+        const { phone, message, templateName, variables, attachments, buttons, mediaType } = req.body;
 
         if (!phone) {
             return res.status(400).json({ error: 'Phone is required' });
@@ -20,6 +20,7 @@ router.post('/ghl/message', async (req, res) => {
 
         let finalMessage = message || '';
         let finalMediaUrl = (attachments && attachments.length > 0) ? attachments[0] : null;
+        let finalMediaType = mediaType || 'image';
 
         // If templateName is provided, override message and media from template
         if (templateName) {
@@ -32,6 +33,7 @@ router.post('/ghl/message', async (req, res) => {
                     if (template) {
                         finalMessage = template.content;
                         finalMediaUrl = finalMediaUrl || template.mediaUrl;
+                        finalMediaType = mediaType || template.mediaType || 'image';
 
                         // Replace variables if provided
                         if (variables) {
@@ -52,9 +54,9 @@ router.post('/ghl/message', async (req, res) => {
             return res.status(400).json({ error: 'Message or template content is required' });
         }
 
-        logger.info('📤 Outbound message from GHL', { phone, templateName, hasMedia: !!finalMediaUrl });
+        logger.info('📤 Outbound message from GHL', { phone, templateName, hasMedia: !!finalMediaUrl, hasButtons: !!buttons });
 
-        const result = await whatsappClient.sendMessage(phone, finalMessage, finalMediaUrl);
+        const result = await whatsappClient.sendMessage(phone, finalMessage, finalMediaUrl, finalMediaType, buttons);
 
         res.json({
             success: true,

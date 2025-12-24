@@ -108,32 +108,48 @@ class WhatsAppClient extends EventEmitter {
         });
     }
 
-    async sendMessage(to, message, mediaUrl = null, mediaType = 'image') {
+    async sendMessage(to, message, mediaUrl = null, mediaType = 'image', buttons = null) {
         if (!this.isReady) throw new Error('WhatsApp client is not ready');
 
         try {
             const chatId = this._formatChatId(to);
             let result;
 
+            // Handle Buttons if provided
+            if (buttons && Array.isArray(buttons) && buttons.length > 0) {
+                const { Buttons } = require('whatsapp-web.js');
+                // buttons should be array of strings like ["Yes", "No"]
+                const formattedButtons = buttons.map(btn => ({ body: btn }));
+                const buttonMessage = new Buttons(
+                    message || '',
+                    formattedButtons,
+                    '', // Title
+                    ''  // Footer
+                );
+                result = await this.client.sendMessage(chatId, buttonMessage);
+                logger.info(`🔘 Button message sent to ${chatId}`);
+                return result;
+            }
+
             if (mediaUrl) {
-                logger.info(`📸 Attempting to send media: ${mediaType}`, { url: mediaUrl });
+                logger.info(`📸 Sending ${mediaType}: ${mediaUrl}`);
                 try {
-                    // Download media. use unsafeMime: true for URLs without extensions
                     const media = await MessageMedia.fromUrl(mediaUrl, { unsafeMime: true });
 
-                    // Send media with message as caption
-                    result = await this.client.sendMessage(chatId, media, {
-                        caption: message || ''
-                    });
+                    const options = {};
+                    if (message) options.caption = message;
 
-                    logger.info(`✅ Media message sent to ${chatId}`);
+                    // If it's a document/pdf, we can try to set a filename
+                    if (mediaType === 'document' || mediaType === 'pdf') {
+                        options.sendMediaAsDocument = true;
+                    }
+
+                    result = await this.client.sendMessage(chatId, media, options);
+                    logger.info(`✅ ${mediaType} sent successfully`);
                 } catch (mediaError) {
-                    logger.error(`❌ Media download failed: ${mediaError.message}. Falling back to text.`, { url: mediaUrl });
-
-                    // If media fails, at least send the text if it exists
+                    logger.error(`❌ Media failed (${mediaError.message}), falling back to text`);
                     if (message) {
                         result = await this.client.sendMessage(chatId, message);
-                        logger.info(`📤 Text fallback sent after media error`);
                     } else {
                         throw mediaError;
                     }
