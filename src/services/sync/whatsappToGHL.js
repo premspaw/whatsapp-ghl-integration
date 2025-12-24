@@ -22,34 +22,34 @@ class WhatsAppGHLSync {
      * Sync WhatsApp message to GHL
      * This creates/updates contact and conversation in GHL
      */
-    async syncMessageToGHL(whatsappMessage) {
+    async syncMessageToGHL(locationId, whatsappMessage) {
         try {
             const { from, body, type, timestamp, hasMedia } = whatsappMessage;
 
             // Normalize phone number
             const phone = this.normalizePhone(from);
 
-            logger.info('📨 Syncing WhatsApp message to GHL', { from: phone, type });
+            logger.info('📨 Syncing WhatsApp message to GHL', { locationId, from: phone, type });
 
             // Step 1: Get or create contact
-            const contact = await ghlContacts.getOrCreateContact(phone, from);
+            const contact = await ghlContacts.getOrCreateContact(locationId, phone, from);
 
             if (!contact) {
-                logger.error('Failed to get/create contact', { phone });
+                logger.error('Failed to get/create contact', { locationId, phone });
                 return false;
             }
 
-            logger.info('✅ Contact synced', { contactId: contact.id, phone });
+            logger.info('✅ Contact synced', { contactId: contact.id, locationId, phone });
 
             // Step 2: Get or create conversation
-            const conversation = await ghlConversations.getOrCreateConversation(contact.id);
+            const conversation = await ghlConversations.getOrCreateConversation(locationId, contact.id);
 
             if (!conversation) {
-                logger.error('Failed to get/create conversation', { contactId: contact.id });
+                logger.error('Failed to get/create conversation', { contactId: contact.id, locationId });
                 return false;
             }
 
-            logger.info('✅ Conversation synced', { conversation });
+            logger.info('✅ Conversation synced', { conversation, locationId });
 
             // Step 3: Send message to conversation
             let messageText = body;
@@ -63,7 +63,7 @@ class WhatsAppGHLSync {
                         if (media) {
                             // Upload to Supabase/S3 to get a public URL
                             const { supabase } = require('../../config/supabase');
-                            const filename = `${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
+                            const filename = `${locationId}/${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
 
                             const { data, error } = await supabase.storage
                                 .from('whatsapp-media')
@@ -77,9 +77,9 @@ class WhatsAppGHLSync {
                                     .getPublicUrl(filename);
 
                                 attachments.push(publicUrlData.publicUrl);
-                                logger.info('📸 Media uploaded', { url: publicUrlData.publicUrl });
+                                logger.info('📸 Media uploaded', { url: publicUrlData.publicUrl, locationId });
                             } else {
-                                logger.error('Failed to upload media', error);
+                                logger.error('Failed to upload media', { error, locationId });
                             }
                         }
                     } else {
@@ -87,7 +87,7 @@ class WhatsAppGHLSync {
                         messageText += ' [Media - Download Not Supported]';
                     }
                 } catch (err) {
-                    logger.error('Error handling media', { error: err.message, stack: err.stack });
+                    logger.error('Error handling media', { error: err.message, locationId });
                     messageText += ' [Media Download Failed: ' + err.message + ']';
                 }
             }
@@ -97,10 +97,11 @@ class WhatsAppGHLSync {
                 messageText = 'Media Attachment';
             }
 
-            // Provide the Custom Provider ID (from logs) to link this SMS to your app
+            // Provide the Custom Provider ID (standard for this app)
             const providerId = '69306e4ed1e0a0573cdc2207';
 
             await ghlConversations.sendMessage(
+                locationId,
                 conversation.id,
                 messageText,
                 'SMS',
@@ -108,12 +109,13 @@ class WhatsAppGHLSync {
                 'inbound',
                 timestamp,
                 providerId,
-                attachments // Pass attachments
+                attachments
             );
 
             logger.info('✅ Message synced to GHL', {
                 conversationId: conversation.id,
-                contactId: contact.id
+                contactId: contact.id,
+                locationId
             });
 
             return {
@@ -125,6 +127,7 @@ class WhatsAppGHLSync {
         } catch (error) {
             logger.error('❌ Failed to sync message to GHL', {
                 error: error.message,
+                locationId,
                 from: whatsappMessage.from
             });
             return { success: false, error: error.message };
@@ -134,21 +137,22 @@ class WhatsAppGHLSync {
     /**
      * Sync contact info from WhatsApp to GHL
      */
-    async syncContact(whatsappContact) {
+    async syncContact(locationId, whatsappContact) {
         try {
             const phone = this.normalizePhone(whatsappContact.id._serialized);
             const name = whatsappContact.pushname || whatsappContact.name || phone;
 
-            logger.info('📇 Syncing WhatsApp contact to GHL', { phone, name });
+            logger.info('📇 Syncing WhatsApp contact to GHL', { locationId, phone, name });
 
-            const contact = await ghlContacts.getOrCreateContact(phone, name);
+            const contact = await ghlContacts.getOrCreateContact(locationId, phone, name);
 
-            logger.info('✅ Contact synced', { contactId: contact.id });
+            logger.info('✅ Contact synced', { contactId: contact.id, locationId });
             return contact;
 
         } catch (error) {
             logger.error('❌ Failed to sync contact', {
                 error: error.message,
+                locationId,
                 contact: whatsappContact.id._serialized
             });
             return null;

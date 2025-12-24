@@ -26,8 +26,8 @@ app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/templates', require('./routes/templates'));
 
 // Initialize Services
-const whatsappClient = require('./services/whatsapp/client');
-whatsappClient.initialize();
+const whatsappManager = require('./services/whatsapp/manager');
+whatsappManager.initializeAll();
 
 // Start Server
 server.listen(config.port, () => {

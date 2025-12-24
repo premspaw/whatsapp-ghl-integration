@@ -39,8 +39,13 @@ function saveTemplates(templates) {
 // GET /api/templates
 router.get('/', (req, res) => {
     try {
-        const templates = loadTemplates();
-        res.json({ success: true, templates: Object.values(templates) });
+        const locationId = req.query.location_id || req.query.locationId || 'default';
+        const allTemplates = loadTemplates();
+
+        // Filter templates by locationId
+        const templates = Object.values(allTemplates).filter(t => t.locationId === locationId);
+
+        res.json({ success: true, templates });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -64,7 +69,9 @@ router.get('/:id', (req, res) => {
 // POST /api/templates
 router.post('/', (req, res) => {
     try {
-        const { id, name, content, category, mediaUrl, mediaType } = req.body;
+        const { id, name, content, category, mediaUrl, mediaType, locationId } = req.body;
+        const targetLocationId = locationId || req.query.location_id || 'default';
+
         if (!name || !content) {
             return res.status(400).json({ success: false, error: 'Name and content are required' });
         }
@@ -74,6 +81,7 @@ router.post('/', (req, res) => {
 
         templates[templateId] = {
             id: templateId,
+            locationId: targetLocationId, // Store mapping
             name,
             content,
             category: category || 'general',

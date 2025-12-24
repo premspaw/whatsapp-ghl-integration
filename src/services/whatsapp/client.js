@@ -1,20 +1,19 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
 const EventEmitter = require('events');
-const axios = require('axios');
-const config = require('../../config/env');
 const logger = require('../../utils/logger');
 const whatsappSync = require('../sync/whatsappToGHL');
 
 class WhatsAppClient extends EventEmitter {
-    constructor() {
+    constructor(locationId) {
         super();
+        this.locationId = locationId || 'default';
         this.client = null;
         this.isReady = false;
+        this.qrCode = null;
     }
 
     initialize() {
-        logger.info('Initializing WhatsApp client...');
+        logger.info(`Initializing WhatsApp client for location: ${this.locationId}`);
 
         const puppeteerOptions = {
             headless: true,
@@ -36,11 +35,10 @@ class WhatsAppClient extends EventEmitter {
 
         this.client = new Client({
             authStrategy: new LocalAuth({
-                clientId: 'whatsapp-client',
-                dataPath: './data/.wwebjs_auth'
+                clientId: `whatsapp-${this.locationId}`,
+                dataPath: `./data/.wwebjs_auth/${this.locationId}`
             }),
             puppeteer: puppeteerOptions,
-            // Force a stable web version to fix the "Evaluation failed: t" error
             webVersionCache: {
                 type: 'remote',
                 remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
@@ -53,10 +51,9 @@ class WhatsAppClient extends EventEmitter {
 
     _setupEvents() {
         this.client.on('qr', async (qr) => {
-            logger.info('QR Code received');
-            qrcode.generate(qr, { small: true });
+            logger.info(`QR Code received for ${this.locationId}`);
+            // qrcode.generate(qr, { small: true });
 
-            // Store QR as data URL for dashboard
             const QRCode = require('qrcode');
             this.qrCode = await QRCode.toDataURL(qr);
 
@@ -64,104 +61,81 @@ class WhatsAppClient extends EventEmitter {
         });
 
         this.client.on('ready', () => {
-            logger.info('✅ WhatsApp client is ready!');
+            logger.info(`✅ WhatsApp client is ready for ${this.locationId}`);
             this.isReady = true;
-            this.qrCode = null; // Clear QR code when connected
+            this.qrCode = null;
             this.emit('ready');
         });
 
         this.client.on('message', async (message) => {
-            // Ignore Group Messages (@g.us) and Status Updates (status@broadcast)
             if (message.from.includes('@g.us') || message.from.includes('status@broadcast')) {
                 return;
             }
 
-            logger.info(`📨 Message from ${message.from}: ${message.body.substring(0, 50)}...`);
+            logger.info(`📨 [Loc: ${this.locationId}] Message from ${message.from}: ${message.body.substring(0, 50)}...`);
 
-            // Sync to GHL automatically
             try {
-                const syncResult = await whatsappSync.syncMessageToGHL({
+                const syncResult = await whatsappSync.syncMessageToGHL(this.locationId, {
                     from: message.from,
                     body: message.body,
                     type: message.type,
                     timestamp: message.timestamp,
-                    hasMedia: message.hasMedia
+                    hasMedia: message.hasMedia,
+                    downloadMedia: message.downloadMedia ? message.downloadMedia.bind(message) : null
                 });
 
                 if (syncResult.success) {
-                    logger.info('✅ Message synced to GHL', syncResult);
+                    logger.info(`✅ [Loc: ${this.locationId}] Message synced to GHL`, syncResult);
                 }
             } catch (error) {
-                logger.error('Failed to sync message to GHL', { error: error.message });
+                logger.error(`❌ [Loc: ${this.locationId}] Failed to sync message to GHL`, { error: error.message });
             }
 
             this.emit('message', message);
         });
 
         this.client.on('disconnected', (reason) => {
-            logger.warn('WhatsApp client disconnected', { reason });
+            logger.warn(`WhatsApp client disconnected for ${this.locationId}`, { reason });
             this.isReady = false;
             this.emit('disconnected', reason);
         });
 
         this.client.on('auth_failure', (msg) => {
-            logger.error('Authentication failed', { msg });
+            logger.error(`Authentication failed for ${this.locationId}`, { msg });
             this.emit('auth_failure', msg);
         });
     }
 
     async sendMessage(to, message, mediaUrl = null, mediaType = 'image', buttons = null) {
-        if (!this.isReady) throw new Error('WhatsApp client is not ready');
+        if (!this.isReady) throw new Error(`WhatsApp client not ready for ${this.locationId}`);
 
         try {
             const chatId = this._formatChatId(to);
-            logger.info(`📤 Preparing to send message to ${chatId}`);
-
-            // Pre-verify contact to avoid "t" error on non-existent numbers
-            try {
-                const isRegistered = await this.client.isRegisteredUser(chatId);
-                if (!isRegistered) {
-                    throw new Error(`The number ${to} is not registered on WhatsApp.`);
-                }
-            } catch (err) {
-                logger.warn(`Contact verification failed for ${chatId}: ${err.message}`);
-                // Continue anyway if it's just a protocol error, but block if clearly not registered
-                if (err.message.includes('not registered')) throw err;
-            }
-
             let result;
 
-            // Handle Buttons if provided
             if (buttons && Array.isArray(buttons) && buttons.length > 0) {
                 const { Buttons } = require('whatsapp-web.js');
                 const formattedButtons = buttons.map(btn => ({ body: btn }));
                 const buttonMessage = new Buttons(
                     message || '',
                     formattedButtons,
-                    '', // Title
-                    ''  // Footer
+                    '',
+                    ''
                 );
                 result = await this.client.sendMessage(chatId, buttonMessage);
-                logger.info(`🔘 Button message sent to ${chatId}`);
                 return result;
             }
 
             if (mediaUrl) {
-                logger.info(`📸 Sending media (${mediaType}) to ${chatId}: ${mediaUrl}`);
                 try {
                     const media = await MessageMedia.fromUrl(mediaUrl, { unsafeMime: true });
-
                     const options = {};
                     if (message) options.caption = message;
-
                     if (mediaType === 'document' || mediaType === 'pdf') {
                         options.sendMediaAsDocument = true;
                     }
-
                     result = await this.client.sendMessage(chatId, media, options);
-                    logger.info(`✅ ${mediaType} sent successfully to ${chatId}`);
                 } catch (mediaError) {
-                    logger.error(`❌ Media failed for ${chatId} (${mediaError.message}), falling back to text`);
                     if (message) {
                         result = await this.client.sendMessage(chatId, message);
                     } else {
@@ -170,36 +144,26 @@ class WhatsAppClient extends EventEmitter {
                 }
             } else {
                 result = await this.client.sendMessage(chatId, message);
-                logger.info(`📤 Text message sent to ${chatId}`);
             }
 
             return result;
         } catch (error) {
-            logger.error('Failed to send message', { to, error: error.message });
+            logger.error(`Failed to send message [Loc: ${this.locationId}]`, { to, error: error.message });
             throw error;
         }
     }
 
     _formatChatId(number) {
         if (!number) return '';
-
-        // Remove all non-numeric characters
         let cleaned = number.toString().replace(/[^\d]/g, '');
-
-        // Handle common formatting issues
-        // If it starts with 0 and is 11 digits (like 08123133382), it's likely an Indian number missing 91
         if (cleaned.startsWith('0') && cleaned.length === 11) {
             cleaned = '91' + cleaned.substring(1);
         }
-
-        // If it's 10 digits and doesn't have 91, assume India
         if (cleaned.length === 10) {
             cleaned = '91' + cleaned;
         }
-
-        // Ensure it ends with @c.us
         return cleaned.includes('@c.us') ? cleaned : `${cleaned}@c.us`;
     }
 }
 
-module.exports = new WhatsAppClient();
+module.exports = WhatsAppClient;

@@ -372,9 +372,13 @@
     <script>
         const API_BASE = window.location.origin;
 
+        // Multi-tenant: Get locationId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const locationId = urlParams.get('location_id') || 'default';
+
         async function fetchAnalytics() {
             try {
-                const res = await fetch(`${API_BASE}/api/whatsapp/analytics`);
+                const res = await fetch(`${API_BASE}/api/whatsapp/analytics?location_id=${locationId}`);
                 const data = await res.json();
                 if (data.success) {
                     const stats = data.stats;
@@ -389,7 +393,7 @@
 
         async function checkStatus() {
             try {
-                const res = await fetch(`${API_BASE}/api/whatsapp/status`);
+                const res = await fetch(`${API_BASE}/api/whatsapp/status?location_id=${locationId}`);
                 const data = await res.json();
 
                 const badge = document.getElementById('statusBadge');
@@ -414,7 +418,7 @@
                     instruction.style.display = 'block';
 
                     if (data.hasQRCode) {
-                        const qrRes = await fetch(`${API_BASE}/api/whatsapp/qr-code`);
+                        const qrRes = await fetch(`${API_BASE}/api/whatsapp/qr-code?location_id=${locationId}`);
                         const qrData = await qrRes.json();
                         qrImg.src = qrData.qrCode;
                         qrImg.style.display = 'block';
@@ -422,7 +426,7 @@
                         instruction.textContent = 'Open WhatsApp > Linked Devices > Scan QR';
                     } else {
                         qrImg.style.display = 'none';
-                        qrLoading.style.display = 'block';
+                        qrLoading.style.display = 'flex';
                         qrLoading.textContent = 'Initializing WhatsApp...';
                         instruction.textContent = 'Please wait for QR code to generate';
                     }
@@ -446,11 +450,9 @@
         }
 
         async function logoutWhatsApp() {
-            if (confirm('Are you sure you want to disconnect? This will stop all automations.')) {
-                // We'll use a pm2 restart logic in the backend for clean logout
-                alert('Request sent. The server will restart to clear the session.');
-                // Trigger a hypothetical logout or just wipe session via back-end
-                // For now, simpler to just instruct:
+            if (confirm('Are you sure you want to disconnect? This will stop all automations for this sub-account.')) {
+                // Implementation for logout if needed
+                alert('Request sent. Please refresh the page in a moment.');
                 window.location.reload();
             }
         }
@@ -465,8 +467,9 @@
             if (currentSearch) {
                 document.querySelectorAll('a.glass-card, a.action-card, a.nav-btn').forEach(link => {
                     const href = link.getAttribute('href');
-                    if (href && !href.startsWith('http') && !href.includes('?')) {
-                        link.setAttribute('href', href + currentSearch);
+                    if (href && !href.startsWith('http')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        link.setAttribute('href', href + separator + currentSearch.substring(1));
                     }
                 });
             }

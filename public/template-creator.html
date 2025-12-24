@@ -54,6 +54,7 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            position: relative;
         }
 
         /* Header Styles */
@@ -87,6 +88,7 @@
             display: flex;
             justify-content: space-between;
             pointer-events: none;
+            z-index: 100;
         }
 
         .nav-btn {
@@ -399,8 +401,8 @@
 <body>
     <div class="container">
         <div class="nav-buttons">
-            <a href="/ghl-whatsapp-tab.html" class="nav-btn">← Dashboard</a>
-            <a href="/templates.html" class="nav-btn">📋 Templates</a>
+            <a href="ghl-whatsapp-tab.html" class="nav-btn">← Dashboard</a>
+            <a href="templates.html" class="nav-btn">📋 Templates</a>
         </div>
 
         <header class="header">
@@ -569,6 +571,10 @@
         let editMode = false;
         let editingTemplateId = null;
 
+        // Multi-tenant: Get locationId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const locationId = urlParams.get('location_id') || 'default';
+
         // UI Interactions
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
@@ -636,7 +642,8 @@
                 content,
                 category: document.getElementById('category').value,
                 mediaUrl: document.getElementById('imageUrl').value.trim() || undefined,
-                mediaType: document.getElementById('mediaType').value
+                mediaType: document.getElementById('mediaType').value,
+                locationId: locationId // Include locationId
             };
 
             try {
@@ -656,7 +663,9 @@
 
         async function loadTemplates() {
             try {
-                const res = await fetch('/api/templates');
+                // For now templates are global in data/templates.json, but stats/fetch could be per-location
+                // If you want per-location templates, we'd need to update templates.js route too.
+                const res = await fetch(`/api/templates?location_id=${locationId}`);
                 const data = await res.json();
                 if (!data.success) return;
 
@@ -721,7 +730,8 @@
                 templateName: document.getElementById('templateName').value,
                 variables: { first_name: 'TestUser' },
                 mediaUrl: document.getElementById('imageUrl').value || undefined,
-                mediaType: document.getElementById('mediaType').value
+                mediaType: document.getElementById('mediaType').value,
+                locationId: locationId // Use specific WhatsApp instance
             };
 
             const res = await fetch('/api/whatsapp/send-template', {
@@ -737,8 +747,8 @@
             const name = document.getElementById('selectedTemplate').value;
             if (!name) return document.getElementById('webhookConfig').textContent = "Select template...";
 
-            const config = `METHOD: POST
-URL: ${window.location.origin}/api/whatsapp/send-template
+            const configText = `METHOD: POST
+URL: ${window.location.origin}/api/whatsapp/send-template?location_id=${locationId}
 
 PAYLOAD:
 {
@@ -748,7 +758,7 @@ PAYLOAD:
     "first_name": "{{contact.first_name}}"
   }
 }`;
-            document.getElementById('webhookConfig').textContent = config;
+            document.getElementById('webhookConfig').textContent = configText;
         }
 
         function copyWebhookConfig() {
@@ -792,8 +802,9 @@ PAYLOAD:
             if (currentSearch) {
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     const href = btn.getAttribute('href');
-                    if (href && !href.startsWith('http') && !href.includes('?')) {
-                        btn.setAttribute('href', href + currentSearch);
+                    if (href && !href.startsWith('http')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        btn.setAttribute('href', href + separator + currentSearch.substring(1));
                     }
                 });
             }

@@ -6,13 +6,9 @@ const GHL_API_BASE = 'https://services.leadconnectorhq.com';
 const API_VERSION = '2021-07-28';
 
 class GHLConversationsService {
-    constructor() {
-        this.locationId = process.env.GHL_LOCATION_ID || 'dXh04Cd8ixM9hnk1IS5b';
-    }
-
-    async _makeRequest(method, endpoint, data = null, params = {}) {
+    async _makeRequest(locationId, method, endpoint, data = null, params = {}) {
         try {
-            const accessToken = await ghlOAuth.getAccessToken(this.locationId);
+            const accessToken = await ghlOAuth.getAccessToken(locationId);
 
             const config = {
                 method,
@@ -22,7 +18,7 @@ class GHLConversationsService {
                     'Version': API_VERSION,
                     'Content-Type': 'application/json'
                 },
-                params: { locationId: this.locationId, ...params }
+                params: { locationId, ...params }
             };
 
             if (data) {
@@ -35,6 +31,7 @@ class GHLConversationsService {
         } catch (error) {
             logger.error('GHL Conversations API Error', {
                 endpoint,
+                locationId,
                 error: error.message,
                 response: error.response?.data
             });
@@ -45,19 +42,19 @@ class GHLConversationsService {
     /**
      * Create a new conversation for a contact
      */
-    async createConversation(contactId) {
-        logger.info('Creating conversation', { contactId });
+    async createConversation(locationId, contactId) {
+        logger.info('Creating conversation', { locationId, contactId });
 
         try {
-            const data = await this._makeRequest('POST', '/conversations/', {
+            const data = await this._makeRequest(locationId, 'POST', '/conversations/', {
                 contactId,
-                locationId: this.locationId
+                locationId: locationId
             });
 
-            logger.info('✅ Conversation created', { conversationId: data.conversation?.id });
+            logger.info('✅ Conversation created', { conversationId: data.conversation?.id, locationId });
             return data.conversation;
         } catch (error) {
-            logger.error('Failed to create conversation', { contactId, error: error.message });
+            logger.error('Failed to create conversation', { contactId, locationId, error: error.message });
             throw error;
         }
     }
@@ -65,18 +62,12 @@ class GHLConversationsService {
     /**
      * Send a message to a conversation
      */
-    async sendMessage(conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null, conversationProviderId = null, attachments = []) {
-        logger.info('Sending message to conversation', { conversationId, type, direction, conversationProviderId, hasAttachments: attachments.length > 0 });
+    async sendMessage(locationId, conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null, conversationProviderId = null, attachments = []) {
+        logger.info('Sending message to conversation', { locationId, conversationId, type, direction, conversationProviderId, hasAttachments: attachments.length > 0 });
 
         const endpoint = direction === 'inbound'
             ? '/conversations/messages/inbound'
             : '/conversations/messages';
-
-        // Construct payload based on direction
-        // We strip custom fields like providerId if not supported by outbound, 
-        // but for inbound, we can try passing undocumented params or rely on type match.
-        // Actually, let's try sending type: 'WhatsApp' again but assume the issue was purely timing.
-        // Wait, the user wants to try linking provider.
 
         const payload = {
             type,
@@ -90,7 +81,6 @@ class GHLConversationsService {
 
         if (direction === 'inbound') {
             payload.status = 'unread';
-            // Let GHL use current server time
             if (conversationProviderId) {
                 payload.conversationProviderId = conversationProviderId;
             }
@@ -99,11 +89,11 @@ class GHLConversationsService {
         }
 
         try {
-            const data = await this._makeRequest('POST', endpoint, payload);
-            logger.info('✅ Message sent', { messageId: data.messageId, direction });
+            const data = await this._makeRequest(locationId, 'POST', endpoint, payload);
+            logger.info('✅ Message sent', { messageId: data.messageId, direction, locationId });
             return data;
         } catch (error) {
-            logger.error('Failed to send message', { conversationId, error: error.message });
+            logger.error('Failed to send message', { conversationId, locationId, error: error.message });
             throw error;
         }
     }
@@ -111,14 +101,14 @@ class GHLConversationsService {
     /**
      * Get conversation by ID
      */
-    async getConversation(conversationId) {
-        logger.info('Getting conversation', { conversationId });
+    async getConversation(locationId, conversationId) {
+        logger.info('Getting conversation', { locationId, conversationId });
 
         try {
-            const data = await this._makeRequest('GET', `/conversations/${conversationId}`);
+            const data = await this._makeRequest(locationId, 'GET', `/conversations/${conversationId}`);
             return data.conversation;
         } catch (error) {
-            logger.error('Failed to get conversation', { conversationId, error: error.message });
+            logger.error('Failed to get conversation', { conversationId, locationId, error: error.message });
             throw error;
         }
     }
@@ -126,16 +116,16 @@ class GHLConversationsService {
     /**
      * Search conversations by contact ID
      */
-    async getConversationsByContact(contactId) {
-        logger.info('Getting conversations for contact', { contactId });
+    async getConversationsByContact(locationId, contactId) {
+        logger.info('Getting conversations for contact', { locationId, contactId });
 
         try {
-            const data = await this._makeRequest('GET', '/conversations/search', null, {
+            const data = await this._makeRequest(locationId, 'GET', '/conversations/search', null, {
                 contactId
             });
             return data.conversations || [];
         } catch (error) {
-            logger.error('Failed to get conversations', { contactId, error: error.message });
+            logger.error('Failed to get conversations', { contactId, locationId, error: error.message });
             return [];
         }
     }
@@ -143,19 +133,19 @@ class GHLConversationsService {
     /**
      * Get or create conversation for contact
      */
-    async getOrCreateConversation(contactId) {
+    async getOrCreateConversation(locationId, contactId) {
         // Check if conversation exists
-        const conversations = await this.getConversationsByContact(contactId);
+        const conversations = await this.getConversationsByContact(locationId, contactId);
 
         if (conversations.length > 0) {
             const activeConv = conversations.find(c => c.status === 'active') || conversations[0];
-            logger.info('Conversation found', { conversationId: activeConv.id });
+            logger.info('Conversation found', { conversationId: activeConv.id, locationId });
             return activeConv;
         }
 
         // Create new conversation
-        logger.info('No conversation found, creating new', { contactId });
-        return await this.createConversation(contactId);
+        logger.info('No conversation found, creating new', { contactId, locationId });
+        return await this.createConversation(locationId, contactId);
     }
 }
 
