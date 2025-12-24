@@ -69,6 +69,7 @@
             font-weight: 700;
             background: linear-gradient(to right, #25D366, #34B7F1);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
             letter-spacing: -1px;
@@ -780,16 +781,30 @@ PAYLOAD:
         }
         document.getElementById('trackingId').addEventListener('input', updateTrackingUI);
 
-        // Init
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadTemplates();
             updatePreview();
             updateTrackingUI();
 
-            // Handle return URL
-            const params = new URLSearchParams(window.location.search);
+            // Handle back button query preservation
+            const currentSearch = window.location.search;
+            if (currentSearch) {
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    const href = btn.getAttribute('href');
+                    if (href && !href.startsWith('http') && !href.includes('?')) {
+                        btn.setAttribute('href', href + currentSearch);
+                    }
+                });
+            }
+
+            // Handle return URL override (if specifically requested)
+            const params = new URLSearchParams(currentSearch);
             const ret = params.get('return');
-            if (ret) document.querySelector('.nav-btn').href = '/' + ret;
+            if (ret) {
+                const backBtn = document.querySelector('.nav-btn');
+                if (backBtn) backBtn.href = '/' + ret + currentSearch;
+            }
         });
     </script>
 </body>

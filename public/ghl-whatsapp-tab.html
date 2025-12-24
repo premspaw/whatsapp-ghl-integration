@@ -75,6 +75,7 @@
             font-weight: 700;
             background: linear-gradient(to right, #25D366, #34B7F1);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -1px;
         }
@@ -458,6 +459,18 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchAnalytics();
             checkStatus();
+
+            // Preserve query parameters for links to sub-pages
+            const currentSearch = window.location.search;
+            if (currentSearch) {
+                document.querySelectorAll('a.glass-card, a.action-card, a.nav-btn').forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('http') && !href.includes('?')) {
+                        link.setAttribute('href', href + currentSearch);
+                    }
+                });
+            }
+
             // Polling
             setInterval(checkStatus, 5000);
             setInterval(fetchAnalytics, 30000);

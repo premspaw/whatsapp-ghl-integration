@@ -59,6 +59,7 @@
             font-size: 2.5rem;
             background: linear-gradient(to right, #25D366, #34B7F1);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -243,7 +244,20 @@
             alert('Settings saved successfully!');
         }
 
-        fetchStats();
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStats();
+
+            // Preserve query parameters for back button
+            const currentSearch = window.location.search;
+            if (currentSearch) {
+                const backBtn = document.querySelector('.nav-btn');
+                if (backBtn) {
+                    const href = backBtn.getAttribute('href');
+                    backBtn.setAttribute('href', href + currentSearch);
+                }
+            }
+        });
     </script>
 </body>
 
