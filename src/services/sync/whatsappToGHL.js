@@ -103,7 +103,7 @@ class WhatsAppGHLSync {
             await ghlConversations.sendMessage(
                 conversation.id,
                 messageText,
-                'Custom',
+                'SMS',
                 contact.id,
                 'inbound',
                 timestamp,

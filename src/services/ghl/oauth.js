@@ -111,7 +111,7 @@ class GHLOAuthService {
             response_type: 'code',
             client_id: config.ghl.clientId,
             redirect_uri: config.ghl.redirectUri,
-            scope: 'contacts.readonly contacts.write conversations.write conversations.readonly conversations/message.write locations.readonly',
+            scope: 'contacts.readonly contacts.write conversations.write conversations.readonly conversations/message.write conversations/message.readonly locations.readonly',
         });
         if (state) params.append('state', state);
 
