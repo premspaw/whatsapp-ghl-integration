@@ -2,17 +2,27 @@ const axios = require('axios');
 const ghlOAuth = require('./oauth');
 const logger = require('../../utils/logger');
 
-const GHL_API_BASE = 'https://services.leadconnectorhq.com';
+const GHL_API_BASE_V2 = 'https://services.leadconnectorhq.com';
+const GHL_API_BASE_V1 = 'https://rest.gohighlevel.com/v1';
 const API_VERSION = '2021-07-28';
 
 class GHLContactsService {
     async _makeRequest(locationId, method, endpoint, data = null, params = {}) {
         try {
-            const accessToken = await ghlOAuth.getAccessToken(locationId);
+            const tokenData = await ghlOAuth.getTokens(locationId); // Get full token object
+            
+            // Check if using Legacy API Key
+            if (tokenData && (tokenData.userType === 'ApiKey' || tokenData.type === 'ApiKey')) {
+                return this._makeRequestV1(tokenData.access_token, method, endpoint, data, params);
+            }
+
+            // Default to OAuth/V2
+            const accessToken = tokenData ? tokenData.access_token : null;
+            if (!accessToken) throw new Error(`No access token found for location ${locationId}`);
 
             const config = {
                 method,
-                url: `${GHL_API_BASE}${endpoint}`,
+                url: `${GHL_API_BASE_V2}${endpoint}`,
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Version': API_VERSION,
@@ -21,28 +31,50 @@ class GHLContactsService {
                 params: { locationId, ...params }
             };
 
-            if (data) {
-                config.data = data;
-            }
+            if (data) config.data = data;
 
-            logger.info(`📡 GHL Request: ${method} ${endpoint}`, {
-                locationId,
-                params: config.params,
-                url: config.url
-            });
-
+            logger.info(`📡 GHL Request (V2): ${method} ${endpoint}`, { locationId });
             const response = await axios(config);
             return response.data;
 
         } catch (error) {
-            logger.error('GHL Contacts API Error', {
-                endpoint,
-                locationId,
-                error: error.message,
-                response: error.response?.data
-            });
+            this._handleError(error, locationId, endpoint);
             throw error;
         }
+    }
+
+    async _makeRequestV1(apiKey, method, endpoint, data, params) {
+        // Map V2 endpoints to V1 if necessary, or assume caller knows V1 structure?
+        // For simplicity, we'll try to map common ones or just pass through.
+        // V1 Contacts: /contacts
+        
+        // Remove leading slash for consistency if needed, but V1 base has no trailing slash
+        const url = `${GHL_API_BASE_V1}${endpoint}`;
+        
+        const config = {
+            method,
+            url,
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            params // V1 usually doesn't need locationId in params if API Key is location-specific
+        };
+
+        if (data) config.data = data;
+
+        logger.info(`📡 GHL Request (V1): ${method} ${endpoint}`);
+        const response = await axios(config);
+        return response.data;
+    }
+
+    _handleError(error, locationId, endpoint) {
+        logger.error('GHL Contacts API Error', {
+            endpoint,
+            locationId,
+            error: error.message,
+            response: error.response?.data
+        });
     }
 
     /**

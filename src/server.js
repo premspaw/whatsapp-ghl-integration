@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 const config = require('./config/env');
 const logger = require('./utils/logger');
 
@@ -12,7 +13,7 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public')); // Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Basic Routes
 app.get('/health', (req, res) => {

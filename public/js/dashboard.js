@@ -2,7 +2,16 @@
 const ORIGIN = window.location.origin;
 const IS_DEV_5173 = ORIGIN.includes('localhost:5173');
 const API_BASE = IS_DEV_5173 ? ORIGIN.replace(':5173', ':3000') : ORIGIN;
-const apiUrl = (path) => `${API_BASE}${path}`;
+
+// Multi-tenant Helper
+const getQueryParams = () => new URLSearchParams(window.location.search);
+const getLocationId = () => getQueryParams().get('locationId') || 'default';
+
+const apiUrl = (path) => {
+    const locationId = getLocationId();
+    const separator = path.includes('?') ? '&' : '?';
+    return `${API_BASE}${path}${separator}locationId=${locationId}`;
+};
 
 // State
 let conversations = [];
@@ -39,11 +48,39 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeSocket();
     setupEventListeners();
     checkWhatsAppStatus();
+    checkApiKeyRegistration();
 
     // Periodic checks
     setInterval(checkWhatsAppStatus, 10000);
     setInterval(loadConversations, 30000);
 });
+
+async function checkApiKeyRegistration() {
+    const params = getQueryParams();
+    const apiKey = params.get('apiKey');
+    const locationId = getLocationId();
+
+    if (apiKey && locationId && locationId !== 'default') {
+        try {
+            console.log('Registering API Key from URL...');
+            const res = await fetch('/api/auth/apikey', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locationId, apiKey })
+            });
+            const data = await res.json();
+            if (data.success) {
+                console.log('API Key registered successfully');
+                // Optional: Clean URL
+                // const url = new URL(window.location);
+                // url.searchParams.delete('apiKey');
+                // window.history.replaceState({}, '', url);
+            }
+        } catch (e) {
+            console.error('Failed to register API Key', e);
+        }
+    }
+}
 
 function setupEventListeners() {
     els.searchBox.addEventListener('input', searchConversations);
@@ -74,14 +111,17 @@ function setupEventListeners() {
 
     // Templates Button - Navigate to template creator page
     document.getElementById('templatesBtn').addEventListener('click', () => {
-        window.location.href = '/template-creator.html?return=ghl-whatsapp-tab.html';
+        const locationId = getLocationId();
+        window.location.href = `/template-creator.html?return=ghl-whatsapp-tab.html&locationId=${locationId}`;
     });
 
     // Settings Button - Navigate to WhatsApp AI dashboard
     document.getElementById('settingsBtn').addEventListener('click', () => {
+        const locationId = getLocationId();
         const params = new URLSearchParams(window.location.search);
         const integration = params.get('integration');
-        const target = integration ? `/automation-dashboard.html?integration=${integration}` : '/automation-dashboard.html';
+        let target = integration ? `/automation-dashboard.html?integration=${integration}` : '/automation-dashboard.html';
+        target += (target.includes('?') ? '&' : '?') + `locationId=${locationId}`;
         window.location.href = target;
     });
 

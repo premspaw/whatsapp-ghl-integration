@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Admin - Multi-Tenant Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; }
+        .tenant-row:hover { background-color: #f1f3f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Integration Admin</h1>
+            <button class="btn btn-primary" onclick="window.location.reload()">Refresh List</button>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Connected Locations (Tenants)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Location ID</th>
+                                <th>Type</th>
+                                <th>Connected At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tenantList">
+                            <tr><td colspan="4" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>Note:</strong> To add a new tenant, install the GHL App on that sub-account. It will automatically appear here after authorization.
+        </div>
+    </div>
+
+    <script>
+        async function loadTenants() {
+            try {
+                const res = await fetch('/api/auth/locations');
+                const data = await res.json();
+                
+                const tbody = document.getElementById('tenantList');
+                tbody.innerHTML = '';
+
+                if (data.locations && data.locations.length > 0) {
+                    data.locations.forEach(loc => {
+                        const date = new Date(loc.connectedAt).toLocaleString();
+                        const row = `
+                            <tr class="tenant-row">
+                                <td><code>${loc.id}</code></td>
+                                <td><span class="badge bg-secondary">${loc.userType || 'Location'}</span></td>
+                                <td>${date}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="/ghl-whatsapp-tab.html?locationId=${loc.id}" class="btn btn-sm btn-success" target="_blank">Open Dashboard</a>
+                                        <a href="/template-creator.html?locationId=${loc.id}" class="btn btn-sm btn-outline-primary" target="_blank">Templates</a>
+                                        <a href="/automation-dashboard.html?locationId=${loc.id}" class="btn btn-sm btn-outline-dark" target="_blank">Settings</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No connected locations found.</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tenantList').innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error loading tenants: ${err.message}</td></tr>`;
+            }
+        }
+
+        loadTenants();
+    </script>
+</body>
+</html>

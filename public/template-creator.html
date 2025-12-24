@@ -568,20 +568,24 @@
     <div id="toast" class="toast"></div>
 
     <script>
+        // Multi-tenant Helper
+        const params = new URLSearchParams(window.location.search);
+        const locationId = params.get('locationId') || 'default';
+
+        // State
         let editMode = false;
         let editingTemplateId = null;
 
-        // Multi-tenant: Get locationId from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const locationId = urlParams.get('location_id') || 'default';
-
-        // UI Interactions
         function showToast(msg, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.background = type === 'success' ? '#059669' : '#dc2626';
-            toast.style.display = 'block';
-            setTimeout(() => toast.style.display = 'none', 3000);
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = type === 'success' ? 'rgba(37, 211, 102, 0.9)' : 'rgba(255, 99, 71, 0.9)';
+            t.style.opacity = '1';
+            t.style.transform = 'translateY(0)';
+            setTimeout(() => {
+                t.style.opacity = '0';
+                t.style.transform = 'translateY(20px)';
+            }, 3000);
         }
 
         // Variable Insertion

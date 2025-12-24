@@ -2,21 +2,28 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const whatsappClient = require('../services/whatsapp/client');
+const whatsappManager = require('../services/whatsapp/manager');
 const logger = require('../utils/logger');
 const statsService = require('../services/stats');
 
 /**
  * Webhook endpoint for GHL to send messages via WhatsApp
  * POST /api/webhooks/ghl/message
- * Body: { phone, message, templateName, variables, attachments }
+ * Body: { phone, message, templateName, variables, attachments, locationId }
  */
 router.post('/ghl/message', async (req, res) => {
     try {
-        const { phone, message, templateName, variables, attachments, buttons, mediaType } = req.body;
+        const { phone, message, templateName, variables, attachments, buttons, mediaType, locationId } = req.body;
+
+        const targetLocationId = locationId || req.query.locationId || 'default';
 
         if (!phone) {
             return res.status(400).json({ error: 'Phone is required' });
+        }
+
+        const client = await whatsappManager.getInstance(targetLocationId);
+        if (!client || !client.isReady) {
+             return res.status(503).json({ error: `WhatsApp client not ready for location ${targetLocationId}` });
         }
 
         let finalMessage = message || '';

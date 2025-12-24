@@ -40,15 +40,19 @@ class GHLOAuthService {
     async saveTokens(locationId, data) {
         if (!locationId) locationId = 'default';
 
-        const expiresAt = Date.now() + (data.expires_in * 1000);
+        // Handle API Key (no expiration)
+        const isApiKey = data.userType === 'ApiKey' || data.type === 'ApiKey';
+        const expiresAt = isApiKey ? 
+            Date.now() + (365 * 24 * 60 * 60 * 1000) : // 1 year mock expiration
+            Date.now() + (data.expires_in * 1000);
 
         // Update local memory & file
         this.tokens[locationId] = {
             access_token: data.access_token,
             refresh_token: data.refresh_token,
-            expires_in: data.expires_in,
+            expires_in: data.expires_in || 0,
             obtained_at: Date.now(),
-            user_type: data.userType,
+            user_type: isApiKey ? 'ApiKey' : data.userType,
             company_id: data.companyId
         };
         this._saveLocalTokens();
@@ -61,9 +65,9 @@ class GHLOAuthService {
                     .upsert({
                         location_id: locationId,
                         access_token: data.access_token,
-                        refresh_token: data.refresh_token,
+                        refresh_token: data.refresh_token || '',
                         expires_at: expiresAt,
-                        user_type: data.userType || 'Location',
+                        user_type: isApiKey ? 'ApiKey' : (data.userType || 'Location'),
                         company_id: data.companyId,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'location_id' });
@@ -111,7 +115,7 @@ class GHLOAuthService {
             response_type: 'code',
             client_id: config.ghl.clientId,
             redirect_uri: config.ghl.redirectUri,
-            scope: 'contacts.readonly contacts.write conversations.write conversations.readonly conversations/message.write conversations/message.readonly locations.readonly',
+            scope: 'conversations.readonly conversations/message.write contacts.write contacts.readonly conversations/message.readonly conversations/reports.readonly conversations.write conversations/livechat.write locations.readonly invoices/estimate.write oauth.write oauth.readonly locations/tags.readonly locations/tags.write locations/customFields.write locations/customFields.readonly locations/customValues.write locations/customValues.readonly locations/tasks.readonly locations/tasks.write phonenumbers.read conversation-ai.readonly conversation-ai.write voice-ai-agent-goals.write knowledge-bases.write knowledge-bases.readonly voice-ai-agent-goals.readonly agent-studio.readonly agent-studio.write calendars.write calendars/events.write calendars.readonly calendars/groups.readonly calendars/groups.write calendars/resources.readonly calendars/resources.write locations/templates.readonly recurring-tasks.write recurring-tasks.readonly medias.write medias.readonly funnels/redirect.readonly opportunities.readonly opportunities.write charges.write charges.readonly voice-ai-agents.write voice-ai-agents.readonly voice-ai-dashboard.readonly documents_contracts_template/list.readonly documents_contracts_template/sendLink.write marketplace-installer-details.readonly links.write lc-email.readonly businesses.write documents_contracts/list.readonly documents_contracts/sendLink.write',
         });
         if (state) params.append('state', state);
 
@@ -157,6 +161,11 @@ class GHLOAuthService {
                 return await this.getAccessToken('default');
             }
             return null;
+        }
+
+        // Handle API Key (Legacy/Manual)
+        if (token.user_type === 'ApiKey' || token.type === 'ApiKey') {
+            return token.access_token;
         }
 
         // Check if expired (give 5 min buffer)

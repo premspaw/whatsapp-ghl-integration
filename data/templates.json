@@ -25,5 +25,15 @@
     "mediaUrl": "https://via.placeholder.com/300.png",
     "mediaType": "image",
     "createdAt": 1763996500584
+  },
+  "tpl_1766601812203": {
+    "id": "tpl_1766601812203",
+    "locationId": "default",
+    "name": "somany",
+    "content": "hello {last_name}",
+    "category": "welcome",
+    "mediaType": "image",
+    "createdAt": "2025-12-24T18:43:32.253Z",
+    "updatedAt": "2025-12-24T18:43:32.253Z"
   }
 }
