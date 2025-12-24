@@ -1,48 +1,64 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 const whatsappClient = require('../services/whatsapp/client');
 const logger = require('../utils/logger');
 
 /**
  * Webhook endpoint for GHL to send messages via WhatsApp
  * POST /api/webhooks/ghl/message
- * Body: { phone, message, conversationId }
+ * Body: { phone, message, templateName, variables, attachments }
  */
 router.post('/ghl/message', async (req, res) => {
     try {
-        const { phone, message, conversationId, contactId, attachments } = req.body;
+        const { phone, message, templateName, variables, attachments } = req.body;
 
-        if (!phone || !message) {
-            return res.status(400).json({ error: 'Phone and message are required' });
+        if (!phone) {
+            return res.status(400).json({ error: 'Phone is required' });
         }
 
-        logger.info('📤 Outbound message from GHL', { phone, conversationId, hasAttachments: !!attachments });
+        let finalMessage = message || '';
+        let finalMediaUrl = (attachments && attachments.length > 0) ? attachments[0] : null;
 
-        let result;
-
-        // Check if there are attachments
-        if (attachments && attachments.length > 0) {
-            // For now, send the first attachment (WhatsApp supports one media per message typically)
-            const attachmentUrl = attachments[0];
-
+        // If templateName is provided, override message and media from template
+        if (templateName) {
             try {
-                logger.info('📎 GHL sending media with message', { url: attachmentUrl });
-                // Pass mediaUrl to our unified sendMessage function
-                result = await whatsappClient.sendMessage(phone, message, attachmentUrl);
-            } catch (mediaError) {
-                logger.error('❌ Failed to send media from GHL, falling back to text', { error: mediaError.message });
-                // Fallback to text message if media fails
-                result = await whatsappClient.sendMessage(phone, message + '\n\n[Attachment: ' + attachmentUrl + ']');
+                const TEMPLATES_FILE = path.join(process.cwd(), 'data', 'templates.json');
+                if (fs.existsSync(TEMPLATES_FILE)) {
+                    const templates = JSON.parse(fs.readFileSync(TEMPLATES_FILE, 'utf8') || '{}');
+                    const template = Object.values(templates).find(t => t.name === templateName);
+
+                    if (template) {
+                        finalMessage = template.content;
+                        finalMediaUrl = finalMediaUrl || template.mediaUrl;
+
+                        // Replace variables if provided
+                        if (variables) {
+                            Object.entries(variables).forEach(([key, value]) => {
+                                finalMessage = finalMessage.replace(new RegExp(`{${key}}`, 'g'), value);
+                            });
+                        }
+                    } else {
+                        logger.warn(`Template "${templateName}" not found, using raw message.`);
+                    }
+                }
+            } catch (tplErr) {
+                logger.error('Error loading template in webhook', tplErr);
             }
-        } else {
-            // Send regular text message
-            result = await whatsappClient.sendMessage(phone, message);
-            logger.info('✅ Text message sent via WhatsApp', { phone, messageId: result.id._serialized });
         }
+
+        if (!finalMessage && !finalMediaUrl) {
+            return res.status(400).json({ error: 'Message or template content is required' });
+        }
+
+        logger.info('📤 Outbound message from GHL', { phone, templateName, hasMedia: !!finalMediaUrl });
+
+        const result = await whatsappClient.sendMessage(phone, finalMessage, finalMediaUrl);
 
         res.json({
             success: true,
-            messageId: result.id._serialized,
+            messageId: result.id?._serialized || result.id,
             timestamp: result.timestamp
         });
 
