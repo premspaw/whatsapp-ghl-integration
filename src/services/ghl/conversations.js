@@ -62,7 +62,7 @@ class GHLConversationsService {
     /**
      * Send a message to a conversation
      */
-    async sendMessage(locationId, conversationId, message, type = 'Plain', contactId = null, direction = 'outbound', timestamp = null, conversationProviderId = null, attachments = []) {
+    async sendMessage(locationId, conversationId, message, type = 'SMS', contactId = null, direction = 'outbound', timestamp = null, conversationProviderId = null, attachments = []) {
         logger.info('Sending message to conversation', { locationId, conversationId, type, direction, conversationProviderId, hasAttachments: attachments.length > 0 });
 
         const endpoint = direction === 'inbound'
@@ -70,7 +70,7 @@ class GHLConversationsService {
             : '/conversations/messages';
 
         const payload = {
-            type,
+            type: 'SMS', // Force SMS type for external channels usually
             message,
             conversationId
         };
@@ -81,8 +81,10 @@ class GHLConversationsService {
 
         if (direction === 'inbound') {
             payload.status = 'unread';
+            // Only attach provider ID for inbound
             if (conversationProviderId) {
-                payload.conversationProviderId = conversationProviderId;
+                // Remove if it causes 400 even on inbound, but usually required for attribution
+                // payload.conversationProviderId = conversationProviderId; 
             }
         } else {
             payload.contactId = contactId;
