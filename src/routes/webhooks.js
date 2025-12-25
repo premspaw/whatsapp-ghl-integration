@@ -100,16 +100,22 @@ router.post('/ghl/conversation', async (req, res) => {
         });
 
         // Handle different conversation events
-        if (req.body.type === 'OutboundMessage') {
-            // Handle outbound message from GHL (if configured to send via this channel)
-            const { contactId, locationId, body, messagetype, direction } = req.body;
-            // Find contact phone from GHL Service or if included in body
-            // Actually, GHL outbound webhook usually includes contact info if configured, but here we might need to fetch it
-            // implementation pending full specs, logging for now
-            logger.info('Outbound Message from GHL detected', { contactId, body });
+        // Handle different conversation events
+        if (req.body.type === 'SMS' && req.body.phone && req.body.message) {
+            // This is the GHL Conversation Provider Outbound Message Payload
+            const { phone, message, locationId, attachments } = req.body;
 
-            // ToDo: Implement actual sending if this 'OutboundMessage' event is meant to trigger WhatsApp sending
-            // Usually, GHL sends to /api/webhooks/ghl/message via Custom Provider config, not this general webhook
+            logger.info('🚀 Processing GHL Outbound Message via WhatsApp Provider', { phone, locationId });
+
+            const client = await whatsappManager.getInstance(locationId || 'default');
+            if (client && client.isReady) {
+                const mediaUrl = (attachments && attachments.length > 0) ? attachments[0] : null;
+                await client.sendMessage(phone, message, mediaUrl);
+                return res.json({ success: true, messageId: 'sent' });
+            } else {
+                logger.warn('WhatsApp client not ready for outbound message', { locationId });
+                return res.json({ success: false, error: 'WhatsApp not connected' });
+            }
         }
 
         switch (event) {
