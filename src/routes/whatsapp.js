@@ -271,7 +271,7 @@ router.post('/send-template', async (req, res) => {
 
         // Find template by name AND locationId (with legacy fallback to default)
         const template = Object.values(allTemplates).find(t => {
-            const isNameMatch = t.name === templateName;
+            const isNameMatch = t.name.toLowerCase() === templateName.toLowerCase();
             const tLoc = t.locationId || 'default';
             return isNameMatch && tLoc === locationId;
         });
