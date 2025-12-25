@@ -570,7 +570,8 @@
     <script>
         // Multi-tenant Helper
         const params = new URLSearchParams(window.location.search);
-        const locationId = params.get('locationId') || 'default';
+        // Standardize: check location_id (standard) then locationId (legacy)
+        const locationId = params.get('location_id') || params.get('locationId') || 'default';
 
         // State
         let editMode = false;
