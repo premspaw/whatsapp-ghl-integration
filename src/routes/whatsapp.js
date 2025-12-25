@@ -169,40 +169,64 @@ router.get('/conversations', async (req, res) => {
 
 // Helper to sync outbound message to GHL
 async function syncOutboundMessage(locationId, phone, message, attachments = [], contactId = null) {
+    logger.info('🔄 [Sync] Starting outbound sync to GHL', { locationId, phone, contactId });
     try {
-        if (locationId === 'default') return;
-
-        let finalContactId = contactId;
-
-        // If no contactId provided, search by phone
-        if (!finalContactId) {
-            const contact = await ghlContacts.searchContactByPhone(locationId, phone);
-            if (contact) finalContactId = contact.id;
-        }
-
-        if (!finalContactId) {
-            logger.warn('Cannot sync outbound: Contact not found in GHL', { phone, locationId });
+        if (locationId === 'default') {
+            logger.warn('⚠️ [Sync] Skipping sync: locationId is "default"');
             return;
         }
 
-        // 2. Get/Create Conversation
-        const conversation = await ghlConversations.getOrCreateConversation(locationId, finalContactId);
+        let finalContactId = contactId;
 
-        // 3. Add to Conversation
+        // Step 1: Get Contact ID
+        if (!finalContactId) {
+            logger.info('🔍 [Sync] Step 1: Searching contact by phone...');
+            const contact = await ghlContacts.searchContactByPhone(locationId, phone);
+            if (contact) {
+                finalContactId = contact.id;
+                logger.info('✅ [Sync] Contact found by phone', { finalContactId });
+            }
+        } else {
+            logger.info('✅ [Sync] Step 1: Using provided contactId', { finalContactId });
+        }
+
+        if (!finalContactId) {
+            logger.warn('❌ [Sync] Aborting: Contact not found in GHL', { phone });
+            return;
+        }
+
+        // Step 2: Get/Create Conversation
+        logger.info('🔍 [Sync] Step 2: Getting/Creating Conversation...');
+        const conversation = await ghlConversations.getOrCreateConversation(locationId, finalContactId);
+        if (!conversation || !conversation.id) {
+            logger.error('❌ [Sync] Aborting: Failed to get/create conversation');
+            return;
+        }
+        logger.info('✅ [Sync] Conversation ready', { conversationId: conversation.id });
+
+        // Step 3: Add to Conversation
+        logger.info('🔍 [Sync] Step 3: Sending message to GHL API...');
+        const providerId = '69306e4ed1e0a0573cdc2207';
+
         await ghlConversations.sendMessage(
             locationId,
             conversation.id,
             message,
-            'Custom', // type
+            'Custom',
             finalContactId,
             'outbound',
             null,
-            '69306e4ed1e0a0573cdc2207', // Use correct Provider ID from sync service
+            providerId,
             attachments
         );
-        logger.info('✅ Outbound message synced to GHL', { locationId, phone, contactId: finalContactId });
+        logger.info('🚀 [Sync] SUCCESS! Outbound message visible in GHL', { locationId, phone });
     } catch (error) {
-        logger.error('Failed to sync outbound message to GHL', { locationId, error: error.message });
+        logger.error('❌ [Sync] CRITICAL FAILURE', {
+            locationId,
+            phone,
+            error: error.message,
+            stack: error.stack
+        });
     }
 }
 
