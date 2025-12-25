@@ -451,9 +451,13 @@
 
         async function logoutWhatsApp() {
             if (confirm('Are you sure you want to disconnect? This will stop all automations for this sub-account.')) {
-                // Implementation for logout if needed
-                alert('Request sent. Please refresh the page in a moment.');
-                window.location.reload();
+                try {
+                    await fetch(`${API_BASE}/api/whatsapp/restart?location_id=${locationId}`, { method: 'POST' });
+                    showToast('Disconnected. Refreshing...');
+                    setTimeout(() => window.location.reload(), 2000);
+                } catch (e) {
+                    alert('Error disconnecting: ' + e.message);
+                }
             }
         }
 
@@ -465,11 +469,18 @@
             // Preserve query parameters for links to sub-pages
             const currentSearch = window.location.search;
             if (currentSearch) {
-                document.querySelectorAll('a.glass-card, a.action-card, a.nav-btn').forEach(link => {
+                // Select all internal action links
+                const links = document.querySelectorAll('.action-list a');
+                links.forEach(link => {
                     const href = link.getAttribute('href');
-                    if (href && !href.startsWith('http')) {
-                        const separator = href.includes('?') ? '&' : '?';
-                        link.setAttribute('href', href + separator + currentSearch.substring(1));
+                    if (href && !href.startsWith('http') && !href.startsWith('#')) {
+                        // Append params if not already there
+                        if (!href.includes('location_id')) {
+                            const separator = href.includes('?') ? '&' : '?';
+                            // Remove leading ? from currentSearch if present
+                            const params = currentSearch.startsWith('?') ? currentSearch.substring(1) : currentSearch;
+                            link.setAttribute('href', href + separator + params);
+                        }
                     }
                 });
             }
