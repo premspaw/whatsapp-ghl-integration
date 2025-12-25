@@ -11,6 +11,7 @@ class GHLOAuthService {
         const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
         this.storageFile = path.join(dataDir, 'ghl-oauth.json');
         this.tokens = this._loadLocalTokens();
+        this.refreshPromises = new Map(); // Cache ongoing refresh promises
     }
 
     _loadLocalTokens() {
@@ -159,31 +160,36 @@ class GHLOAuthService {
     async getAccessToken(locationId) {
         const token = await this.getTokens(locationId);
         if (!token) {
-            // Try default from env if specific location not found
             if (locationId !== 'default' && locationId === config.ghl.locationId) {
                 return await this.getAccessToken('default');
             }
             return null;
         }
 
-        // Handle API Key (Legacy/Manual)
         if (token.user_type === 'ApiKey' || token.type === 'ApiKey') {
             return token.access_token;
         }
 
-        // Check if expired (give 5 min buffer)
-        // Note: DB stores expires_at (ms), Local stores expires_in + obtained_at
-        let expiresAt;
-        if (token.expires_at) {
-            expiresAt = token.expires_at;
-        } else {
-            expiresAt = token.obtained_at + (token.expires_in * 1000);
-        }
-
+        let expiresAt = token.expires_at || (token.obtained_at + (token.expires_in * 1000));
         const now = Date.now();
-        if (now > expiresAt - 300000) { // 5 minutes buffer
+
+        if (now > expiresAt - 300000) {
+            // Check if already refreshing
+            if (this.refreshPromises.has(locationId)) {
+                logger.info(`⏳ Waiting for ongoing refresh for ${locationId}`);
+                return this.refreshPromises.get(locationId);
+            }
+
             logger.info(`🔄 Refreshing GHL token for ${locationId}`);
-            return await this.refreshToken(locationId, token.refresh_token);
+            const refreshPromise = this.refreshToken(locationId, token.refresh_token);
+            this.refreshPromises.set(locationId, refreshPromise);
+
+            try {
+                const newToken = await refreshPromise;
+                return newToken;
+            } finally {
+                this.refreshPromises.delete(locationId);
+            }
         }
 
         return token.access_token;
@@ -205,7 +211,7 @@ class GHLOAuthService {
                 refresh_token: refreshToken,
                 client_id: config.ghl.clientId,
                 client_secret: config.ghl.clientSecret,
-                user_type: 'Location' // Default
+                user_type: 'Location'
             });
 
             const { data } = await axios.post(
@@ -214,21 +220,17 @@ class GHLOAuthService {
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
             );
 
-            // Response usually contains new access_token, refresh_token, etc.
-            // locationId might be missing in refresh response, reuse existing
-            const oneDay = 23.5 * 60 * 60; // Mock 23.5 hours
+            const oneDay = 23.5 * 60 * 60;
             if (!data.expires_in) data.expires_in = oneDay;
 
             await this.saveTokens(locationId, data);
-
             return data.access_token;
         } catch (error) {
-            logger.error('❌ GHL Token Refresh Failed', { error: error.message });
-
-            if (error.response?.data?.error === 'invalid_grant') {
-                logger.error('🚨 CRITICAL: GHL REFRESH TOKEN INVALID. PLEASE RE-AUTHENTICATE.');
-            }
-
+            logger.error('❌ GHL Token Refresh Failed', {
+                locationId,
+                error: error.message,
+                data: error.response?.data
+            });
             throw error;
         }
     }
