@@ -17,43 +17,53 @@ const initialStats = {
     lastUpdate: new Date().toISOString()
 };
 
-const getStats = () => {
+const getStats = (locationId = 'default') => {
     try {
-        if (!fs.existsSync(STATS_FILE)) {
-            fs.writeFileSync(STATS_FILE, JSON.stringify(initialStats, null, 2));
-            return initialStats;
+        let allStats = {};
+        if (fs.existsSync(STATS_FILE)) {
+            allStats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{}');
         }
-        const data = fs.readFileSync(STATS_FILE, 'utf8');
-        return JSON.parse(data || JSON.stringify(initialStats));
+
+        // Initialize location stats if missing
+        if (!allStats[locationId]) {
+            allStats[locationId] = { ...initialStats };
+            // Don't save yet to avoid IO spam on read, but return default structure
+        }
+
+        return allStats[locationId];
     } catch (error) {
         logger.error('Error loading stats', error);
         return initialStats;
     }
 };
 
-const updateStats = (updates) => {
+const saveStats = (allStats) => {
     try {
-        const currentStats = getStats();
-        const newStats = {
-            ...currentStats,
-            ...updates,
-            lastUpdate: new Date().toISOString()
-        };
-        fs.writeFileSync(STATS_FILE, JSON.stringify(newStats, null, 2));
-        return newStats;
+        fs.writeFileSync(STATS_FILE, JSON.stringify(allStats, null, 2));
     } catch (error) {
-        logger.error('Error updating stats', error);
-        return null;
+        logger.error('Error saving stats', error);
     }
 };
 
-const incrementStat = (key) => {
-    const stats = getStats();
-    if (stats.hasOwnProperty(key)) {
-        stats[key]++;
-        return updateStats(stats);
+const incrementStat = (key, locationId = 'default') => {
+    try {
+        let allStats = {};
+        if (fs.existsSync(STATS_FILE)) {
+            allStats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{}');
+        }
+
+        if (!allStats[locationId]) {
+            allStats[locationId] = { ...initialStats };
+        }
+
+        if (allStats[locationId].hasOwnProperty(key)) {
+            allStats[locationId][key]++;
+            allStats[locationId].lastUpdate = new Date().toISOString();
+            saveStats(allStats);
+        }
+    } catch (error) {
+        logger.error('Error incrementing stat', error);
     }
-    return stats;
 };
 
 module.exports = {

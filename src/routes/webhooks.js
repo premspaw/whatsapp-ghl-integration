@@ -66,12 +66,9 @@ router.post('/ghl/message', async (req, res) => {
 
         const result = await client.sendMessage(phone, finalMessage, finalMediaUrl, finalMediaType, buttons);
 
-        statsService.incrementStat('totalMessagesSent');
-        if (templateName) statsService.incrementStat('totalTemplatesSent');
-
-        // If the message is coming from GHL, we can assume it's part of the AI flow if it's an automated reply
-        // For now, let's treat all outbound GHL messages as potential AI responses for tracking
-        statsService.incrementStat('totalAiResponses');
+        statsService.incrementStat('totalMessagesSent', targetLocationId);
+        if (templateName) statsService.incrementStat('totalTemplatesSent', targetLocationId);
+        statsService.incrementStat('totalAiResponses', targetLocationId);
 
         res.json({
             success: true,
@@ -100,8 +97,6 @@ router.post('/ghl/conversation', async (req, res) => {
         });
 
         // Handle different conversation events
-        // Handle different conversation events
-        // Handle different conversation events
         if (req.body.type === 'SMS' && req.body.phone && req.body.message) {
             // This is the GHL Conversation Provider Outbound Message Payload
             const { phone, message, locationId, attachments } = req.body;
@@ -112,6 +107,7 @@ router.post('/ghl/conversation', async (req, res) => {
             if (client && client.isReady) {
                 const mediaUrl = (attachments && attachments.length > 0) ? attachments[0] : null;
                 await client.sendMessage(phone, message, mediaUrl);
+                statsService.incrementStat('totalMessagesSent', locationId); // Track stat
                 return res.json({ success: true, messageId: 'sent' });
             } else {
                 logger.warn('WhatsApp client not ready for outbound message', { locationId });
@@ -126,7 +122,6 @@ router.post('/ghl/conversation', async (req, res) => {
 
             try {
                 // 1. Fetch Contact to get Phone
-                // Use try-catch specifically for the require and fetch
                 let ghlContacts;
                 try {
                     ghlContacts = require('../services/ghl/contacts');
@@ -145,6 +140,7 @@ router.post('/ghl/conversation', async (req, res) => {
                     if (client && client.isReady) {
                         const mediaUrl = (attachments && attachments.length > 0) ? attachments[0] : null;
                         await client.sendMessage(contact.phone, body, mediaUrl);
+                        statsService.incrementStat('totalMessagesSent', locationId); // Track stat
                         logger.info('✅ OutboundMessage Sent via WhatsApp', { phone: contact.phone });
                     } else {
                         logger.warn('WhatsApp Client NOT READY for location', { locationId });

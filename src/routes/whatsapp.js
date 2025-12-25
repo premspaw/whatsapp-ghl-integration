@@ -173,7 +173,7 @@ router.post('/send', async (req, res) => {
         }
 
         await clientInstance.sendMessage(to, message, mediaUrl, mediaType);
-        statsService.incrementStat('totalMessagesSent');
+        statsService.incrementStat('totalMessagesSent', locationId);
         res.json({ success: true, locationId });
     } catch (error) {
         logger.error('Error sending message', error);
@@ -230,8 +230,8 @@ router.post('/send-template', async (req, res) => {
         const finalMediaType = mediaType || template.mediaType;
 
         await clientInstance.sendMessage(to, content, finalMediaUrl, finalMediaType);
-        statsService.incrementStat('totalMessagesSent');
-        statsService.incrementStat('totalTemplatesSent');
+        statsService.incrementStat('totalMessagesSent', locationId);
+        statsService.incrementStat('totalTemplatesSent', locationId);
         res.json({ success: true, message: 'Template sent', to, templateName, locationId });
     } catch (error) {
         logger.error('Error sending template', error);
@@ -242,7 +242,8 @@ router.post('/send-template', async (req, res) => {
 // GET /api/whatsapp/analytics
 router.get('/analytics', (req, res) => {
     try {
-        const stats = statsService.getStats();
+        const locationId = getLocationId(req);
+        const stats = statsService.getStats(locationId);
         res.json({ success: true, stats });
     } catch (error) {
         res.status(500).json({ error: error.message });
