@@ -83,8 +83,11 @@ class GHLConversationsService {
             payload.status = 'unread';
             // Only attach provider ID for inbound
             if (conversationProviderId) {
-                // Remove if it causes 400 even on inbound, but usually required for attribution
-                // payload.conversationProviderId = conversationProviderId; 
+                payload.conversationProviderId = conversationProviderId;
+                // If using a provider ID, often type must be 'Custom' or match the provider's capabilities, 
+                // but if we stick to SMS, GHL might just treat it as an SMS injected by that provider.
+                // However, usually it's best to try keeping type='SMS' first.
+                // If we want "Custom App" badge, GHL assigns it based on Provider ID automatically.
             }
         } else {
             payload.contactId = contactId;
