@@ -197,7 +197,7 @@ async function syncOutboundMessage(locationId, phone, message, attachments = [],
             finalContactId,
             'outbound',
             null,
-            'ai_whatsapp_custom_app', // Provider ID
+            '69306e4ed1e0a0573cdc2207', // Use correct Provider ID from sync service
             attachments
         );
         logger.info('✅ Outbound message synced to GHL', { locationId, phone, contactId: finalContactId });
