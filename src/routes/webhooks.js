@@ -126,22 +126,38 @@ router.post('/ghl/conversation', async (req, res) => {
 
             try {
                 // 1. Fetch Contact to get Phone
-                const ghlContacts = require('../services/ghl/contacts');
+                // Use try-catch specifically for the require and fetch
+                let ghlContacts;
+                try {
+                    ghlContacts = require('../services/ghl/contacts');
+                } catch (modErr) {
+                    logger.error('Failed to load ghl/contacts module', modErr);
+                    throw modErr;
+                }
+
+                logger.info('Fetching contact details from GHL...', { contactId });
                 const contact = await ghlContacts.getContact(locationId, contactId);
 
                 if (contact && contact.phone) {
+                    logger.info('Contact found, sending WhatsApp...', { phone: contact.phone });
                     // 2. Send via WhatsApp
                     const client = await whatsappManager.getInstance(locationId || 'default');
                     if (client && client.isReady) {
                         const mediaUrl = (attachments && attachments.length > 0) ? attachments[0] : null;
                         await client.sendMessage(contact.phone, body, mediaUrl);
                         logger.info('✅ OutboundMessage Sent via WhatsApp', { phone: contact.phone });
+                    } else {
+                        logger.warn('WhatsApp Client NOT READY for location', { locationId });
                     }
                 } else {
-                    logger.warn('Contact phone not found for OutboundMessage', { contactId });
+                    logger.warn('Contact phone not found for OutboundMessage', { contactId, contactData: contact });
                 }
             } catch (err) {
-                logger.error('Failed to process OutboundMessage', err);
+                logger.error('Failed to process OutboundMessage', {
+                    message: err.message,
+                    stack: err.stack,
+                    response: err.response?.data
+                });
             }
         }
 
