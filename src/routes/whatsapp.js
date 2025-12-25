@@ -168,19 +168,25 @@ router.get('/conversations', async (req, res) => {
 });
 
 // Helper to sync outbound message to GHL
-async function syncOutboundMessage(locationId, phone, message, attachments = []) {
+async function syncOutboundMessage(locationId, phone, message, attachments = [], contactId = null) {
     try {
-        if (locationId === 'default') return; // Cannot sync without location context
+        if (locationId === 'default') return;
 
-        // 1. Get Contact ID
-        const contact = await ghlContacts.searchContactByPhone(locationId, phone);
-        if (!contact) {
+        let finalContactId = contactId;
+
+        // If no contactId provided, search by phone
+        if (!finalContactId) {
+            const contact = await ghlContacts.searchContactByPhone(locationId, phone);
+            if (contact) finalContactId = contact.id;
+        }
+
+        if (!finalContactId) {
             logger.warn('Cannot sync outbound: Contact not found in GHL', { phone, locationId });
             return;
         }
 
         // 2. Get/Create Conversation
-        const conversation = await ghlConversations.getOrCreateConversation(locationId, contact.id);
+        const conversation = await ghlConversations.getOrCreateConversation(locationId, finalContactId);
 
         // 3. Add to Conversation
         await ghlConversations.sendMessage(
@@ -188,13 +194,13 @@ async function syncOutboundMessage(locationId, phone, message, attachments = [])
             conversation.id,
             message,
             'Custom', // type
-            contact.id,
+            finalContactId,
             'outbound',
             null,
             'ai_whatsapp_custom_app', // Provider ID
             attachments
         );
-        logger.info('✅ Outbound message synced to GHL', { locationId, phone });
+        logger.info('✅ Outbound message synced to GHL', { locationId, phone, contactId: finalContactId });
     } catch (error) {
         logger.error('Failed to sync outbound message to GHL', { locationId, error: error.message });
     }
@@ -206,7 +212,8 @@ router.post('/send', async (req, res) => {
         const locationId = getLocationId(req);
         const clientInstance = await whatsappManager.getInstance(locationId);
 
-        const { to, message, mediaUrl, mediaType } = req.body;
+        const { to, message, mediaUrl, mediaType, contact_id, contact } = req.body;
+        const contactId = contact_id || (contact && contact.id);
         if (!to || (!message && !mediaUrl)) {
             return res.status(400).json({ error: 'Missing to or message/media' });
         }
@@ -216,7 +223,7 @@ router.post('/send', async (req, res) => {
 
         // Sync to GHL
         const attachments = mediaUrl ? [mediaUrl] : [];
-        syncOutboundMessage(locationId, to, message || (mediaUrl ? `[Media: ${mediaType}]` : ''), attachments);
+        syncOutboundMessage(locationId, to, message || (mediaUrl ? `[Media: ${mediaType}]` : ''), attachments, contactId);
 
         res.json({ success: true, locationId });
     } catch (error) {
@@ -239,6 +246,11 @@ router.post('/send-template', async (req, res) => {
         let variables = payload.variables || (payload.customData ? payload.customData.variables : null);
         let mediaUrl = payload.mediaUrl || (payload.customData ? payload.customData.mediaUrl : null);
         let mediaType = payload.mediaType || (payload.customData ? payload.customData.mediaType : null);
+
+        // Extract Contact ID from various GHL payload locations
+        const contactId = payload.contact_id ||
+            (payload.contact && payload.contact.id) ||
+            (payload.body && payload.body.contact_id);
 
         if (to) to = to.toString().replace(/\s+/g, '');
         if (templateName) templateName = templateName.toString().trim();
@@ -279,7 +291,7 @@ router.post('/send-template', async (req, res) => {
 
         // Sync to GHL
         const attachments = finalMediaUrl ? [finalMediaUrl] : [];
-        syncOutboundMessage(locationId, to, content, attachments);
+        syncOutboundMessage(locationId, to, content, attachments, contactId);
 
         res.json({ success: true, message: 'Template sent', to, templateName, locationId });
     } catch (error) {
