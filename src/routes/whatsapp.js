@@ -10,7 +10,11 @@ const statsService = require('../services/stats');
  * Helper to get locationId from request
  */
 const getLocationId = (req) => {
-    return req.query.location_id || req.body.locationId || req.query.locationId || 'default';
+    return req.query.location_id ||
+        req.body.locationId ||
+        req.query.locationId ||
+        (req.body.location && req.body.location.id) ||
+        'default';
 };
 
 // GET /api/whatsapp/status

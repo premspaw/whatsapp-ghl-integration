@@ -5,6 +5,7 @@ const path = require('path');
 const whatsappManager = require('../services/whatsapp/manager');
 const logger = require('../utils/logger');
 const statsService = require('../services/stats');
+const ghlContacts = require('../services/ghl/contacts');
 
 /**
  * Webhook endpoint for GHL to send messages via WhatsApp
@@ -122,14 +123,6 @@ router.post('/ghl/conversation', async (req, res) => {
 
             try {
                 // 1. Fetch Contact to get Phone
-                let ghlContacts;
-                try {
-                    ghlContacts = require('../services/ghl/contacts');
-                } catch (modErr) {
-                    logger.error('Failed to load ghl/contacts module', modErr);
-                    throw modErr;
-                }
-
                 logger.info('Fetching contact details from GHL...', { contactId });
                 const contact = await ghlContacts.getContact(locationId, contactId);
 
