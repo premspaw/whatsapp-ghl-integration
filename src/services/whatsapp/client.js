@@ -2,6 +2,7 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const EventEmitter = require('events');
 const logger = require('../../utils/logger');
 const whatsappSync = require('../sync/whatsappToGHL');
+const fs = require('fs');
 
 class WhatsAppClient extends EventEmitter {
     constructor(locationId) {
@@ -10,6 +11,8 @@ class WhatsAppClient extends EventEmitter {
         this.client = null;
         this.isReady = false;
         this.qrCode = null;
+        this.qrText = null;
+        this.puppeteerExecutablePath = null;
     }
 
     initialize() {
@@ -29,8 +32,25 @@ class WhatsAppClient extends EventEmitter {
             ]
         };
 
+        // Auto-detect executable path if not set
         if (process.env.PUPPETEER_EXECUTABLE_PATH) {
             puppeteerOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+            this.puppeteerExecutablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        } else {
+            const candidates = [
+                '/usr/bin/google-chrome',
+                '/usr/bin/chromium',
+                '/usr/bin/chromium-browser',
+                'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+            ];
+            for (const p of candidates) {
+                if (fs.existsSync(p)) {
+                    puppeteerOptions.executablePath = p;
+                    this.puppeteerExecutablePath = p;
+                    break;
+                }
+            }
         }
 
         this.client = new Client({
@@ -52,9 +72,9 @@ class WhatsAppClient extends EventEmitter {
     _setupEvents() {
         this.client.on('qr', async (qr) => {
             logger.info(`QR Code received for ${this.locationId}`);
-            // qrcode.generate(qr, { small: true });
 
             const QRCode = require('qrcode');
+            this.qrText = qr;
             this.qrCode = await QRCode.toDataURL(qr);
 
             this.emit('qr', qr);
@@ -64,6 +84,7 @@ class WhatsAppClient extends EventEmitter {
             logger.info(`✅ WhatsApp client is ready for ${this.locationId}`);
             this.isReady = true;
             this.qrCode = null;
+            this.qrText = null;
             this.emit('ready');
         });
 
@@ -97,6 +118,8 @@ class WhatsAppClient extends EventEmitter {
         this.client.on('disconnected', (reason) => {
             logger.warn(`WhatsApp client disconnected for ${this.locationId}`, { reason });
             this.isReady = false;
+            this.qrCode = null;
+            this.qrText = null;
             this.emit('disconnected', reason);
         });
 

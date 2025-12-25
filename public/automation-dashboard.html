@@ -232,7 +232,11 @@
     <script>
         async function fetchStats() {
             try {
-                const res = await fetch('/api/whatsapp/analytics');
+                // Multi-tenant: Get locationId from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const locationId = urlParams.get('location_id') || 'default';
+
+                const res = await fetch(`/api/whatsapp/analytics?location_id=${locationId}`);
                 const data = await res.json();
                 if (data.success) {
                     document.getElementById('totalAiResponses').textContent = data.stats.totalAiResponses || 0;

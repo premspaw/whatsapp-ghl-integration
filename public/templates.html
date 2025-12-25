@@ -227,9 +227,13 @@
     <script>
         const API_BASE = window.location.origin;
 
+        // Multi-tenant: Get locationId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const locationId = urlParams.get('location_id') || 'default';
+
         async function loadTemplates() {
             try {
-                const res = await fetch(`${API_BASE}/api/templates`);
+                const res = await fetch(`${API_BASE}/api/templates?location_id=${locationId}`);
                 const data = await res.json();
                 if (data.success) renderTemplates(data.templates);
             } catch (err) {
@@ -264,6 +268,7 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
+            data.locationId = locationId; // Include locationId
 
             await fetch(`${API_BASE}/api/templates`, {
                 method: 'POST',
@@ -282,7 +287,17 @@
             document.getElementById('templateModal').classList.remove('active');
         }
 
-        loadTemplates();
+        document.addEventListener('DOMContentLoaded', () => {
+            // Update back button
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn && locationId !== 'default') {
+                const separator = backBtn.getAttribute('onclick').includes('?') ? '&' : '?';
+                // Very crude replace, better to just set href if it was an anchor, but it's a button onclick.
+                // Let's rewrite the onclick
+                backBtn.onclick = () => window.location.href = `ghl-whatsapp-tab.html?location_id=${locationId}`;
+            }
+            loadTemplates();
+        });
     </script>
 </body>
 

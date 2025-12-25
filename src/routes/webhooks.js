@@ -64,7 +64,7 @@ router.post('/ghl/message', async (req, res) => {
 
         logger.info('📤 Outbound message from GHL', { phone, templateName, hasMedia: !!finalMediaUrl, hasButtons: !!buttons });
 
-        const result = await whatsappClient.sendMessage(phone, finalMessage, finalMediaUrl, finalMediaType, buttons);
+        const result = await client.sendMessage(phone, finalMessage, finalMediaUrl, finalMediaType, buttons);
 
         statsService.incrementStat('totalMessagesSent');
         if (templateName) statsService.incrementStat('totalTemplatesSent');

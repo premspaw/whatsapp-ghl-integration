@@ -49,6 +49,65 @@ router.get('/qr-code', async (req, res) => {
     }
 });
 
+// GET /api/whatsapp/qr-image
+router.get('/qr-image', async (req, res) => {
+    try {
+        const locationId = getLocationId(req);
+        const client = await whatsappManager.getInstance(locationId);
+
+        if (client.qrText) {
+            const QRCode = require('qrcode');
+            const pngBuffer = await QRCode.toBuffer(client.qrText, { type: 'png', margin: 1, scale: 8 });
+            res.set('Content-Type', 'image/png');
+            res.send(pngBuffer);
+        } else {
+            res.status(404).json({ error: 'No QR code available' });
+        }
+    } catch (error) {
+        logger.error('Error getting QR image', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/restart', async (req, res) => {
+    try {
+        const locationId = getLocationId(req);
+        await whatsappManager.removeInstance(locationId);
+        const client = await whatsappManager.getInstance(locationId);
+        res.json({ success: true, locationId, isReady: client.isReady });
+    } catch (error) {
+        logger.error('Error restarting WhatsApp client', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/logout', async (req, res) => {
+    try {
+        const locationId = getLocationId(req);
+        await whatsappManager.removeInstance(locationId);
+        await whatsappManager.clearAuth(locationId);
+        res.json({ success: true, locationId });
+    } catch (error) {
+        logger.error('Error logging out WhatsApp client', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/debug', async (req, res) => {
+    try {
+        const locationId = getLocationId(req);
+        const client = await whatsappManager.getInstance(locationId);
+        const authDir = path.join(process.cwd(), 'data', '.wwebjs_auth', locationId);
+        const authPathExists = fs.existsSync(authDir);
+        const executablePath = client.puppeteerExecutablePath || process.env.PUPPETEER_EXECUTABLE_PATH || null;
+        const executableExists = executablePath ? fs.existsSync(executablePath) : null;
+        res.json({ locationId, isReady: client.isReady, hasQRCode: !!client.qrCode, authDir, authPathExists, executablePath, executableExists });
+    } catch (error) {
+        logger.error('Error getting WhatsApp debug info', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /api/whatsapp/conversations
 router.get('/conversations', async (req, res) => {
     try {

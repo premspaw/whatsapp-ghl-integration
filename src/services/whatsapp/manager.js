@@ -69,6 +69,19 @@ class WhatsAppManager {
         }
         return false;
     }
+
+    async clearAuth(locationId) {
+        try {
+            const dir = path.join(this.authPath, locationId);
+            if (fs.existsSync(dir)) {
+                fs.rmSync(dir, { recursive: true, force: true });
+                return true;
+            }
+            return false;
+        } catch (e) {
+            return false;
+        }
+    }
 }
 
 module.exports = new WhatsAppManager();

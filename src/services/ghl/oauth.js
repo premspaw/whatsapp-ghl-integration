@@ -7,7 +7,9 @@ const supabase = require('../../config/supabase');
 
 class GHLOAuthService {
     constructor() {
-        this.storageFile = path.join(process.cwd(), 'data', 'ghl-oauth.json');
+        // Use persistent storage directory if available (e.g. on Render/VPS)
+        const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+        this.storageFile = path.join(dataDir, 'ghl-oauth.json');
         this.tokens = this._loadLocalTokens();
     }
 
@@ -42,7 +44,7 @@ class GHLOAuthService {
 
         // Handle API Key (no expiration)
         const isApiKey = data.userType === 'ApiKey' || data.type === 'ApiKey';
-        const expiresAt = isApiKey ? 
+        const expiresAt = isApiKey ?
             Date.now() + (365 * 24 * 60 * 60 * 1000) : // 1 year mock expiration
             Date.now() + (data.expires_in * 1000);
 
@@ -119,6 +121,7 @@ class GHLOAuthService {
         });
         if (state) params.append('state', state);
 
+        // Return standard GHL OAuth if Marketplace fails
         return `https://marketplace.leadconnectorhq.com/oauth/chooselocation?${params.toString()}`;
     }
 
@@ -213,6 +216,9 @@ class GHLOAuthService {
 
             // Response usually contains new access_token, refresh_token, etc.
             // locationId might be missing in refresh response, reuse existing
+            const oneDay = 23.5 * 60 * 60; // Mock 23.5 hours
+            if (!data.expires_in) data.expires_in = oneDay;
+
             await this.saveTokens(locationId, data);
 
             return data.access_token;
