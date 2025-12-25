@@ -101,6 +101,7 @@ router.post('/ghl/conversation', async (req, res) => {
 
         // Handle different conversation events
         // Handle different conversation events
+        // Handle different conversation events
         if (req.body.type === 'SMS' && req.body.phone && req.body.message) {
             // This is the GHL Conversation Provider Outbound Message Payload
             const { phone, message, locationId, attachments } = req.body;
@@ -115,6 +116,32 @@ router.post('/ghl/conversation', async (req, res) => {
             } else {
                 logger.warn('WhatsApp client not ready for outbound message', { locationId });
                 return res.json({ success: false, error: 'WhatsApp not connected' });
+            }
+        }
+
+        // Handle GHL Outbound Message Event (Missing Phone in Payload)
+        if (req.body.type === 'OutboundMessage') {
+            const { contactId, locationId, body, attachments } = req.body;
+            logger.info('🚀 Processing OutboundMessage Event', { contactId, locationId });
+
+            try {
+                // 1. Fetch Contact to get Phone
+                const ghlContacts = require('../services/ghl/contacts');
+                const contact = await ghlContacts.getContact(locationId, contactId);
+
+                if (contact && contact.phone) {
+                    // 2. Send via WhatsApp
+                    const client = await whatsappManager.getInstance(locationId || 'default');
+                    if (client && client.isReady) {
+                        const mediaUrl = (attachments && attachments.length > 0) ? attachments[0] : null;
+                        await client.sendMessage(contact.phone, body, mediaUrl);
+                        logger.info('✅ OutboundMessage Sent via WhatsApp', { phone: contact.phone });
+                    }
+                } else {
+                    logger.warn('Contact phone not found for OutboundMessage', { contactId });
+                }
+            } catch (err) {
+                logger.error('Failed to process OutboundMessage', err);
             }
         }
 
