@@ -5,6 +5,8 @@ const path = require('path');
 const whatsappManager = require('../services/whatsapp/manager');
 const logger = require('../utils/logger');
 const statsService = require('../services/stats');
+const ghlContacts = require('../services/ghl/contacts');
+const ghlConversations = require('../services/ghl/conversations');
 
 /**
  * Helper to get locationId from request
@@ -165,6 +167,39 @@ router.get('/conversations', async (req, res) => {
     }
 });
 
+// Helper to sync outbound message to GHL
+async function syncOutboundMessage(locationId, phone, message, attachments = []) {
+    try {
+        if (locationId === 'default') return; // Cannot sync without location context
+
+        // 1. Get Contact ID
+        const contact = await ghlContacts.searchContactByPhone(locationId, phone);
+        if (!contact) {
+            logger.warn('Cannot sync outbound: Contact not found in GHL', { phone, locationId });
+            return;
+        }
+
+        // 2. Get/Create Conversation
+        const conversation = await ghlConversations.getOrCreateConversation(locationId, contact.id);
+
+        // 3. Add to Conversation
+        await ghlConversations.sendMessage(
+            locationId,
+            conversation.id,
+            message,
+            'Custom', // type
+            contact.id,
+            'outbound',
+            null,
+            'ai_whatsapp_custom_app', // Provider ID
+            attachments
+        );
+        logger.info('✅ Outbound message synced to GHL', { locationId, phone });
+    } catch (error) {
+        logger.error('Failed to sync outbound message to GHL', { locationId, error: error.message });
+    }
+}
+
 // POST /api/whatsapp/send
 router.post('/send', async (req, res) => {
     try {
@@ -178,6 +213,11 @@ router.post('/send', async (req, res) => {
 
         await clientInstance.sendMessage(to, message, mediaUrl, mediaType);
         statsService.incrementStat('totalMessagesSent', locationId);
+
+        // Sync to GHL
+        const attachments = mediaUrl ? [mediaUrl] : [];
+        syncOutboundMessage(locationId, to, message || (mediaUrl ? `[Media: ${mediaType}]` : ''), attachments);
+
         res.json({ success: true, locationId });
     } catch (error) {
         logger.error('Error sending message', error);
@@ -236,6 +276,11 @@ router.post('/send-template', async (req, res) => {
         await clientInstance.sendMessage(to, content, finalMediaUrl, finalMediaType);
         statsService.incrementStat('totalMessagesSent', locationId);
         statsService.incrementStat('totalTemplatesSent', locationId);
+
+        // Sync to GHL
+        const attachments = finalMediaUrl ? [finalMediaUrl] : [];
+        syncOutboundMessage(locationId, to, content, attachments);
+
         res.json({ success: true, message: 'Template sent', to, templateName, locationId });
     } catch (error) {
         logger.error('Error sending template', error);

@@ -84,12 +84,18 @@ class GHLConversationsService {
             // Only attach provider ID for inbound
             if (conversationProviderId) {
                 payload.conversationProviderId = conversationProviderId;
-                // Important: GHL V2 API usually requires type='Custom' (or omitted if provider implies it) when provider ID is present.
-                // Using 'SMS' with a Custom Provider ID often causes 400.
                 payload.type = 'Custom';
             }
         } else {
+            // OUTBOUND
             payload.contactId = contactId;
+            if (conversationProviderId) {
+                payload.conversationProviderId = conversationProviderId;
+                payload.type = 'Custom';
+            } else {
+                // If no provider ID, rely on passed type (default SMS)
+                payload.type = type;
+            }
         }
 
         try {

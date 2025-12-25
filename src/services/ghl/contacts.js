@@ -10,7 +10,7 @@ class GHLContactsService {
     async _makeRequest(locationId, method, endpoint, data = null, params = {}) {
         try {
             const tokenData = await ghlOAuth.getTokens(locationId); // Get full token object
-            
+
             // Check if using Legacy API Key
             if (tokenData && (tokenData.userType === 'ApiKey' || tokenData.type === 'ApiKey')) {
                 return this._makeRequestV1(tokenData.access_token, method, endpoint, data, params);
@@ -47,10 +47,10 @@ class GHLContactsService {
         // Map V2 endpoints to V1 if necessary, or assume caller knows V1 structure?
         // For simplicity, we'll try to map common ones or just pass through.
         // V1 Contacts: /contacts
-        
+
         // Remove leading slash for consistency if needed, but V1 base has no trailing slash
         const url = `${GHL_API_BASE_V1}${endpoint}`;
-        
+
         const config = {
             method,
             url,
@@ -75,6 +75,21 @@ class GHLContactsService {
             error: error.message,
             response: error.response?.data
         });
+    }
+
+    /**
+     * Get contact by ID
+     */
+    async getContact(locationId, contactId) {
+        logger.info('Getting contact by ID', { locationId, contactId });
+        try {
+            const data = await this._makeRequest(locationId, 'GET', `/contacts/${contactId}`);
+            return data.contact;
+        } catch (error) {
+            logger.error('Failed to get contact', { locationId, contactId, error: error.message });
+            // If 404, maybe return null? For now throw to let caller handle
+            throw error;
+        }
     }
 
     /**
