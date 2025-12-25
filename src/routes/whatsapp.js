@@ -264,13 +264,20 @@ router.post('/send-template', async (req, res) => {
         }
 
         const TEMPLATES_FILE = path.join(process.cwd(), 'data', 'templates.json');
-        let templates = {};
+        let allTemplates = {};
         if (fs.existsSync(TEMPLATES_FILE)) {
-            templates = JSON.parse(fs.readFileSync(TEMPLATES_FILE, 'utf8') || '{}');
+            allTemplates = JSON.parse(fs.readFileSync(TEMPLATES_FILE, 'utf8') || '{}');
         }
 
-        const template = Object.values(templates).find(t => t.name === templateName);
+        // Find template by name AND locationId (with legacy fallback to default)
+        const template = Object.values(allTemplates).find(t => {
+            const isNameMatch = t.name === templateName;
+            const tLoc = t.locationId || 'default';
+            return isNameMatch && tLoc === locationId;
+        });
+
         if (!template) {
+            logger.warn(`Template "${templateName}" not found for location ${locationId}`);
             return res.status(404).json({ error: `Template "${templateName}" not found` });
         }
 

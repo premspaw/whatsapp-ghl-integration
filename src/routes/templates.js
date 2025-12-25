@@ -42,8 +42,11 @@ router.get('/', (req, res) => {
         const locationId = req.query.location_id || req.query.locationId || 'default';
         const allTemplates = loadTemplates();
 
-        // Filter templates by locationId
-        const templates = Object.values(allTemplates).filter(t => t.locationId === locationId);
+        // Filter templates by locationId, treating legacy templates as 'default'
+        const templates = Object.values(allTemplates).filter(t => {
+            const tLoc = t.locationId || 'default';
+            return tLoc === locationId;
+        });
 
         res.json({ success: true, templates });
     } catch (error) {
