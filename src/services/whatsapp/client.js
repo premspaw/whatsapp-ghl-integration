@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 const logger = require('../../utils/logger');
 const whatsappSync = require('../sync/whatsappToGHL');
 const fs = require('fs');
+const path = require('path');
 
 class WhatsAppClient extends EventEmitter {
     constructor(locationId) {
@@ -28,6 +29,7 @@ class WhatsAppClient extends EventEmitter {
                 '--no-first-run',
                 '--no-zygote',
                 '--disable-gpu',
+                '--disable-web-security',
                 '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             ]
         };
@@ -56,17 +58,20 @@ class WhatsAppClient extends EventEmitter {
         this.client = new Client({
             authStrategy: new LocalAuth({
                 clientId: `whatsapp-${this.locationId}`,
-                dataPath: `./data/.wwebjs_auth/${this.locationId}`
+                dataPath: path.join(process.cwd(), 'data', '.wwebjs_auth', this.locationId)
             }),
             puppeteer: puppeteerOptions,
+            shell: false,
             webVersionCache: {
                 type: 'remote',
-                remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
+                remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014133543-alpha.html'
             }
         });
 
         this._setupEvents();
-        this.client.initialize();
+        this.client.initialize().catch(err => {
+            logger.error(`Failed to initialize WhatsApp client for ${this.locationId}`, err);
+        });
     }
 
     _setupEvents() {
