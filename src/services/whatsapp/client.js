@@ -14,6 +14,7 @@ class WhatsAppClient extends EventEmitter {
         this.qrCode = null;
         this.qrText = null;
         this.puppeteerExecutablePath = null;
+        this.recentSends = new Map(); // Anti-duplicate cache
     }
 
     initialize() {
@@ -139,6 +140,27 @@ class WhatsAppClient extends EventEmitter {
 
         try {
             const chatId = this._formatChatId(to);
+
+            // --- Anti-Duplicate Logic ---
+            const msgHash = `${chatId}|${message || ''}|${mediaUrl || ''}`;
+            const now = Date.now();
+            if (this.recentSends.has(msgHash)) {
+                const lastSent = this.recentSends.get(msgHash);
+                if (now - lastSent < 5000) { // 5 second window
+                    logger.info(`🛡️ [Anti-Duplicate] Skipping identical message to ${to} (Sent ${now - lastSent}ms ago)`);
+                    return { id: { _serialized: 'skipped_duplicate' }, timestamp: now };
+                }
+            }
+            this.recentSends.set(msgHash, now);
+
+            // Cleanup old cache entries (older than 1 minute) to prevent memory growth
+            if (this.recentSends.size > 100) {
+                for (const [key, timestamp] of this.recentSends.entries()) {
+                    if (now - timestamp > 60000) this.recentSends.delete(key);
+                }
+            }
+            // ----------------------------
+
             let result;
 
             if (buttons && Array.isArray(buttons) && buttons.length > 0) {
