@@ -87,6 +87,7 @@
                                         <a href="/ghl-whatsapp-tab.html?location_id=${loc.id}" class="btn btn-sm btn-success" target="_blank">Open Dashboard</a>
                                         <a href="/template-creator.html?location_id=${loc.id}" class="btn btn-sm btn-outline-primary" target="_blank">Templates</a>
                                         <a href="/automation-dashboard.html?location_id=${loc.id}" class="btn btn-sm btn-outline-dark" target="_blank">Settings</a>
+                                        <button onclick="deleteLocation('${loc.id}')" class="btn btn-sm btn-danger">Remove</button>
                                     </div>
                                 </td>
                             </tr>
@@ -99,6 +100,23 @@
             } catch (err) {
                 console.error(err);
                 document.getElementById('tenantList').innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error loading tenants: ${err.message}</td></tr>`;
+            }
+        }
+
+        async function deleteLocation(id) {
+            if (!confirm(`Are you sure you want to remove ${id}? This will disconnect WhatsApp and GHL for this location.`)) return;
+
+            try {
+                const res = await fetch(`/api/auth/locations/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Location removed successfully');
+                    loadTenants();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Failed to delete location');
             }
         }
 

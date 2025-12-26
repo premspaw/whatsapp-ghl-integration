@@ -67,4 +67,22 @@ router.get('/locations', async (req, res) => {
     }
 });
 
+// DELETE /api/auth/locations/:id - Delete a connected location (Admin)
+router.delete('/locations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (ghlOAuth.tokens[id]) {
+            delete ghlOAuth.tokens[id];
+            ghlOAuth._saveLocalTokens();
+            logger.info(`🗑️ [Auth] Location ${id} deleted by Admin`);
+            res.json({ success: true, message: `Location ${id} deleted` });
+        } else {
+            res.status(404).json({ error: 'Location not found' });
+        }
+    } catch (error) {
+        logger.error('Error deleting location', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

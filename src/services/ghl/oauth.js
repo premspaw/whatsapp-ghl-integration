@@ -12,6 +12,13 @@ class GHLOAuthService {
         this.storageFile = path.join(dataDir, 'ghl-oauth.json');
         this.tokens = this._loadLocalTokens();
         this.refreshPromises = new Map(); // Cache ongoing refresh promises
+
+        // Multi-tenant Cleanup: Ensure 'default' is never used as a valid location key
+        if (this.tokens['default']) {
+            logger.warn('🗑️ [Auth] Purging legacy "default" token from startup memory');
+            delete this.tokens['default'];
+            this._saveLocalTokens();
+        }
     }
 
     _loadLocalTokens() {
@@ -41,7 +48,10 @@ class GHLOAuthService {
      * Save tokens to DB (Supabase) and Local File
      */
     async saveTokens(locationId, data) {
-        if (!locationId) locationId = 'default';
+        if (!locationId || locationId === 'default') {
+            logger.error('❌ [Auth] Attempted to save token for "default" location. Blocking for security.');
+            return;
+        }
 
         // Handle API Key (no expiration)
         const isApiKey = data.userType === 'ApiKey' || data.type === 'ApiKey';
@@ -147,7 +157,13 @@ class GHLOAuthService {
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
             );
 
-            const locationId = data.locationId || config.ghl.locationId || 'default';
+            const locationId = data.locationId || config.ghl.locationId;
+
+            if (!locationId || locationId === 'default') {
+                logger.error('❌ [Auth] GHL did not return a valid locationId. Exchange aborted to prevent "default" pollution.', { data });
+                throw new Error('Invalid GHL Location ID returned from OAuth');
+            }
+
             logger.info(`🔍 [Auth] Exchange successful. Saving tokens for Location ID: ${locationId}`, { dataLocationId: data.locationId });
 
             await this.saveTokens(locationId, data);
