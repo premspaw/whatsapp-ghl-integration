@@ -79,4 +79,6 @@ jspm_packages/
 .Spotlight-V100
 .Trashes
 ehthumbs.db
+# Persistent Data
+data/
 Thumbs.db
