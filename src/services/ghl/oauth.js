@@ -110,7 +110,12 @@ class GHLOAuthService {
         }
 
         // 2. Fallback to local
-        return this.tokens[locationId];
+        const token = this.tokens[locationId];
+        if (!token) {
+            const availableIds = Object.keys(this.tokens);
+            logger.warn(`🔍 [Auth] No local token for ${locationId}. Available IDs: ${availableIds.join(', ')}`);
+        }
+        return token;
     }
 
     getAuthorizeUrl(state = '') {
@@ -143,6 +148,7 @@ class GHLOAuthService {
             );
 
             const locationId = data.locationId || config.ghl.locationId || 'default';
+            logger.info(`🔍 [Auth] Exchange successful. Saving tokens for Location ID: ${locationId}`, { dataLocationId: data.locationId });
 
             await this.saveTokens(locationId, data);
 
