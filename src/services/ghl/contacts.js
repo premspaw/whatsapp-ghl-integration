@@ -9,16 +9,17 @@ const API_VERSION = '2021-07-28';
 class GHLContactsService {
     async _makeRequest(locationId, method, endpoint, data = null, params = {}) {
         try {
-            const tokenData = await ghlOAuth.getTokens(locationId); // Get full token object
+            // Use getAccessToken to ensure automatic refresh
+            const accessToken = await ghlOAuth.getAccessToken(locationId);
+            if (!accessToken) throw new Error(`No access token found for location ${locationId}`);
+
+            // Fetch full token metadata for userType check (legacy fallback)
+            const tokenData = await ghlOAuth.getTokens(locationId);
 
             // Check if using Legacy API Key
-            if (tokenData && (tokenData.userType === 'ApiKey' || tokenData.type === 'ApiKey')) {
-                return this._makeRequestV1(tokenData.access_token, method, endpoint, data, params);
+            if (tokenData && (tokenData.user_type === 'ApiKey' || tokenData.type === 'ApiKey')) {
+                return this._makeRequestV1(accessToken, method, endpoint, data, params);
             }
-
-            // Default to OAuth/V2
-            const accessToken = tokenData ? tokenData.access_token : null;
-            if (!accessToken) throw new Error(`No access token found for location ${locationId}`);
 
             const config = {
                 method,
