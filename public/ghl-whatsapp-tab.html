@@ -376,6 +376,22 @@
         const urlParams = new URLSearchParams(window.location.search);
         const locationId = urlParams.get('location_id') || 'default';
 
+        // Security: Warn if using default location
+        if (locationId === 'default') {
+            const container = document.querySelector('.container');
+            const warning = document.createElement('div');
+            warning.className = 'glass-card';
+            warning.style.border = '1px solid #ef4444';
+            warning.style.marginBottom = '2rem';
+            warning.style.padding = '1rem';
+            warning.innerHTML = `
+                <h3 style="color: #ef4444; margin-bottom: 0.5rem;">⚠️ System Notice: Action Required</h3>
+                <p style="font-size: 0.9rem;">You are currently in the <strong>"Default"</strong> mode. Outbound/Inbound Sync is <strong>disabled</strong> for security in this mode.</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Please go to the <a href="/admin.html" style="color: var(--primary); font-weight: bold;">Admin Panel</a> and click "Open Dashboard" next to your GHL Sub-account to enable syncing.</p>
+            `;
+            container.prepend(warning);
+        }
+
         async function fetchAnalytics() {
             try {
                 const res = await fetch(`${API_BASE}/api/whatsapp/analytics?location_id=${locationId}`);
