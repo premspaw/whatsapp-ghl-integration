@@ -118,7 +118,15 @@ router.post('/ghl/conversation', async (req, res) => {
 
         // Handle GHL Outbound Message Event (Missing Phone in Payload)
         if (req.body.type === 'OutboundMessage') {
-            const { contactId, locationId, body, attachments } = req.body;
+            const { contactId, locationId, body, attachments, conversationProviderId } = req.body;
+
+            // Skip messages sent from our own provider to prevent duplicate loops
+            const PROVIDER_ID = '69306e4ed1e0a0573cdc2207';
+            if (conversationProviderId === PROVIDER_ID) {
+                logger.info('⏭️ [Webhook] Skipping OutboundMessage from our own provider (Deduplication)');
+                return res.json({ success: true, message: 'skipped_self' });
+            }
+
             logger.info('🚀 Processing OutboundMessage Event', { contactId, locationId });
 
             try {
