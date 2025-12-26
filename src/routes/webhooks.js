@@ -97,10 +97,19 @@ router.post('/ghl/conversation', async (req, res) => {
             headers: req.headers
         });
 
+        // Deduplication Helper: Skip messages sent from our own provider CID to prevent loops
+        const PROVIDER_ID = '69306e4ed1e0a0573cdc2207';
+        const isSelfSent = (p) => (p.conversationProviderId === PROVIDER_ID || (p.body && p.body.conversationProviderId === PROVIDER_ID));
+
         // Handle different conversation events
         if (req.body.type === 'SMS' && req.body.phone && req.body.message) {
             // This is the GHL Conversation Provider Outbound Message Payload
             const { phone, message, locationId, attachments } = req.body;
+
+            if (isSelfSent(req.body)) {
+                logger.info('⏭️ [Webhook] Skipping "SMS" type message from our own provider (Deduplication)');
+                return res.json({ success: true, message: 'skipped_self' });
+            }
 
             logger.info('🚀 Processing GHL Outbound Message via WhatsApp Provider', { phone, locationId });
 
@@ -118,12 +127,10 @@ router.post('/ghl/conversation', async (req, res) => {
 
         // Handle GHL Outbound Message Event (Missing Phone in Payload)
         if (req.body.type === 'OutboundMessage') {
-            const { contactId, locationId, body, attachments, conversationProviderId } = req.body;
+            const { contactId, locationId, body, attachments } = req.body;
 
-            // Skip messages sent from our own provider to prevent duplicate loops
-            const PROVIDER_ID = '69306e4ed1e0a0573cdc2207';
-            if (conversationProviderId === PROVIDER_ID) {
-                logger.info('⏭️ [Webhook] Skipping OutboundMessage from our own provider (Deduplication)');
+            if (isSelfSent(req.body)) {
+                logger.info('⏭️ [Webhook] Skipping "OutboundMessage" type from our own provider (Deduplication)');
                 return res.json({ success: true, message: 'skipped_self' });
             }
 
