@@ -22,8 +22,8 @@ class WhatsAppManager {
 
             const sessions = fs.readdirSync(this.authPath);
             for (const locationId of sessions) {
-                // Ignore hidden files, system files, and legacy session folders
-                if (locationId.startsWith('.') || locationId.startsWith('session-')) continue;
+                // Ignore hidden files, system files, legacy sessions, and the forbidden 'default' session
+                if (locationId.startsWith('.') || locationId.startsWith('session-') || locationId === 'default') continue;
 
                 // Check if it's actually a directory
                 const fullPath = path.join(this.authPath, locationId);
@@ -41,7 +41,10 @@ class WhatsAppManager {
      * Get or create a WhatsApp instance for a specific location
      */
     async getInstance(locationId) {
-        if (!locationId) return null;
+        if (!locationId || locationId === 'default') {
+            logger.warn('🚫 [Manager] Blocked attempt to create/get a "default" WhatsApp instance.');
+            return null;
+        }
 
         if (this.instances.has(locationId)) {
             return this.instances.get(locationId);
