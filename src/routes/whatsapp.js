@@ -15,14 +15,16 @@ const getLocationId = (req) => {
     return req.query.location_id ||
         req.body.locationId ||
         req.query.locationId ||
-        (req.body.location && req.body.location.id) ||
-        'default';
+        (req.body.location && req.body.location.id);
 };
 
 // GET /api/whatsapp/status
 router.get('/status', async (req, res) => {
     try {
         const locationId = getLocationId(req);
+        if (!locationId) {
+            return res.status(400).json({ error: 'locationId is required' });
+        }
         const client = await whatsappManager.getInstance(locationId);
 
         const status = {

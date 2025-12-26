@@ -29,6 +29,11 @@ class WhatsAppGHLSync {
             // Normalize phone number
             const phone = this.normalizePhone(from);
 
+            if (locationId === 'default') {
+                logger.warn('⚠️ [Sync] Skipping inbound sync: locationId is "default". Please link WhatsApp within a specific GHL sub-account context.', { from: phone });
+                return { success: false, error: 'unassigned_location' };
+            }
+
             logger.info('📨 Syncing WhatsApp message to GHL', { locationId, from: phone, type });
 
             // Step 1: Get or create contact
