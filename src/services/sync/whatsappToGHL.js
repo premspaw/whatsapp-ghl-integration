@@ -67,28 +67,24 @@ class WhatsAppGHLSync {
                     if (typeof whatsappMessage.downloadMedia === 'function') {
                         const media = await whatsappMessage.downloadMedia();
                         if (media) {
-                            const supabase = require('../../config/supabase');
-                            if (!supabase) {
-                                logger.error('❌ Supabase client not initialized. Syncing text only.');
-                            } else {
-                                const filename = `${locationId}/${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
+                            try {
+                                const ghlMedia = require('../ghl/media');
+                                const filename = `${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
 
-                                const { data, error } = await supabase.storage
-                                    .from('whatsapp-media')
-                                    .upload(filename, Buffer.from(media.data, 'base64'), {
-                                        contentType: media.mimetype
-                                    });
+                                // Upload to GHL Media Storage
+                                const publicUrl = await ghlMedia.uploadFile(
+                                    locationId,
+                                    Buffer.from(media.data, 'base64'),
+                                    filename,
+                                    media.mimetype
+                                );
 
-                                if (!error && data) {
-                                    const { data: publicUrlData } = supabase.storage
-                                        .from('whatsapp-media')
-                                        .getPublicUrl(filename);
-
-                                    attachments.push(publicUrlData.publicUrl);
-                                    logger.info('📸 Media uploaded successfully', { url: publicUrlData.publicUrl, locationId });
-                                } else {
-                                    logger.error('❌ Media upload failed', { error, locationId, filename });
+                                if (publicUrl) {
+                                    attachments.push(publicUrl);
+                                    logger.info('📸 Media synced via GHL Storage', { url: publicUrl, locationId });
                                 }
+                            } catch (uploadErr) {
+                                logger.error('❌ GHL Media upload failed, syncing text only', { error: uploadErr.message, locationId });
                             }
                         }
                     } else {

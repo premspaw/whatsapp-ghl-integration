@@ -77,10 +77,10 @@ class GHLConversationsService {
 
         if (timestamp) {
             // GHL requires ISO 8601 or standard UTC format for historical timestamps
-            // Using a simplified YYYY-MM-DD HH:mm:ss format which sometimes helps GHL skip its 24h default rendering for custom channels
+            // Using a format without the 'Z' suffix sometimes helps GHL's UI apply local 12h/24h rules correctly in bubbles
             const date = new Date(timestamp > 1e10 ? timestamp : timestamp * 1000);
-            const pad = (n) => n.toString().padStart(2, '0');
-            payload.dateAdded = `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+            const iso = date.toISOString(); // 2024-01-01T12:00:00.000Z
+            payload.dateAdded = iso.split('.')[0]; // 2024-01-01T12:00:00
         }
 
         if (attachments && attachments.length > 0) {
