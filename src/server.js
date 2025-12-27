@@ -23,9 +23,17 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/webhooks', require('./routes/webhooks'));
-app.use('/api/whatsapp', require('./routes/whatsapp'));
-app.use('/api/templates', require('./routes/templates'));
-app.use('/api/billing', require('./routes/billing'));
+const whatsappRoutes = require('./routes/whatsapp');
+const templateRoutes = require('./routes/templates');
+const billingRoutes = require('./routes/billing');
+const loyaltyRoutes = require('./routes/loyalty');
+const ghlRoutes = require('./routes/ghl');
+
+app.use('/api/v1/whatsapp', whatsappRoutes);
+app.use('/api/v1/templates', templateRoutes);
+app.use('/api/v1/billing', billingRoutes);
+app.use('/api/v1/loyalty', loyaltyRoutes);
+app.use('/api/v1/ghl', ghlRoutes);
 
 // Initialize Services
 const whatsappManager = require('./services/whatsapp/manager');

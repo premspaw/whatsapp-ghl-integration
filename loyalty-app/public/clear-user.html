@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Clear Loyalty User Data</title>
+</head>
+
+<body>
+    <h1>Clear User Registration</h1>
+    <button onclick="clearData()">Clear Registration Data</button>
+    <p id="result"></p>
+
+    <script>
+        function clearData() {
+            // Clear all loyalty user data
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('loyalty_user_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            document.getElementById('result').textContent = 'Registration data cleared! Refresh the app to see the registration form.';
+        }
+    </script>
+</body>
+
+</html>
