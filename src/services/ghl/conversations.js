@@ -77,10 +77,15 @@ class GHLConversationsService {
 
         if (timestamp) {
             // GHL requires ISO 8601 or standard UTC format for historical timestamps
-            // Using a format without the 'Z' suffix sometimes helps GHL's UI apply local 12h/24h rules correctly in bubbles
-            const date = new Date(timestamp > 1e10 ? timestamp : timestamp * 1000);
-            const iso = date.toISOString(); // 2024-01-01T12:00:00.000Z
-            payload.dateAdded = iso.split('.')[0]; // 2024-01-01T12:00:00
+            // If the message is from more than 1 minute ago, send explicit dateAdded
+            // Otherwise, let GHL use current time which is better for triggering local 12h/24h UI logic
+            const tsMs = timestamp > 1e10 ? timestamp : timestamp * 1000;
+            const now = Date.now();
+
+            if (now - tsMs > 60000) { // If older than 1 min
+                const date = new Date(tsMs);
+                payload.dateAdded = date.toISOString();
+            }
         }
 
         if (attachments && attachments.length > 0) {

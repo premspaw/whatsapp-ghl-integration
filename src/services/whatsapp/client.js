@@ -127,10 +127,11 @@ class WhatsAppClient extends EventEmitter {
                 const mediaUrl = ''; // We can't easily get the URL for phone-sent media without a lot of overhead
 
                 // Check if our integration just sent this to avoid double syncing
-                const msgHash = `${chatId}|${body}|${mediaUrl}`;
+                const normalizedBody = body.replace(/\s+/g, ' ').trim();
+                const msgHash = `${chatId}|${normalizedBody}|${mediaUrl}`;
                 if (this.recentSends.has(msgHash)) {
                     const lastSent = this.recentSends.get(msgHash);
-                    if (Date.now() - lastSent < 10000) return; // 10s window for phone sync safety
+                    if (Date.now() - lastSent < 15000) return; // 15s window for phone sync safety
                 }
 
                 logger.info(`📤 [Loc: ${this.locationId}] Native phone reply to ${chatId}: ${body.substring(0, 50)}...`);
@@ -174,7 +175,8 @@ class WhatsAppClient extends EventEmitter {
             const chatId = this._formatChatId(to);
 
             // --- Anti-Duplicate Logic ---
-            const msgHash = `${chatId}|${message || ''}|${mediaUrl || ''}`;
+            const normalizedMsg = (message || '').replace(/\s+/g, ' ').trim();
+            const msgHash = `${chatId}|${normalizedMsg}|${mediaUrl || ''}`;
             const now = Date.now();
             if (this.recentSends.has(msgHash)) {
                 const lastSent = this.recentSends.get(msgHash);
