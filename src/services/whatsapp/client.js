@@ -128,7 +128,7 @@ class WhatsAppClient extends EventEmitter {
 
                 // Check if our integration just sent this to avoid double syncing
                 const normalizedBody = body.replace(/\s+/g, ' ').trim();
-                const msgHash = `${chatId}|${normalizedBody}|${mediaUrl}`;
+                const msgHash = `${chatId}|${normalizedBody}|${message.hasMedia}`;
                 if (this.recentSends.has(msgHash)) {
                     const lastSent = this.recentSends.get(msgHash);
                     if (Date.now() - lastSent < 15000) return; // 15s window for phone sync safety
@@ -176,7 +176,7 @@ class WhatsAppClient extends EventEmitter {
 
             // --- Anti-Duplicate Logic ---
             const normalizedMsg = (message || '').replace(/\s+/g, ' ').trim();
-            const msgHash = `${chatId}|${normalizedMsg}|${mediaUrl || ''}`;
+            const msgHash = `${chatId}|${normalizedMsg}|${!!mediaUrl}`;
             const now = Date.now();
             if (this.recentSends.has(msgHash)) {
                 const lastSent = this.recentSends.get(msgHash);

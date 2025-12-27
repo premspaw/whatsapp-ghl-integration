@@ -77,14 +77,21 @@ class GHLConversationsService {
 
         if (timestamp) {
             // GHL requires ISO 8601 or standard UTC format for historical timestamps
-            // If the message is from more than 1 minute ago, send explicit dateAdded
-            // Otherwise, let GHL use current time which is better for triggering local 12h/24h UI logic
+            // For real-time messages (<1 min), try sending a human-readable 12h string
+            // This is a known trick to force GHL into localized 12h display
             const tsMs = timestamp > 1e10 ? timestamp : timestamp * 1000;
             const now = Date.now();
+            const date = new Date(tsMs);
 
-            if (now - tsMs > 60000) { // If older than 1 min
-                const date = new Date(tsMs);
+            if (now - tsMs > 60000) { // If older than 1 min, use standard ISO
                 payload.dateAdded = date.toISOString();
+            } else {
+                // Real-time: Use human-readable 12h format
+                const pad = (n) => n.toString().padStart(2, '0');
+                const hours = date.getHours();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                const h12 = hours % 12 || 12;
+                payload.dateAdded = `${pad(date.getMonth() + 1)}/${pad(date.getDate())}/${date.getFullYear()} ${pad(h12)}:${pad(date.getMinutes())}:${pad(date.getSeconds())} ${ampm}`;
             }
         }
 
