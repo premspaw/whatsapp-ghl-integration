@@ -374,7 +374,7 @@ function getInitials(name) {
 
 function formatTime(ts) {
     const date = new Date(ts > 1e10 ? ts : ts * 1000);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function scrollToBottom() {

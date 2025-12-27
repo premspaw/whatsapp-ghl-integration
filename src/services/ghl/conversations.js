@@ -75,6 +75,11 @@ class GHLConversationsService {
             conversationId
         };
 
+        if (timestamp) {
+            // GHL requires ISO 8601 format for historical timestamps
+            payload.dateAdded = new Date(timestamp > 1e10 ? timestamp : timestamp * 1000).toISOString();
+        }
+
         if (attachments && attachments.length > 0) {
             payload.attachments = attachments;
         }
