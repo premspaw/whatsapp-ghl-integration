@@ -25,6 +25,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/templates', require('./routes/templates'));
+app.use('/api/billing', require('./routes/billing'));
 
 // Initialize Services
 const whatsappManager = require('./services/whatsapp/manager');

@@ -107,8 +107,8 @@
         /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
             margin-bottom: 3rem;
         }
 
@@ -293,6 +293,10 @@
                 <div class="stat-value" id="stat-templates" style="color: var(--primary);">0</div>
                 <div class="stat-label">Templates Delivered</div>
             </div>
+            <div class="glass-card stat-card" style="border: 1px solid rgba(168, 85, 247, 0.3);">
+                <div class="stat-value" id="stat-wallet" style="color: #a855f7;">₹0</div>
+                <div class="stat-label">Wallet Balance</div>
+            </div>
         </div>
 
         <div class="main-grid">
@@ -318,9 +322,26 @@
                     <h3 style="color: var(--primary); margin-bottom: 0.5rem;">System Online</h3>
                     <p style="color: var(--text-dim);">Your WhatsApp is linked and syncing with GHL</p>
                     <button class="btn" style="margin-top: 2rem; background: rgba(255,255,255,0.05); color: #fff;"
-                        onclick="logoutWhatsApp()">
-                        Disconnect Device
+                        onclick="restartService()">
+                        Restart Session
                     </button>
+
+                    <div class="glass-card"
+                        style="margin-top: 3rem; padding: 1.5rem; width: 100%; max-width: 400px; text-align: center;">
+                        <h4
+                            style="margin-bottom: 1.5rem; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">
+                            Recharge AI Credits</h4>
+                        <div style="display: flex; gap: 0.8rem; justify-content: center;">
+                            <button class="btn btn-primary" style="padding: 0.6rem 1rem; font-size: 0.8rem;"
+                                onclick="recharge(300)">+ ₹300</button>
+                            <button class="btn btn-primary" style="padding: 0.6rem 1rem; font-size: 0.8rem;"
+                                onclick="recharge(500)">+ ₹500</button>
+                            <button class="btn btn-primary" style="padding: 0.6rem 1rem; font-size: 0.8rem;"
+                                onclick="recharge(1000)">+ ₹1000</button>
+                        </div>
+                        <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-dim);">Deduction rate: <span
+                                id="current-rate">₹0.20</span> per AI response</p>
+                    </div>
                 </div>
             </section>
 
@@ -402,8 +423,35 @@
                     document.getElementById('stat-ai').textContent = stats.totalAiResponses || 0;
                     document.getElementById('stat-templates').textContent = stats.totalTemplatesSent || 0;
                 }
+
+                // Fetch Billing
+                const billRes = await fetch(`${API_BASE}/api/billing/status?location_id=${locationId}`);
+                const billData = await billRes.json();
+                if (billData.success) {
+                    const billing = billData.billing;
+                    document.getElementById('stat-wallet').textContent = `₹${billing.balance.toFixed(2)}`;
+                    document.getElementById('current-rate').textContent = `₹${billing.rate.toFixed(2)}`;
+                }
             } catch (e) {
                 console.error('Analytics error:', e);
+            }
+        }
+
+        async function recharge(amount) {
+            if (!confirm(`Are you sure you want to recharge ₹${amount}?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/billing/recharge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locationId, amount })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Successfully recharged ₹${amount}!`);
+                    fetchAnalytics();
+                }
+            } catch (e) {
+                showToast('Recharge failed. Check console.');
             }
         }
 

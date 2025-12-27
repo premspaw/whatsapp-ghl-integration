@@ -45,6 +45,8 @@
                             <tr>
                                 <th>Location ID</th>
                                 <th>Type</th>
+                                <th>AI Rate (₹)</th>
+                                <th>Balance (₹)</th>
                                 <th>Connected At</th>
                                 <th>Actions</th>
                             </tr>
@@ -75,12 +77,25 @@
                 tbody.innerHTML = '';
 
                 if (data.locations && data.locations.length > 0) {
+                    // Fetch all billing stats once
+                    const billRes = await fetch('/api/billing/all');
+                    const billData = await billRes.json();
+                    const allBilling = billData.allBilling || {};
+
                     data.locations.forEach(loc => {
                         const date = new Date(loc.connectedAt).toLocaleString();
+                        const billing = allBilling[loc.id] || { rate: 0.20, balance: 0.00 };
                         const row = `
                             <tr class="tenant-row">
                                 <td><code>${loc.id}</code></td>
                                 <td><span class="badge bg-secondary">${loc.userType || 'Location'}</span></td>
+                                <td>
+                                    <div class="input-group input-group-sm" style="width: 120px;">
+                                        <input type="number" step="0.01" class="form-control" id="rate-${loc.id}" value="${billing.rate}">
+                                        <button class="btn btn-outline-primary" onclick="updateRate('${loc.id}')">Set</button>
+                                    </div>
+                                </td>
+                                <td><span class="fw-bold ${billing.balance < 5 ? 'text-danger' : 'text-success'}">₹${billing.billing ? billing.balance.toFixed(2) : billing.balance.toFixed(2)}</span></td>
                                 <td>${date}</td>
                                 <td>
                                     <div class="btn-group">
@@ -117,6 +132,24 @@
                 }
             } catch (err) {
                 alert('Failed to delete location');
+            }
+        }
+
+        async function updateRate(locationId) {
+            const rate = document.getElementById(`rate-${locationId}`).value;
+            try {
+                const res = await fetch('/api/billing/set-rate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locationId, rate })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`Rate updated to ₹${rate} for ${locationId}`);
+                    loadTenants();
+                }
+            } catch (err) {
+                alert('Failed to update rate');
             }
         }
 

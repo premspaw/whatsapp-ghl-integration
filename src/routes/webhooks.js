@@ -77,7 +77,11 @@ router.post('/ghl/message', async (req, res) => {
 
         statsService.incrementStat('totalMessagesSent', targetLocationId);
         if (templateName) statsService.incrementStat('totalTemplatesSent', targetLocationId);
+
+        // Handle AI Billing
         statsService.incrementStat('totalAiResponses', targetLocationId);
+        const billingService = require('../services/billing');
+        billingService.deductCredit(targetLocationId);
 
         res.json({
             success: true,
