@@ -77,7 +77,7 @@ class GHLConversationsService {
 
         if (timestamp) {
             // GHL requires ISO 8601 format for historical timestamps
-            // Stripping milliseconds can sometimes help GHL correctly apply local 12h/24h formatting
+            // Using a strictly formatted ISO string (no fractional seconds) to ensure GHL applies its local time format rules
             const date = new Date(timestamp > 1e10 ? timestamp : timestamp * 1000);
             payload.dateAdded = date.toISOString().split('.')[0] + 'Z';
         }

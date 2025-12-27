@@ -69,26 +69,26 @@ class WhatsAppGHLSync {
                         if (media) {
                             const supabase = require('../../config/supabase');
                             if (!supabase) {
-                                logger.error('❌ Supabase client not initialized. Sync skipped.');
-                                return;
-                            }
-                            const filename = `${locationId}/${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
-
-                            const { data, error } = await supabase.storage
-                                .from('whatsapp-media')
-                                .upload(filename, Buffer.from(media.data, 'base64'), {
-                                    contentType: media.mimetype
-                                });
-
-                            if (!error && data) {
-                                const { data: publicUrlData } = supabase.storage
-                                    .from('whatsapp-media')
-                                    .getPublicUrl(filename);
-
-                                attachments.push(publicUrlData.publicUrl);
-                                logger.info('📸 Media uploaded successfully', { url: publicUrlData.publicUrl, locationId });
+                                logger.error('❌ Supabase client not initialized. Syncing text only.');
                             } else {
-                                logger.error('❌ Media upload failed', { error, locationId, filename });
+                                const filename = `${locationId}/${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
+
+                                const { data, error } = await supabase.storage
+                                    .from('whatsapp-media')
+                                    .upload(filename, Buffer.from(media.data, 'base64'), {
+                                        contentType: media.mimetype
+                                    });
+
+                                if (!error && data) {
+                                    const { data: publicUrlData } = supabase.storage
+                                        .from('whatsapp-media')
+                                        .getPublicUrl(filename);
+
+                                    attachments.push(publicUrlData.publicUrl);
+                                    logger.info('📸 Media uploaded successfully', { url: publicUrlData.publicUrl, locationId });
+                                } else {
+                                    logger.error('❌ Media upload failed', { error, locationId, filename });
+                                }
                             }
                         }
                     } else {
