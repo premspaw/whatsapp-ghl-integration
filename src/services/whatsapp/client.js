@@ -94,28 +94,60 @@ class WhatsAppClient extends EventEmitter {
             this.emit('ready');
         });
 
-        this.client.on('message', async (message) => {
-            if (message.from.includes('@g.us') || message.from.includes('status@broadcast')) {
+        // Capture ALL messages (inbound + outbound from phone)
+        this.client.on('message_create', async (message) => {
+            // Ignore group messages and status updates
+            if (message.from.includes('@g.us') || message.from.includes('status@broadcast') ||
+                message.to.includes('@g.us') || message.to.includes('status@broadcast')) {
                 return;
             }
 
-            logger.info(`📨 [Loc: ${this.locationId}] Message from ${message.from}: ${message.body.substring(0, 50)}...`);
-
-            try {
-                const syncResult = await whatsappSync.syncMessageToGHL(this.locationId, {
-                    from: message.from,
-                    body: message.body,
-                    type: message.type,
-                    timestamp: message.timestamp,
-                    hasMedia: message.hasMedia,
-                    downloadMedia: message.downloadMedia ? message.downloadMedia.bind(message) : null
-                });
-
-                if (syncResult.success) {
-                    logger.info(`✅ [Loc: ${this.locationId}] Message synced to GHL`, syncResult);
+            // Case A: INBOUND message from a contact
+            if (!message.fromMe) {
+                logger.info(`📨 [Loc: ${this.locationId}] Incoming from ${message.from}: ${message.body.substring(0, 50)}...`);
+                try {
+                    await whatsappSync.syncMessageToGHL(this.locationId, {
+                        from: message.from,
+                        body: message.body,
+                        type: message.type,
+                        timestamp: message.timestamp,
+                        hasMedia: message.hasMedia,
+                        downloadMedia: message.downloadMedia ? message.downloadMedia.bind(message) : null,
+                        direction: 'inbound'
+                    });
+                } catch (error) {
+                    logger.error(`❌ [Loc: ${this.locationId}] Inbound sync failed`, { error: error.message });
                 }
-            } catch (error) {
-                logger.error(`❌ [Loc: ${this.locationId}] Failed to sync message to GHL`, { error: error.message });
+            }
+
+            // Case B: OUTBOUND message sent from the physical phone (Manual Reply)
+            else {
+                const chatId = message.to;
+                const body = message.body || '';
+                const mediaUrl = ''; // We can't easily get the URL for phone-sent media without a lot of overhead
+
+                // Check if our integration just sent this to avoid double syncing
+                const msgHash = `${chatId}|${body}|${mediaUrl}`;
+                if (this.recentSends.has(msgHash)) {
+                    const lastSent = this.recentSends.get(msgHash);
+                    if (Date.now() - lastSent < 10000) return; // 10s window for phone sync safety
+                }
+
+                logger.info(`📤 [Loc: ${this.locationId}] Native phone reply to ${chatId}: ${body.substring(0, 50)}...`);
+                try {
+                    await whatsappSync.syncMessageToGHL(this.locationId, {
+                        to: chatId,
+                        from: message.from, // Our own number
+                        body: body,
+                        type: message.type,
+                        timestamp: message.timestamp,
+                        hasMedia: message.hasMedia,
+                        downloadMedia: message.downloadMedia ? message.downloadMedia.bind(message) : null,
+                        direction: 'outbound'
+                    });
+                } catch (error) {
+                    logger.error(`❌ [Loc: ${this.locationId}] Phone reply sync failed`, { error: error.message });
+                }
             }
 
             this.emit('message', message);
