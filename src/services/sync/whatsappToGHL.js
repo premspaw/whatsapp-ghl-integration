@@ -67,7 +67,11 @@ class WhatsAppGHLSync {
                     if (typeof whatsappMessage.downloadMedia === 'function') {
                         const media = await whatsappMessage.downloadMedia();
                         if (media) {
-                            const { supabase } = require('../../config/supabase');
+                            const supabase = require('../../config/supabase');
+                            if (!supabase) {
+                                logger.error('❌ Supabase client not initialized. Sync skipped.');
+                                return;
+                            }
                             const filename = `${locationId}/${Date.now()}_${media.filename || 'media'}.${media.mimetype.split('/')[1]}`;
 
                             const { data, error } = await supabase.storage
@@ -82,9 +86,13 @@ class WhatsAppGHLSync {
                                     .getPublicUrl(filename);
 
                                 attachments.push(publicUrlData.publicUrl);
-                                logger.info('📸 Media uploaded', { url: publicUrlData.publicUrl, locationId });
+                                logger.info('📸 Media uploaded successfully', { url: publicUrlData.publicUrl, locationId });
+                            } else {
+                                logger.error('❌ Media upload failed', { error, locationId, filename });
                             }
                         }
+                    } else {
+                        logger.warn('⚠️ downloadMedia not available on message object');
                     }
                 } catch (err) {
                     logger.error('Error handling media', { error: err.message, locationId });
