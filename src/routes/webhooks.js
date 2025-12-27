@@ -76,10 +76,14 @@ router.post('/ghl/message', async (req, res) => {
         const result = await client.sendMessage(phone, finalMessage, finalMediaUrl, finalMediaType, buttons);
 
         statsService.incrementStat('totalMessagesSent', targetLocationId);
-        if (templateName) statsService.incrementStat('totalTemplatesSent', targetLocationId);
 
-        // Handle AI Billing
-        statsService.incrementStat('totalAiResponses', targetLocationId);
+        if (templateName) {
+            statsService.incrementStat('totalTemplatesSent', targetLocationId);
+        } else {
+            statsService.incrementStat('totalAiResponses', targetLocationId);
+        }
+
+        // Always bill for GHL automated/template outbound messages
         const billingService = require('../services/billing');
         billingService.deductCredit(targetLocationId);
 

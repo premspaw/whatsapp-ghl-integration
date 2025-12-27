@@ -322,6 +322,10 @@ router.post('/send-template', async (req, res) => {
         statsService.incrementStat('totalMessagesSent', locationId);
         statsService.incrementStat('totalTemplatesSent', locationId);
 
+        // Handle Billing for manual template sends
+        const billingService = require('../services/billing');
+        billingService.deductCredit(locationId);
+
         // Sync to GHL
         const attachments = finalMediaUrl ? [finalMediaUrl] : [];
         syncOutboundMessage(locationId, to, content, attachments, contactId);
