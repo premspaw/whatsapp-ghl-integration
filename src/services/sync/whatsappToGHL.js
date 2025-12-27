@@ -99,8 +99,14 @@ class WhatsAppGHLSync {
                 }
             }
 
-            if (!messageText && attachments.length > 0) {
-                messageText = 'Media Attachment';
+            if (!messageText) {
+                if (attachments.length > 0) {
+                    messageText = 'Media Attachment';
+                } else if (hasMedia) {
+                    // Fallback for when media exists but upload failed AND there is no caption
+                    const mediaType = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Media';
+                    messageText = `[${mediaType} Attachment]`;
+                }
             }
 
             // Provide the Custom Provider ID
