@@ -76,10 +76,11 @@ class GHLConversationsService {
         };
 
         if (timestamp) {
-            // GHL requires ISO 8601 format for historical timestamps
-            // Using standard ISO format to ensure maximum compatibility with GHL's V2 API
+            // GHL requires ISO 8601 or standard UTC format for historical timestamps
+            // Using a simplified YYYY-MM-DD HH:mm:ss format which sometimes helps GHL skip its 24h default rendering for custom channels
             const date = new Date(timestamp > 1e10 ? timestamp : timestamp * 1000);
-            payload.dateAdded = date.toISOString();
+            const pad = (n) => n.toString().padStart(2, '0');
+            payload.dateAdded = `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
         }
 
         if (attachments && attachments.length > 0) {

@@ -63,6 +63,14 @@ router.post('/ghl/message', async (req, res) => {
             return res.status(400).json({ error: 'Message or template content is required' });
         }
 
+        // Anti-Echo Check: Do not send internal sync placeholders back to WhatsApp
+        // These are usually triggered by GHL Workflows echoing our own synced messages
+        const isSyncPlaceholder = finalMessage && /\[.*Attachment\]/.test(finalMessage);
+        if (isSyncPlaceholder && !finalMediaUrl) {
+            logger.info('⏭️ [Webhook] Skipping outbound echo of internal sync placeholder', { finalMessage });
+            return res.json({ success: true, message: 'skipped_echo' });
+        }
+
         logger.info('📤 Outbound message from GHL', { phone, templateName, hasMedia: !!finalMediaUrl, hasButtons: !!buttons });
 
         const result = await client.sendMessage(phone, finalMessage, finalMediaUrl, finalMediaType, buttons);
