@@ -127,6 +127,8 @@ function InsightItem({ title, details }: { title: string, details: any }) {
     );
 }
 
+import { getSkinAnalysisHistory } from '@/lib/api';
+
 export default function SkinAnalysisResult() {
     const params = useParams();
     const router = useRouter();
@@ -136,17 +138,39 @@ export default function SkinAnalysisResult() {
     const [userImage, setUserImage] = useState<string | null>(null);
 
     useEffect(() => {
-        const savedReport = localStorage.getItem('last_skin_analysis_report');
-        const savedImage = localStorage.getItem('last_skin_analysis_image');
-        if (savedReport) {
-            try {
-                setData(JSON.parse(savedReport));
-            } catch (e) {
-                console.error("Failed to parse report");
+        const fetchLatestResult = async () => {
+            // Try localStorage first for immediate UI
+            const savedReport = localStorage.getItem('last_skin_analysis_report');
+            const savedImage = localStorage.getItem('last_skin_analysis_image');
+
+            if (savedReport) {
+                try {
+                    setData(JSON.parse(savedReport));
+                } catch (e) {
+                    console.error("Failed to parse report");
+                }
             }
-        }
-        if (savedImage) setUserImage(savedImage);
-    }, []);
+            if (savedImage) setUserImage(savedImage);
+
+            // Sync with backend to get the REAL latest result for this user
+            const storedUser = localStorage.getItem(`loyalty_user_${locationId}`);
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                try {
+                    const historyData = await getSkinAnalysisHistory(locationId, user.contactId);
+                    if (historyData.success && historyData.history && historyData.history.length > 0) {
+                        const latest = historyData.history[0];
+                        setData(latest.analysis_data);
+                        if (latest.image_url) setUserImage(latest.image_url);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch analysis from backend", err);
+                }
+            }
+        };
+
+        fetchLatestResult();
+    }, [locationId]);
 
     const getScoreColor = (score: number) => {
         if (score < 25) return { bg: 'bg-green-500/20', text: 'text-green-400', fill: 'bg-green-500', label: 'EXCELLENT' };

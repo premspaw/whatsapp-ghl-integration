@@ -5,24 +5,38 @@ import { ArrowLeft, Calendar, MapPin, CheckCircle, User, Phone, Mail, Award, Clo
 import Link from "next/link";
 import Navbar from "../../../../components/Navbar";
 import { use, useState, useEffect } from "react";
+import { getVisitHistory } from "@/lib/api";
 
 export default function ProfileHistoryPage({ params }: { params: Promise<{ locationId: string }> }) {
     const { locationId } = use(params);
     const [user, setUser] = useState<{ name: string; phone: string; contactId: string } | null>(null);
+    const [visits, setVisits] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const storedUser = localStorage.getItem(`loyalty_user_${locationId}`);
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+
+            const fetchHistory = async () => {
+                const history = await getVisitHistory(locationId, userData.contactId);
+                // Map DB schema to UI schema
+                const mappedVisits = history.map((v: any, idx: number) => ({
+                    id: history.length - idx,
+                    date: v.created_at,
+                    type: "Visit",
+                    status: "Verified",
+                    location: "Lumina Derma Care" // Fallback name
+                }));
+                setVisits(mappedVisits);
+                setIsLoading(false);
+            };
+            fetchHistory();
+        } else {
+            setIsLoading(false);
         }
     }, [locationId]);
-
-    // Mock visits data - In a real app, this would be fetched from Supabase
-    const visits = [
-        { id: 3, date: "2025-12-24T10:30:00Z", type: "Visit", status: "Verified", location: "Lumina Derma Care" },
-        { id: 2, date: "2025-12-20T17:45:00Z", type: "Visit", status: "Verified", location: "Lumina Derma Care" },
-        { id: 1, date: "2025-12-15T09:15:00Z", type: "Visit", status: "Verified", location: "Lumina Derma Care" },
-    ];
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-US', {

@@ -324,6 +324,32 @@ router.get('/analysis/:locationId/:contactId', async (req, res) => {
 });
 
 /**
+ * @route GET /api/v1/loyalty/history/:locationId/:contactId
+ * @desc Get visit history for a specific customer
+ */
+router.get('/history/:locationId/:contactId', async (req, res) => {
+    try {
+        if (!supabase) return res.status(503).json({ error: 'Database not available' });
+
+        const { locationId, contactId } = req.params;
+
+        const { data, error } = await supabase
+            .from('loyalty_visits')
+            .select('*')
+            .eq('location_id', locationId)
+            .eq('contact_id', contactId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        res.json({ success: true, history: data || [] });
+    } catch (error) {
+        logger.error('❌ Fetch History Error', { error: error.message });
+        res.status(500).json({ error: 'Failed to fetch visit history', details: error.message });
+    }
+});
+
+/**
  * @route POST /api/v1/loyalty/customer/profile
  * @desc Update customer profile (Name, Phone)
  */

@@ -85,3 +85,24 @@ export async function getSkinAnalysisHistory(locationId: string, contactId: stri
         return { success: false, history: [] };
     }
 }
+
+export async function getVisitHistory(locationId: string, contactId: string) {
+    try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
+        const response = await fetch(`${baseUrl}/api/v1/loyalty/history/${locationId}/${contactId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch visit history: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.history || [];
+    } catch (error) {
+        console.error('Visit History API error:', error);
+        return [];
+    }
+}
