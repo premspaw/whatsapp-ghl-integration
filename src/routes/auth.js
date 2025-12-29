@@ -54,15 +54,36 @@ router.post('/apikey', async (req, res) => {
 // GET /api/auth/locations - List all connected locations (Admin)
 router.get('/locations', async (req, res) => {
     try {
-        const tokens = ghlOAuth.tokens || {};
-        const locations = Object.keys(tokens).map(id => ({
-            id,
-            userType: tokens[id].user_type,
-            companyId: tokens[id].company_id,
-            connectedAt: tokens[id].obtained_at
-        }));
+        let locations = [];
+
+        // 1. Fetch from Database (Source of Truth)
+        const { data: dbLocations, error } = await require('../config/supabase')
+            .from('ghl_integrations')
+            .select('*');
+
+        if (!error && dbLocations) {
+            locations = dbLocations.map(loc => ({
+                id: loc.location_id,
+                userType: loc.user_type,
+                companyId: loc.company_id,
+                connectedAt: new Date(loc.created_at).getTime(),
+                source: 'database'
+            }));
+        } else {
+            // Fallback to memory if DB fails
+            const tokens = ghlOAuth.tokens || {};
+            locations = Object.keys(tokens).map(id => ({
+                id,
+                userType: tokens[id].user_type,
+                companyId: tokens[id].company_id,
+                connectedAt: tokens[id].obtained_at,
+                source: 'memory'
+            }));
+        }
+
         res.json({ success: true, locations });
     } catch (error) {
+        logger.error('Error fetching locations', error);
         res.status(500).json({ error: error.message });
     }
 });
