@@ -83,13 +83,13 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
 
     useEffect(() => {
         // Get contact data from GHL URL params
-        const contactId = searchParams.get('contact');
-        const name = searchParams.get('name');
-        const phone = searchParams.get('phone');
+        const contactId = searchParams.get('contact') || searchParams.get('contact_id') || searchParams.get('cid');
+        const name = searchParams.get('name') || 'Valued Member';
+        const phone = searchParams.get('phone') || '';
 
         // If no contact info in URL, check localStorage (for return visits)
         let userInfo = null;
-        if (contactId && name && phone) {
+        if (contactId) {
             userInfo = { contactId, name, phone };
             // Store for future visits
             localStorage.setItem(`loyalty_user_${locationId}`, JSON.stringify(userInfo));
