@@ -656,7 +656,7 @@
             };
 
             try {
-                const res = await fetch('/api/templates', {
+                const res = await fetch('/api/v1/templates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -674,7 +674,7 @@
             try {
                 // For now templates are global in data/templates.json, but stats/fetch could be per-location
                 // If you want per-location templates, we'd need to update templates.js route too.
-                const res = await fetch(`/api/templates?location_id=${locationId}`);
+                const res = await fetch(`/api/v1/templates?location_id=${locationId}`);
                 const data = await res.json();
                 if (!data.success) return;
 
@@ -711,7 +711,7 @@
         }
 
         async function editTemplate(id) {
-            const res = await fetch(`/api/templates/${id}`);
+            const res = await fetch(`/api/v1/templates/${id}`);
             const data = await res.json();
             if (data.success) {
                 const t = data.template;
@@ -743,7 +743,7 @@
                 locationId: locationId // Use specific WhatsApp instance
             };
 
-            const res = await fetch('/api/whatsapp/send-template', {
+            const res = await fetch('/api/v1/whatsapp/send-template', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -757,7 +757,7 @@
             if (!name) return document.getElementById('webhookConfig').textContent = "Select template...";
 
             const configText = `METHOD: POST
-URL: ${window.location.origin}/api/whatsapp/send-template?location_id=${locationId}
+URL: ${window.location.origin}/api/v1/whatsapp/send-template?location_id=${locationId}
 
 PAYLOAD:
 {
