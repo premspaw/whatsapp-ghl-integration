@@ -19,6 +19,68 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
     const [user, setUser] = useState<{ name: string; phone: string; contactId: string } | null>(null);
     const [showError, setShowError] = useState(false);
 
+    const [hasAnalysis, setHasAnalysis] = useState(false);
+    const [analysisStats, setAnalysisStats] = useState<{ score: number, improvement: number, metric: string } | null>(null);
+
+    useEffect(() => {
+        const checkAnalysis = async () => {
+            if (!user) return;
+
+            // Try localStorage first for immediate UI
+            const lastReport = localStorage.getItem('last_skin_analysis_report');
+            if (lastReport) {
+                const report = JSON.parse(lastReport);
+                const scorecard = report.scorecard || {};
+                const firstMetric = Object.keys(scorecard)[0] || 'oiliness';
+                const scoreData = scorecard[firstMetric];
+                const score = typeof scoreData === 'object' ? scoreData.value : scoreData;
+
+                setHasAnalysis(true);
+                setAnalysisStats({
+                    score: score || 0,
+                    improvement: 5, // Placeholder for first scan
+                    metric: firstMetric
+                });
+            }
+
+            // Sync with DB history if available
+            try {
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
+                const response = await fetch(`${baseUrl}/api/v1/loyalty/analysis/${locationId}/${user.contactId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.history && data.history.length > 0) {
+                        const history = data.history;
+                        const latest = history[0].analysis_data;
+                        const scorecard = latest.scorecard || {};
+                        const metric = Object.keys(scorecard)[0] || 'oiliness';
+                        const currentVal = typeof scorecard[metric] === 'object' ? scorecard[metric].value : scorecard[metric];
+
+                        let improvement = 0;
+                        if (history.length > 1) {
+                            const prev = history[1].analysis_data.scorecard || {};
+                            const prevVal = typeof prev[metric] === 'object' ? prev[metric].value : prev[metric];
+                            improvement = (prevVal || 0) - (currentVal || 0);
+                        }
+
+                        setHasAnalysis(true);
+                        setAnalysisStats({
+                            score: currentVal || 0,
+                            improvement,
+                            metric
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch history for dashboard", err);
+            }
+        };
+
+        if (user && !isLoading) {
+            checkAnalysis();
+        }
+    }, [user, locationId, isLoading]);
+
     useEffect(() => {
         // Get contact data from GHL URL params
         const contactId = searchParams.get('contact');
@@ -90,68 +152,6 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
         );
     }
 
-    // --- Analysis Stats Logic ---
-    const [hasAnalysis, setHasAnalysis] = useState(false);
-    const [analysisStats, setAnalysisStats] = useState<{ score: number, improvement: number, metric: string } | null>(null);
-
-    useEffect(() => {
-        const checkAnalysis = async () => {
-            if (!user) return;
-
-            // Try localStorage first for immediate UI
-            const lastReport = localStorage.getItem('last_skin_analysis_report');
-            if (lastReport) {
-                const report = JSON.parse(lastReport);
-                const scorecard = report.scorecard || {};
-                const firstMetric = Object.keys(scorecard)[0] || 'oiliness';
-                const scoreData = scorecard[firstMetric];
-                const score = typeof scoreData === 'object' ? scoreData.value : scoreData;
-
-                setHasAnalysis(true);
-                setAnalysisStats({
-                    score: score || 0,
-                    improvement: 5, // Placeholder for first scan
-                    metric: firstMetric
-                });
-            }
-
-            // Sync with DB history if available
-            try {
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
-                const response = await fetch(`${baseUrl}/api/v1/loyalty/history/${locationId}/${user.contactId}`);
-                if (response.ok) {
-                    const history = await response.json();
-                    if (history && history.length > 0) {
-                        const latest = history[0].analysis_data;
-                        const scorecard = latest.scorecard || {};
-                        const metric = Object.keys(scorecard)[0] || 'oiliness';
-                        const currentVal = typeof scorecard[metric] === 'object' ? scorecard[metric].value : scorecard[metric];
-
-                        let improvement = 0;
-                        if (history.length > 1) {
-                            const prev = history[1].analysis_data.scorecard || {};
-                            const prevVal = typeof prev[metric] === 'object' ? prev[metric].value : prev[metric];
-                            improvement = (prevVal || 0) - (currentVal || 0);
-                        }
-
-                        setHasAnalysis(true);
-                        setAnalysisStats({
-                            score: currentVal || 0,
-                            improvement,
-                            metric
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch history for dashboard", err);
-            }
-        };
-
-        if (user && !isLoading) {
-            checkAnalysis();
-        }
-    }, [user, locationId, isLoading]);
-
     const business = data?.settings || {
         name: "Lumina Derma Care",
         primary_color: "#2dd4bf",
@@ -197,11 +197,10 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
                     </div>
                 </div>
 
-                {/* AI Skin Analysis Section - CONDITIONAL RENDERING */}
                 <section className="relative">
                     <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/20 via-rose-500/20 to-teal-500/20 rounded-[2.6rem] blur-xl opacity-20" />
                     <div className="relative">
-                        {hasAnalysis && analysisStats ? (
+                        {hasAnalysis && analysisStats && searchParams.get('action') !== 'scan' ? (
                             <Link href={`/rewards/${locationId}/progress`} className="block group">
                                 <div className="bg-zinc-900 border border-white/10 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden backdrop-blur-sm group-hover:border-teal-500/30 transition-all duration-500">
                                     {/* Background Visual Layer */}

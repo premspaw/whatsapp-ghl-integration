@@ -311,8 +311,8 @@ router.get('/analysis/:locationId/:contactId', async (req, res) => {
 
         res.json({ success: true, history: data });
     } catch (error) {
-        logger.error('❌ Fetch Analysis History Error', { error: error.message });
-        res.status(500).json({ error: 'Failed to fetch analysis history' });
+        logger.error('❌ Fetch Analysis History Error', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Failed to fetch analysis history', details: error.message });
     }
 });
 

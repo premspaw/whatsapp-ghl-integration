@@ -194,6 +194,61 @@ export default function SkinAnalysisResult() {
                     })}
                 </div>
 
+                {/* Strengths & Needs Care Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Zap size={14} className="text-yellow-400" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Strengths</span>
+                        </div>
+                        <div className="space-y-3">
+                            {data.summary?.strongestAreas?.map((area: any, idx: number) => (
+                                <div key={idx} className="bg-teal-500/10 border border-teal-500/20 rounded-xl p-3">
+                                    <div className="text-teal-400 text-[11px] font-black">{area.title || area}</div>
+                                    <div className="text-[9px] text-white/40 font-bold">{area.status || "Healthy hydration"}</div>
+                                </div>
+                            )) || (
+                                    <>
+                                        <div className="bg-teal-500/10 border border-teal-500/20 rounded-xl p-3">
+                                            <div className="text-teal-400 text-[11px] font-black">Cheeks</div>
+                                            <div className="text-[9px] text-white/40 font-bold">Healthy hydration</div>
+                                        </div>
+                                        <div className="bg-teal-500/10 border border-teal-500/20 rounded-xl p-3">
+                                            <div className="text-teal-400 text-[11px] font-black">Under-eye</div>
+                                            <div className="text-[9px] text-white/40 font-bold">Well maintained</div>
+                                        </div>
+                                    </>
+                                )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Target size={14} className="text-rose-400" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Needs Care</span>
+                        </div>
+                        <div className="space-y-3">
+                            {data.summary?.needsFocus?.map((area: any, idx: number) => (
+                                <div key={idx} className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                                    <div className="text-amber-400 text-[11px] font-black">{area.title || area}</div>
+                                    <div className="text-[9px] text-white/40 font-bold">{area.status || "Attention required"}</div>
+                                </div>
+                            )) || (
+                                    <>
+                                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                                            <div className="text-amber-400 text-[11px] font-black">Oil control</div>
+                                            <div className="text-[9px] text-white/40 font-bold">45% elevated</div>
+                                        </div>
+                                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                                            <div className="text-amber-400 text-[11px] font-black">Pore size</div>
+                                            <div className="text-[9px] text-white/40 font-bold">30% visible</div>
+                                        </div>
+                                    </>
+                                )}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Detailed Insights */}
                 <div>
                     <h3 className="text-[10px] text-white/30 uppercase tracking-[0.2em] mb-4 font-black px-2">Detailed Clinical Insights</h3>
@@ -204,28 +259,108 @@ export default function SkinAnalysisResult() {
 
                 {/* Recommended Treatments */}
                 {(data.treatmentPlan || data.treatments) && (
-                    <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-8">
-                        <h3 className="text-lg font-black uppercase mb-6">Treatment Roadmap</h3>
-                        <div className="space-y-6">
-                            <div className="border-l-2 border-green-500/30 pl-6">
-                                <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">Primary Recommendation</span>
-                                <h4 className="text-sm font-black uppercase mt-1">{safeRender(data.treatmentPlan?.primary || data.treatments?.primary)}</h4>
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-6 opacity-10">
+                            <Sparkles size={40} />
+                        </div>
+                        <h3 className="text-lg font-black uppercase mb-6 tracking-tighter">Clinical Roadmap</h3>
+                        <div className="space-y-8 relative">
+                            <div className="absolute left-1 top-2 bottom-2 w-0.5 bg-white/5" />
+
+                            <div className="relative pl-8">
+                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
+                                <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Week 3</span>
+                                <h4 className="text-sm font-black uppercase mt-1 text-white/90">{safeRender(data.treatmentPlan?.primary || data.treatments?.primary)}</h4>
+                                <p className="text-[10px] text-white/40 mt-1 leading-relaxed">Refines texture & minimizes pores. Promotes cell turnover for smoother skin.</p>
                             </div>
-                            <div className="border-l-2 border-blue-500/30 pl-6">
-                                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Secondary Focus</span>
-                                <h4 className="text-sm font-black uppercase mt-1">{safeRender(data.treatmentPlan?.secondary || data.treatments?.additional)}</h4>
+
+                            <div className="relative pl-8">
+                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-teal-500/30" />
+                                <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Week 6</span>
+                                <h4 className="text-sm font-black uppercase mt-1 text-white/90">Follow-up Assessment</h4>
+                                <p className="text-[10px] text-white/40 mt-1 leading-relaxed">Track progress & adjust plan. Ensure optimal results and address any concerns.</p>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 pt-8 border-t border-white/5 flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Total Investment</span>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-2xl font-black">$299</span>
+                                    <span className="text-sm text-white/20 line-through">$449</span>
+                                </div>
+                            </div>
+                            <div className="bg-teal-500/10 text-teal-400 text-[9px] font-black px-3 py-2 rounded-lg border border-teal-500/20">
+                                SAVE $150 TODAY
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* Trust & Urgency Sections */}
+                <div className="space-y-4">
+                    {/* Why Choose Us */}
+                    <div className="bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8 text-center">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-6">Why Choose Us?</h4>
+                        <div className="space-y-3 text-left">
+                            <div className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5">
+                                <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400">
+                                    <Sparkles size={18} />
+                                </div>
+                                <p className="text-[11px] font-bold text-white/70">5-star rated on Google with 247+ verified reviews</p>
+                            </div>
+                            <div className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5">
+                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                    <ShieldCheck size={18} />
+                                </div>
+                                <p className="text-[11px] font-bold text-white/70">Board-certified dermatologists with 15+ years experience</p>
+                            </div>
+                            <div className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5">
+                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                                    <Target size={18} />
+                                </div>
+                                <p className="text-[11px] font-bold text-white/70">30-day satisfaction guarantee or your money back</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Why Act Now */}
+                    <div className="bg-rose-500/5 border border-rose-500/10 rounded-[2.5rem] p-8">
+                        <div className="flex items-center gap-3 mb-4">
+                            <Info size={18} className="text-rose-400" />
+                            <h4 className="text-sm font-black uppercase text-rose-400">Why Act Now?</h4>
+                        </div>
+                        <p className="text-[11px] text-white/60 leading-relaxed font-medium">
+                            Without treatment, oil buildup can lead to enlarged pores and breakouts. Our patients see visible improvement in 2-4 weeks!
+                        </p>
+                    </div>
+                </div>
+
+                {/* Social Proof */}
+                <div className="text-center py-4">
+                    <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30">
+                        <span className="text-teal-500">★</span>
+                        <span>2,847 patients improved their skin with us this year</span>
+                    </div>
+                </div>
+
                 <div className="fixed bottom-6 left-0 right-0 px-5 max-w-md mx-auto z-50">
-                    <button className="w-full bg-green-500 text-black font-black text-xs py-5 rounded-2xl shadow-2xl">
-                        BOOK CONSULTATION
-                    </button>
-                    <button onClick={() => router.push(`/rewards/${locationId}`)} className="w-full mt-3 bg-white/5 text-white/40 text-[10px] font-black py-4 rounded-2xl uppercase tracking-widest flex items-center justify-center gap-2">
-                        <ChevronLeft size={16} /> Return to Home
-                    </button>
+                    <div className="space-y-3">
+                        <button className="w-full bg-teal-500 text-[#0f1419] font-black text-xs py-5 rounded-2xl shadow-[0_20px_40px_rgba(20,184,166,0.3)] flex items-center justify-center gap-2 group">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0f1419] opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0f1419]"></span>
+                            </span>
+                            BOOK FREE CONSULTATION - 3 SLOTS LEFT TODAY
+                        </button>
+                        <button className="w-full bg-white/[0.05] border border-white/10 text-white font-black text-xs py-4 rounded-2xl backdrop-blur-xl flex items-center justify-center gap-2">
+                            <Activity size={14} className="text-teal-400" />
+                            CHAT WITH SKIN EXPERT
+                        </button>
+                        <button onClick={() => router.push(`/rewards/${locationId}`)} className="w-full bg-transparent text-white/30 text-[10px] font-black py-2 rounded-2xl uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-white transition-colors">
+                            <ChevronLeft size={16} /> Return to Home
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
