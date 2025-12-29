@@ -4,11 +4,78 @@ import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, Star, LayoutDashboard, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { useSearchParams } from "next/navigation";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 
 export default function SettingsPage({ params }: { params: Promise<{ locationId: string }> }) {
     const { locationId } = use(params);
+    const searchParams = useSearchParams();
+
+    // User Context
+    const [user, setUser] = useState<{ contactId: string, name: string, phone: string } | null>(null);
+    const [name, setName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveMessage, setSaveMessage] = useState("");
+
+    // Load user from URL or LocalStorage
+    useEffect(() => {
+        const urlCid = searchParams.get('cid') || searchParams.get('contact_id');
+        const urlName = searchParams.get('name');
+        const urlPhone = searchParams.get('phone');
+
+        if (urlCid) {
+            setUser({ contactId: urlCid, name: urlName || "", phone: urlPhone || "" });
+            setName(urlName || "");
+            setPhone(urlPhone || "");
+        } else {
+            // Try localStorage fallback
+            const stored = localStorage.getItem(`loyalty_user_${locationId}`);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                setUser(parsed);
+                setName(parsed.name || "");
+                setPhone(parsed.phone || "");
+            }
+        }
+    }, [searchParams, locationId]);
+
+    const handleSaveProfile = async () => {
+        if (!user) return;
+        setIsSaving(true);
+        setSaveMessage("");
+
+        try {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
+            const res = await fetch(`${baseUrl}/api/v1/loyalty/customer/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    locationId,
+                    contactId: user.contactId,
+                    name,
+                    phone
+                })
+            });
+
+            if (res.ok) {
+                setSaveMessage("Saved successfully! ✅");
+                // Update local storage
+                const updatedUser = { ...user, name, phone };
+                localStorage.setItem(`loyalty_user_${locationId}`, JSON.stringify(updatedUser));
+                setUser(updatedUser);
+            } else {
+                setSaveMessage("Failed to save. ❌");
+            }
+        } catch (err) {
+            console.error(err);
+            setSaveMessage("Error saving. ❌");
+        } finally {
+            setIsSaving(false);
+            setTimeout(() => setSaveMessage(""), 3000);
+        }
+    };
 
     const business = {
         name: "Lumina Derma Care",
@@ -36,10 +103,60 @@ export default function SettingsPage({ params }: { params: Promise<{ locationId:
                         Clinic <span className="text-teal-500">Details</span>
                     </h1>
                     <p className="text-white/40 text-xs font-bold uppercase tracking-widest leading-none mt-1">
-                        About the business
+                        & Your Profile
                     </p>
                 </div>
             </div>
+
+            {/* User Profile Section */}
+            {user && (
+                <div className="px-1">
+                    <div className="glass-card p-6 border-teal-500/20 bg-teal-500/5 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+                                <LayoutDashboard size={14} />
+                            </div>
+                            <h3 className="text-sm font-black uppercase tracking-wide text-white/90">Your <span className="text-teal-400">Profile</span></h3>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1.5 block">Full Name</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white placeholder-white/20 focus:outline-none focus:border-teal-500/50 transition-colors"
+                                    placeholder="Enter your name"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1.5 block">Phone Number</label>
+                                <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white placeholder-white/20 focus:outline-none focus:border-teal-500/50 transition-colors"
+                                    placeholder="Enter phone number"
+                                />
+                            </div>
+
+                            <div className="pt-2 flex items-center justify-between">
+                                <span className="text-xs font-bold text-teal-400">{saveMessage}</span>
+                                <button
+                                    onClick={handleSaveProfile}
+                                    disabled={isSaving}
+                                    className="bg-white text-black text-xs font-black uppercase tracking-wider py-2.5 px-6 rounded-xl hover:bg-teal-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isSaving ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Brand Hero */}
             <div className="glass-card p-0 overflow-hidden border-white/5 premium-shadow">

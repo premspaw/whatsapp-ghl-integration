@@ -323,4 +323,40 @@ router.get('/analysis/:locationId/:contactId', async (req, res) => {
     }
 });
 
+/**
+ * @route POST /api/v1/loyalty/customer/profile
+ * @desc Update customer profile (Name, Phone)
+ */
+router.post('/customer/profile', async (req, res) => {
+    try {
+        if (!supabase) return res.status(503).json({ error: 'Database not available' });
+
+        const { locationId, contactId, name, phone } = req.body;
+
+        if (!locationId || !contactId) {
+            return res.status(400).json({ error: 'Missing locationId or contactId' });
+        }
+
+        // Update loyalty_customers table
+        // We use upsert here just in case, but usually they should exist
+        const { data, error } = await supabase
+            .from('loyalty_customers')
+            .upsert({
+                location_id: locationId,
+                contact_id: contactId,
+                customer_name: name,
+                phone: phone,
+                updated_at: new Date()
+            }, { onConflict: 'location_id, contact_id' })
+            .select();
+
+        if (error) throw error;
+
+        res.json({ success: true, customer: data[0] });
+    } catch (error) {
+        logger.error('❌ Profile Update Error', { error: error.message });
+        res.status(500).json({ error: 'Failed to update profile', details: error.message });
+    }
+});
+
 module.exports = router;
