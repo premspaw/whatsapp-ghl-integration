@@ -359,4 +359,41 @@ router.post('/customer/profile', async (req, res) => {
     }
 });
 
+/**
+ * @route GET /api/v1/loyalty/customer/:locationId/:contactId
+ * @desc Get customer loyalty status (visits, profile)
+ */
+router.get('/customer/:locationId/:contactId', async (req, res) => {
+    try {
+        if (!supabase) return res.status(503).json({ error: 'Database not available' });
+
+        const { locationId, contactId } = req.params;
+
+        const { data: customer, error } = await supabase
+            .from('loyalty_customers')
+            .select('*')
+            .eq('location_id', locationId)
+            .eq('contact_id', contactId)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        if (!customer) {
+            return res.json({
+                success: true,
+                customer: {
+                    total_visits: 0,
+                    location_id: locationId,
+                    contact_id: contactId
+                }
+            });
+        }
+
+        res.json({ success: true, customer });
+    } catch (error) {
+        logger.error('❌ Fetch Customer Error', { error: error.message });
+        res.status(500).json({ error: 'Failed to fetch customer data', details: error.message });
+    }
+});
+
 module.exports = router;

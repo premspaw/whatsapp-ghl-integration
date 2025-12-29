@@ -40,10 +40,29 @@ export async function getLoyaltyData(locationId: string) {
 }
 
 export async function getCustomerData(locationId: string, contactId: string) {
-    // We'll implement this once we have customer-specific routes
-    return {
-        visits: 4, // Mock for now until we have auth/contact context
-    };
+    try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
+        const response = await fetch(`${baseUrl}/api/v1/loyalty/customer/${locationId}/${contactId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch customer: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return {
+            visits: data.customer?.total_visits || 0,
+            profile: data.customer || null
+        };
+    } catch (error) {
+        console.error('Customer API error:', error);
+        return {
+            visits: 0,
+        };
+    }
 }
 
 export async function getSkinAnalysisHistory(locationId: string, contactId: string) {

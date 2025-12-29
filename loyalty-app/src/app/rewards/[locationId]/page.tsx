@@ -101,11 +101,9 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
                 userInfo = JSON.parse(storedUser);
                 setUser(userInfo);
             } else {
-                // [DEV MODE] Auto-login test user if no params
-                console.log("⚠️ DEV MODE: Auto-logging in test user");
-                userInfo = { contactId: 'test_user_123', name: 'Sarah Johnson', phone: '+919999900000' };
-                localStorage.setItem(`loyalty_user_${locationId}`, JSON.stringify(userInfo));
-                setUser(userInfo);
+                // If no contact data, redirect to error state
+                setShowError(true);
+                setIsLoading(false);
             }
         }
 
