@@ -32,9 +32,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${jakarta.variable} ${outfit.variable} antialiased selection:bg-teal-500/30`}
+        suppressHydrationWarning
       >
         {/* Aesthetic Background Elements */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

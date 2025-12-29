@@ -2,7 +2,8 @@
 
 import { use, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Gift, Share2, ChevronRight, Info } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, Gift, Share2, ChevronRight, Info, ArrowDownRight, ArrowUpRight, Activity } from "lucide-react";
 import MilestonePath from "@/components/MilestonePath";
 import Navbar from "@/components/Navbar";
 import { getLoyaltyData, getCustomerData } from "@/lib/api";
@@ -89,6 +90,68 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
         );
     }
 
+    // --- Analysis Stats Logic ---
+    const [hasAnalysis, setHasAnalysis] = useState(false);
+    const [analysisStats, setAnalysisStats] = useState<{ score: number, improvement: number, metric: string } | null>(null);
+
+    useEffect(() => {
+        const checkAnalysis = async () => {
+            if (!user) return;
+
+            // Try localStorage first for immediate UI
+            const lastReport = localStorage.getItem('last_skin_analysis_report');
+            if (lastReport) {
+                const report = JSON.parse(lastReport);
+                const scorecard = report.scorecard || {};
+                const firstMetric = Object.keys(scorecard)[0] || 'oiliness';
+                const scoreData = scorecard[firstMetric];
+                const score = typeof scoreData === 'object' ? scoreData.value : scoreData;
+
+                setHasAnalysis(true);
+                setAnalysisStats({
+                    score: score || 0,
+                    improvement: 5, // Placeholder for first scan
+                    metric: firstMetric
+                });
+            }
+
+            // Sync with DB history if available
+            try {
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
+                const response = await fetch(`${baseUrl}/api/v1/loyalty/history/${locationId}/${user.contactId}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    if (history && history.length > 0) {
+                        const latest = history[0].analysis_data;
+                        const scorecard = latest.scorecard || {};
+                        const metric = Object.keys(scorecard)[0] || 'oiliness';
+                        const currentVal = typeof scorecard[metric] === 'object' ? scorecard[metric].value : scorecard[metric];
+
+                        let improvement = 0;
+                        if (history.length > 1) {
+                            const prev = history[1].analysis_data.scorecard || {};
+                            const prevVal = typeof prev[metric] === 'object' ? prev[metric].value : prev[metric];
+                            improvement = (prevVal || 0) - (currentVal || 0);
+                        }
+
+                        setHasAnalysis(true);
+                        setAnalysisStats({
+                            score: currentVal || 0,
+                            improvement,
+                            metric
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch history for dashboard", err);
+            }
+        };
+
+        if (user && !isLoading) {
+            checkAnalysis();
+        }
+    }, [user, locationId, isLoading]);
+
     const business = data?.settings || {
         name: "Lumina Derma Care",
         primary_color: "#2dd4bf",
@@ -105,87 +168,164 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
     })) || [];
 
     return (
-        <div className="pt-8 space-y-4 pb-32">
-            {/* Header */}
-            <div className="flex justify-between items-center px-2 mb-4">
-                <div>
-                    <h1 className="text-2xl font-black font-outfit uppercase tracking-tighter">
-                        Hello, <span className="text-teal-500">{user?.name.split(' ')[0] || 'Guest'}</span>
-                    </h1>
-                    <p className="text-white/40 text-xs font-bold uppercase tracking-widest leading-none mt-1">
-                        {business.business_name || business.name} Radiance Path
-                    </p>
-                </div>
-                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-sm border border-teal-500/20">
-                    {user?.name.charAt(0).toUpperCase() || 'G'}
-                </div>
-            </div>
+        <div className="min-h-screen bg-gradient-to-br from-[#0f1419] to-[#1a2332] text-white p-4 pb-32 overflow-x-hidden">
+            <div className="max-w-md mx-auto space-y-8">
+                {/* Header / Profile Section */}
+                <div className="flex items-center justify-between bg-white/[0.03] p-6 rounded-[2.5rem] border border-white/5 shadow-2xl backdrop-blur-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-teal-500/10 transition-colors" />
 
-            {/* AI Skin Analysis Section */}
-            <section className="px-2">
-                <SkinAnalysisReport />
-            </section>
-
-            {/* How it Works / Instruction */}
-            <div className="px-2">
-                <div className="glass-card p-4 bg-teal-500/5 border-teal-500/10 flex gap-4 items-start">
-                    <div className="w-8 h-8 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-500 shrink-0">
-                        <Info size={16} />
-                    </div>
-                    <div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-white/80">How it works</h4>
-                        <p className="text-[10px] text-white/40 font-medium leading-relaxed mt-1">
-                            Get 1 stamp for every visit. Reach the Milestone steps to unlock premium treatments.
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-black text-teal-400 uppercase tracking-[0.3em]">Welcome Back</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                        </div>
+                        <h1 className="text-3xl font-black font-outfit uppercase tracking-tighter leading-none">
+                            Hello, <span className="text-teal-500">{user?.name.split(' ')[0] || 'Guest'}</span>
+                        </h1>
+                        <p className="text-white/40 text-[10px] font-black uppercase tracking-widest leading-none mt-2">
+                            {business.business_name || business.name} Client
                         </p>
                     </div>
+
+                    <div className="relative">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500/20 to-teal-500/5 text-teal-400 flex items-center justify-center font-black text-xl border border-teal-500/20 shadow-xl backdrop-blur-md">
+                            {user?.name.charAt(0).toUpperCase() || 'G'}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center text-[10px] text-black border-2 border-[#121821]">
+                            ✓
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Milestone Roadmap Section */}
-            <section className="py-4">
-                <MilestonePath
-                    currentVisits={currentVisits}
-                    totalMilestones={totalVisits}
-                    rewards={rewards}
-                />
-            </section>
+                {/* AI Skin Analysis Section - CONDITIONAL RENDERING */}
+                <section className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/20 via-rose-500/20 to-teal-500/20 rounded-[2.6rem] blur-xl opacity-20" />
+                    <div className="relative">
+                        {hasAnalysis && analysisStats ? (
+                            <Link href={`/rewards/${locationId}/progress`} className="block group">
+                                <div className="bg-zinc-900 border border-white/10 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden backdrop-blur-sm group-hover:border-teal-500/30 transition-all duration-500">
+                                    {/* Background Visual Layer */}
+                                    <div className="absolute inset-0 opacity-[0.05] grayscale group-hover:opacity-10 transition-opacity">
+                                        <img src="/skin-progress-promo.png" alt="" className="w-full h-full object-cover" />
+                                    </div>
 
-            {/* Action Cards */}
-            <div className="grid gap-4 px-2">
-                {/* View All Rewards CTA */}
-                <motion.div
-                    whileTap={{ scale: 0.98 }}
-                    className="glass-card p-5 flex items-center gap-4 group cursor-pointer"
-                >
-                    <div className="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400">
-                        <Trophy size={24} />
-                    </div>
-                    <div className="flex-1">
-                        <h3 className="text-sm font-black uppercase tracking-tight">Reward Catalog</h3>
-                        <p className="text-white/40 text-[11px] font-medium leading-none mt-1">See full details of your perks</p>
-                    </div>
-                    <ChevronRight className="text-white/20 group-hover:translate-x-1 transition-transform" />
-                </motion.div>
+                                    <div className="relative z-10">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div>
+                                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Clinical Impact Score</h3>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-4xl font-black leading-none">{analysisStats.score}%</span>
+                                                    {analysisStats.improvement !== 0 && (
+                                                        <div className={`flex items-center text-[9px] font-black ${analysisStats.improvement > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                            {analysisStats.improvement > 0 ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}
+                                                            {Math.abs(analysisStats.improvement)}%
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-500/20">
+                                                <span className="text-[8px] font-black text-teal-400 uppercase tracking-widest leading-none">
+                                                    {analysisStats.metric}
+                                                </span>
+                                            </div>
+                                        </div>
 
-                {/* Referral Hook */}
-                <motion.div
-                    whileTap={{ scale: 0.98 }}
-                    className="glass-card p-6 flex items-center justify-between border-l-4 border-l-teal-500 overflow-hidden relative group"
-                >
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-                        <Gift size={80} />
+                                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/30 pt-4 border-t border-white/5">
+                                            <div className="flex items-center gap-2">
+                                                <Activity size={14} className="text-teal-400" />
+                                                Live Tracker Active
+                                            </div>
+                                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        ) : (
+                            <SkinAnalysisReport />
+                        )}
                     </div>
-                    <div className="relative z-10 pr-12">
-                        <h3 className="text-lg font-black font-outfit uppercase">Invite Friends</h3>
-                        <p className="text-white/50 text-xs font-medium max-w-[200px] mt-1">Unlock a bonus stamp when a friend starts their journey.</p>
-                        <button className="mt-4 flex items-center gap-1.5 text-teal-400 text-xs font-black uppercase tracking-wider">
+                </section>
+
+                {/* Status / Instructions */}
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-white/5 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative bg-white/[0.03] p-5 rounded-[2rem] border border-white/10 flex gap-4 items-center shadow-xl backdrop-blur-sm">
+                        <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 border border-teal-500/10 shrink-0">
+                            <Sparkles size={20} />
+                        </div>
+                        <div>
+                            <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">Path to Perfection</h4>
+                            <p className="text-[10px] text-white/40 font-bold leading-relaxed mt-1 uppercase tracking-tight">
+                                Complete 10 visits to unlock <span className="text-teal-400">Elite Radiance Benefits</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Milestone Roadmap Section */}
+                <section className="py-2">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30">Journey Progress</h3>
+                        <div className="px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20">
+                            <span className="text-[10px] font-black text-teal-400">{currentVisits}/{totalVisits} STAMPS</span>
+                        </div>
+                    </div>
+                    <div className="bg-white/[0.02] rounded-[2.5rem] border border-white/5 p-4 shadow-3xl backdrop-blur-sm">
+                        <MilestonePath
+                            currentVisits={currentVisits}
+                            totalMilestones={totalVisits}
+                            rewards={rewards}
+                        />
+                    </div>
+                </section>
+
+                {/* Action Cards */}
+                <div className="grid gap-4">
+                    {/* View All Rewards CTA */}
+                    <motion.div
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-white/[0.03] p-6 rounded-[2rem] border border-white/5 flex items-center gap-5 group cursor-pointer hover:bg-white/[0.05] transition-all shadow-xl backdrop-blur-md"
+                    >
+                        <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-400 border border-rose-500/10 group-hover:scale-110 transition-transform">
+                            <Trophy size={28} />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-sm font-black uppercase tracking-[0.1em] text-white/90">Reward Catalog</h3>
+                            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">Unlock VIP Privileges</p>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:translate-x-1 transition-transform">
+                            <ChevronRight className="text-white/20" size={16} />
+                        </div>
+                    </motion.div>
+
+                    {/* Referral Hook */}
+                    <motion.div
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-white/[0.03] p-6 rounded-[2.5rem] border border-white/5 flex flex-col gap-6 relative overflow-hidden group shadow-2xl backdrop-blur-xl"
+                    >
+                        <div className="absolute top-0 right-0 -mr-8 -mt-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <Gift size={160} className="text-teal-400 rotate-12" />
+                        </div>
+
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest">Growth Program</span>
+                                <h3 className="text-2xl font-black font-outfit uppercase tracking-tighter">Invite Friends</h3>
+                            </div>
+                            <div className="w-12 h-12 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 border border-teal-500/20">
+                                <Gift size={24} />
+                            </div>
+                        </div>
+
+                        <p className="text-white/40 text-xs font-bold leading-relaxed uppercase tracking-tight relative z-10">
+                            Give your clinical journey a boost. Unlock a <span className="text-teal-400">Bonus Stamp</span> for every successful referral.
+                        </p>
+
+                        <button className="relative z-10 w-fit bg-teal-500 text-black px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-teal-500/20 hover:scale-105 transition-transform flex items-center gap-2">
                             Share Plan <Share2 size={12} />
                         </button>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-teal-500/20 flex items-center justify-center text-teal-400">
-                        <Gift size={24} />
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </div>
             </div>
 
             <Navbar locationId={locationId} />

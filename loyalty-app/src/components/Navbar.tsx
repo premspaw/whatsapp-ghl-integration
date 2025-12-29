@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Camera, FileText, User } from "lucide-react";
+import { Home, Camera, FileText, User, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Navbar({ locationId }: { locationId: string }) {
@@ -14,6 +14,12 @@ export default function Navbar({ locationId }: { locationId: string }) {
             icon: Home,
             href: `/rewards/${locationId}`,
             active: pathname === `/rewards/${locationId}`
+        },
+        {
+            label: "Progress",
+            icon: TrendingUp,
+            href: `/rewards/${locationId}/progress`,
+            active: pathname.includes('progress')
         },
         {
             label: "Scan",

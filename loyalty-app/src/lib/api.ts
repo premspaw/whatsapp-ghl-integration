@@ -1,6 +1,6 @@
 export async function getLoyaltyData(locationId: string) {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
         console.log('Fetching from:', `${baseUrl}/api/v1/loyalty/settings/${locationId}`);
 
         const response = await fetch(`${baseUrl}/api/v1/loyalty/settings/${locationId}`, {
@@ -44,4 +44,25 @@ export async function getCustomerData(locationId: string, contactId: string) {
     return {
         visits: 4, // Mock for now until we have auth/contact context
     };
+}
+
+export async function getSkinAnalysisHistory(locationId: string, contactId: string) {
+    try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
+        const response = await fetch(`${baseUrl}/api/v1/loyalty/analysis/${locationId}/${contactId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`History fetch failed with status ${response.status}:`, errorText);
+            throw new Error(`Failed to fetch history: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('History API error:', error);
+        return { success: false, history: [] };
+    }
 }

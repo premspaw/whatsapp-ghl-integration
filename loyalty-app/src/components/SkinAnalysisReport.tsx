@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import { CheckCircle2, ScanFace, ChevronRight, Camera, Upload, RefreshCw, ChevronLeft } from "lucide-react";
-import { useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 // --- Interface matching N8N JSON ---
 interface N8NResponse {
@@ -65,6 +65,15 @@ export default function SkinAnalysisReport() {
     const locationId = params.locationId as string;
 
     const [step, setStep] = useState<'intro' | 'capture' | 'analyzing'>('intro');
+    const searchParams = useSearchParams();
+
+    // Auto-trigger scan if query param is present
+    useEffect(() => {
+        if (searchParams.get('action') === 'scan') {
+            setStep('capture');
+        }
+    }, [searchParams]);
+
     const [image, setImage] = useState<string | null>(null);
     const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -175,7 +184,7 @@ export default function SkinAnalysisReport() {
             const storedUser = localStorage.getItem(`loyalty_user_${locationId}`);
             if (storedUser) {
                 const user = JSON.parse(storedUser);
-                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/ghl/add-stamp`, {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001'}/api/v1/ghl/add-stamp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -196,13 +205,29 @@ export default function SkinAnalysisReport() {
             const resultData = await response.json();
 
             if (!response.ok) {
-                console.error('AI Analysis Proxy Failed:', resultData.error, resultData.hint);
-                alert(`Analysis failed: ${resultData.error}\n\n${resultData.hint || 'Using mock data for demonstration.'}`);
+                console.error('AI Analysis Proxy Failed:', resultData.error, resultData.details || resultData.hint);
+                alert(`Analysis failed: ${resultData.error}\n\n${resultData.details || resultData.hint || 'Internal error occurred.'}`);
                 setStep('capture');
                 return;
             }
 
-            // 3. Persist and Redirect
+            // 3. Save to History (Database)
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30001';
+                fetch(`${baseUrl}/api/v1/loyalty/analysis`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        locationId,
+                        contactId: user.contactId || user.phone,
+                        analysisData: resultData,
+                        imageUrl: image // This is the compressed data URL
+                    })
+                }).catch(err => console.error("History save failed", err));
+            }
+
+            // 4. Persist and Redirect
             localStorage.setItem('last_skin_analysis_report', JSON.stringify(resultData));
             if (image) localStorage.setItem('last_skin_analysis_image', image);
 

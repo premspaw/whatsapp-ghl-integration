@@ -117,19 +117,24 @@ export default function MilestonePath({ currentVisits, totalMilestones, rewards 
                                         <motion.div
                                             initial={{ opacity: 0, x: -10 }}
                                             whileInView={{ opacity: 1, x: 0 }}
-                                            whileHover={{ x: -5, scale: 1.05 }}
-                                            transition={{ type: "spring", stiffness: 300 }}
+                                            whileHover={{ x: -10, scale: 1.1 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 15 }}
                                             className={cn(
-                                                "inline-block text-[10px] font-black uppercase tracking-tighter px-3 py-1 rounded-lg border transition-all duration-300",
-                                                isCompleted ? "border-teal-500/50 text-teal-400 bg-teal-500/5 shadow-[0_0_15px_rgba(45,212,191,0.2)]" : "border-white/5 text-white/20 bg-white/5"
+                                                "inline-block text-[11px] font-black uppercase tracking-tighter px-4 py-1.5 rounded-xl border transition-all duration-500",
+                                                isCompleted ? "border-teal-500 text-teal-400 bg-teal-500/10 shadow-[0_0_20px_rgba(45,212,191,0.3)]" :
+                                                    isCurrent ? "border-teal-500/50 text-white bg-teal-500/20 shadow-[0_0_30px_rgba(45,212,191,0.4)] animate-pulse" :
+                                                        "border-white/10 text-white/40 bg-white/5"
                                             )}
                                         >
-                                            {reward.name}
+                                            <div className="flex items-center gap-2">
+                                                {!isCompleted && <Lock size={10} className={isCurrent ? "text-teal-400" : "text-white/20"} />}
+                                                {reward.name}
+                                            </div>
                                         </motion.div>
                                     ) : (
                                         <span className={cn(
                                             "text-[10px] font-black uppercase tracking-widest transition-colors",
-                                            isCompleted ? "text-teal-500/40" : "text-white/10"
+                                            isCompleted ? "text-teal-500/40" : isCurrent ? "text-teal-500/80 underline decoration-teal-500/30 underline-offset-4" : "text-white/10"
                                         )}>
                                             Step {step}
                                         </span>
@@ -138,24 +143,24 @@ export default function MilestonePath({ currentVisits, totalMilestones, rewards 
 
                                 {/* Center: Node with Floating Particles */}
                                 <div className="relative">
-                                    {/* Floating Particles for Active Node */}
+                                    {/* Particle field for "Next Stop" - more aggressive and attractive */}
                                     {isCurrent && (
                                         <>
-                                            {[...Array(6)].map((_, idx) => (
+                                            {[...Array(8)].map((_, idx) => (
                                                 <motion.div
                                                     key={idx}
-                                                    className="absolute w-1 h-1 bg-teal-400 rounded-full"
+                                                    className="absolute w-1.5 h-1.5 bg-teal-400 rounded-full blur-[1px]"
                                                     animate={{
-                                                        x: [0, Math.cos(idx * 60 * Math.PI / 180) * 30],
-                                                        y: [0, Math.sin(idx * 60 * Math.PI / 180) * 30],
-                                                        opacity: [1, 0],
-                                                        scale: [1, 0]
+                                                        x: [0, Math.cos(idx * 45 * Math.PI / 180) * 45],
+                                                        y: [0, Math.sin(idx * 45 * Math.PI / 180) * 45],
+                                                        opacity: [0, 1, 0],
+                                                        scale: [0, 1.5, 0]
                                                     }}
                                                     transition={{
                                                         repeat: Infinity,
-                                                        duration: 2,
-                                                        delay: idx * 0.2,
-                                                        ease: "easeOut"
+                                                        duration: 1.5,
+                                                        delay: idx * 0.15,
+                                                        ease: "easeInOut"
                                                     }}
                                                 />
                                             ))}
@@ -165,57 +170,59 @@ export default function MilestonePath({ currentVisits, totalMilestones, rewards 
                                     <motion.div
                                         initial={false}
                                         animate={{
-                                            scale: isCompleted ? 1 : isCurrent ? [1, 1.15, 1] : 0.9,
-                                            rotate: isCompleted ? 0 : isCurrent ? [0, 5, -5, 0] : 0,
+                                            scale: isCompleted ? 1 : isCurrent ? [1, 1.25, 1] : 0.95,
+                                            rotate: isCompleted ? 0 : isCurrent ? [0, 3, -3, 0] : 0,
+                                            boxShadow: isCurrent ? "0 0 40px rgba(45,212,191,0.6)" : "none"
                                         }}
                                         transition={{
-                                            scale: { repeat: isCurrent ? Infinity : 0, duration: 2 },
-                                            rotate: { repeat: isCurrent ? Infinity : 0, duration: 3 }
+                                            scale: { repeat: isCurrent ? Infinity : 0, duration: 1.5 },
+                                            rotate: { repeat: isCurrent ? Infinity : 0, duration: 4 },
+                                            boxShadow: { repeat: isCurrent ? Infinity : 0, duration: 1.5 }
                                         }}
-                                        whileHover={{ scale: 1.25, rotate: 360 }}
+                                        whileHover={{ scale: 1.3, rotate: 360 }}
                                         whileTap={{ scale: 0.9 }}
                                         className={cn(
-                                            "w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all duration-500 relative z-10 overflow-hidden cursor-pointer",
-                                            isCompleted ? "bg-teal-500 border-teal-400 text-white shadow-[0_0_25px_rgba(45,212,191,0.5)]" :
-                                                isCurrent ? "bg-[#0a0a0a] border-teal-500/50 text-teal-500 shadow-[0_0_20px_rgba(45,212,191,0.3)]" :
-                                                    "bg-[#0a0a0a] border-white/10 text-white/5"
+                                            "w-16 h-16 rounded-[2rem] flex items-center justify-center border-2 transition-all duration-700 relative z-10 overflow-hidden cursor-pointer",
+                                            isCompleted ? "bg-teal-500 border-teal-300 text-white shadow-[0_0_30px_rgba(45,212,191,0.6)]" :
+                                                isCurrent ? "bg-[#0f1419] border-teal-400 text-white" :
+                                                    "bg-[#0a0a0a]/80 border-white/10 text-white/10"
                                         )}
                                     >
                                         {reward?.image ? (
                                             <div className="relative w-full h-full">
                                                 <motion.img
                                                     src={reward.image}
-                                                    initial={{ scale: 1.2 }}
-                                                    whileInView={{ scale: 1 }}
-                                                    transition={{ duration: 0.5 }}
+                                                    initial={{ scale: 1.5, filter: "blur(10px)" }}
+                                                    whileInView={{ scale: 1, filter: isCompleted ? "blur(0px)" : isCurrent ? "blur(2px)" : "blur(5px)" }}
+                                                    transition={{ duration: 0.8 }}
                                                     className={cn(
-                                                        "w-full h-full object-cover transition-all duration-700",
-                                                        !isCompleted ? "grayscale opacity-20" : ""
+                                                        "w-full h-full object-cover transition-all duration-1000",
+                                                        !isCompleted ? "grayscale opacity-50 contrast-150" : "contrast-100"
                                                     )}
                                                     alt={reward.name}
                                                 />
-                                                {!isCompleted && (
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                                                        <Lock size={14} className="text-white/40" />
-                                                    </div>
-                                                )}
-                                                {isCompleted && (
+                                                {/* Shimmer Effect for Next Reward */}
+                                                {!isCompleted && isCurrent && (
                                                     <motion.div
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: [0.2, 0.4, 0.2] }}
-                                                        transition={{ repeat: Infinity, duration: 2 }}
-                                                        className="absolute inset-0 bg-gradient-to-tr from-teal-500/30 to-transparent pointer-events-none"
+                                                        animate={{ x: ["-100%", "200%"] }}
+                                                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
                                                     />
+                                                )}
+                                                {!isCompleted && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
+                                                        <Lock size={18} className={cn("transition-colors", isCurrent ? "text-teal-400 drop-shadow-[0_0_8px_rgba(45,212,191,1)]" : "text-white/20")} />
+                                                    </div>
                                                 )}
                                             </div>
                                         ) : (
                                             reward ? (
                                                 <motion.div
-                                                    animate={isCompleted ? { y: [-2, 2, -2] } : {}}
+                                                    animate={isCompleted ? { y: [-3, 3, -3] } : isCurrent ? { scale: [1, 1.2, 1] } : {}}
                                                     transition={{ repeat: Infinity, duration: 2 }}
                                                     className="flex flex-col items-center"
                                                 >
-                                                    <Gift size={20} className={cn(isCompleted ? "" : "opacity-20")} />
+                                                    <Gift size={24} className={cn(isCompleted ? "text-white" : isCurrent ? "text-teal-400" : "opacity-30")} />
                                                 </motion.div>
                                             ) : (
                                                 isCompleted ? (
@@ -225,26 +232,26 @@ export default function MilestonePath({ currentVisits, totalMilestones, rewards 
                                                         transition={{ type: "spring", stiffness: 200 }}
                                                         className="flex items-center justify-center"
                                                     >
-                                                        <Check size={24} strokeWidth={4} />
+                                                        <Check size={28} strokeWidth={4} />
                                                     </motion.div>
-                                                ) : <span className="text-xs font-black">{step}</span>
+                                                ) : <span className={cn("text-sm font-black", isCurrent ? "text-teal-500" : "")}>{step}</span>
                                             )
                                         )}
                                     </motion.div>
 
-                                    {/* Pulsing Glow Ring for Current */}
+                                    {/* Radiant Glow for Next Stop */}
                                     {isCurrent && (
                                         <motion.div
                                             animate={{
-                                                scale: [1, 1.5, 1],
-                                                opacity: [0.5, 0, 0.5]
+                                                scale: [1, 2, 1],
+                                                opacity: [0.4, 0.1, 0.4]
                                             }}
                                             transition={{
                                                 repeat: Infinity,
-                                                duration: 2,
+                                                duration: 3,
                                                 ease: "easeInOut"
                                             }}
-                                            className="absolute inset-0 rounded-full bg-teal-500/30 blur-xl -z-10"
+                                            className="absolute inset-x-[-20%] inset-y-[-20%] rounded-full bg-teal-500/40 blur-2xl -z-10"
                                         />
                                     )}
                                 </div>
@@ -253,26 +260,29 @@ export default function MilestonePath({ currentVisits, totalMilestones, rewards 
                                 <div className="flex-1 pl-6">
                                     {isCurrent && (
                                         <motion.div
-                                            initial={{ opacity: 0, scale: 0.8 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className="flex items-center gap-2"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            className="flex flex-col"
                                         >
-                                            <motion.div
-                                                animate={{ scale: [1, 1.5, 1] }}
-                                                transition={{ repeat: Infinity, duration: 1.5 }}
-                                                className="w-1.5 h-1.5 rounded-full bg-teal-500"
-                                            />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-teal-500">Next Stop</span>
+                                            <div className="flex items-center gap-2">
+                                                <motion.div
+                                                    animate={{ scale: [1, 1.8, 1], opacity: [1, 0.5, 1] }}
+                                                    transition={{ repeat: Infinity, duration: 1 }}
+                                                    className="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.8)]"
+                                                />
+                                                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400 drop-shadow-[0_0_5px_rgba(45,212,191,0.5)]">Next Reward</span>
+                                            </div>
+                                            <span className="text-[8px] font-bold text-white/30 uppercase tracking-widest mt-1">Visit #{step} to Unlock</span>
                                         </motion.div>
                                     )}
                                     {reward && isCompleted && !isCurrent && (
                                         <motion.div
                                             initial={{ opacity: 0, x: 10 }}
                                             whileInView={{ opacity: 1, x: 0 }}
-                                            className="flex items-center gap-1.5 text-teal-500/50"
+                                            className="flex items-center gap-1.5 text-teal-400"
                                         >
-                                            <Sparkles size={12} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Unlocked</span>
+                                            <Sparkles size={14} className="animate-pulse" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Unlocked & Claimed</span>
                                         </motion.div>
                                     )}
                                 </div>
@@ -288,15 +298,19 @@ export default function MilestonePath({ currentVisits, totalMilestones, rewards 
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 1 }}
-                className="mt-12 text-center"
+                className="mt-16 text-center"
             >
                 <motion.div
-                    whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(45, 212, 191, 0.3)" }}
-                    className="inline-block px-6 py-2 rounded-2xl bg-white/5 border border-white/10 cursor-pointer"
+                    whileHover={{ scale: 1.1, boxShadow: "0 0 50px rgba(45, 212, 191, 0.4)" }}
+                    className="inline-block px-8 py-3 rounded-3xl bg-teal-500/10 border border-teal-500/20 cursor-pointer group shadow-2xl"
                 >
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Ultimate Reward at Visit {totalMilestones}</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-teal-400 flex items-center gap-3">
+                        <Gift size={16} className="group-hover:rotate-12 transition-transform" />
+                        Ultimate Reward at Visit {totalMilestones}
+                    </p>
                 </motion.div>
             </motion.div>
+
         </div>
     );
 }

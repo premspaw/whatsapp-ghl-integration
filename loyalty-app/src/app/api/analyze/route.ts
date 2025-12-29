@@ -34,20 +34,28 @@ export async function POST(req: Request) {
         }
 
         const text = await response.text();
-        if (!text) return NextResponse.json({ error: 'N8N responded with empty data.' }, { status: 500 });
+        if (!text) {
+            console.error("❌ N8N responded with empty data.");
+            return NextResponse.json({ error: 'N8N responded with empty data.' }, { status: 500 });
+        }
 
-        let rawData = JSON.parse(text);
+        let rawData;
+        try {
+            rawData = JSON.parse(text);
+        } catch (e) {
+            console.error("❌ JSON Parse Error. Raw text:", text.substring(0, 100));
+            return NextResponse.json({ error: 'Invalid JSON from N8N', details: text.substring(0, 500) }, { status: 500 });
+        }
 
         // Handle N8N wrapping in array [ { ... } ]
         let data = Array.isArray(rawData) ? rawData[0] : rawData;
 
         // --- Enhanced Parser: Extract deep details from the text if present ---
-        const reportSource = data.finalReport || data.fullReportText || data.report || data.rawData;
+        const reportSource = data.finalReport || data.fullReportText || data.report || data.rawData || data.analysisText;
 
         if (reportSource && typeof reportSource === 'string') {
             console.log("🛠️ Augmenting Structured Data from Text...");
-
-            // Extract Area Analysis (The new Super-Prompt sections)
+            // ... (regex extraction logic continues)
             const analysis: any = {};
             const areaNames = [
                 { name: 'Forehead and T-Zone', key: 'Forehead' },
@@ -59,14 +67,11 @@ export async function POST(req: Request) {
 
             areaNames.forEach((area, index) => {
                 const areaNum = index + 1;
-                // Match the entire section for this area - stop at next number or FINAL SCORECARD
                 const sectionRegex = new RegExp(`${areaNum}\\.\\s*${area.name}[\\s\\S]*?(?=${areaNum + 1}\\.\\s|FINAL SCORECARD|OVERALL TREATMENT|DISCLAIMER|$)`, 'i');
                 const sectionMatch = reportSource.match(sectionRegex);
 
                 if (sectionMatch) {
                     const sectionText = sectionMatch[0];
-                    console.log(`🔍 Section ${areaNum} matched:`, area.name);
-
                     const obsRegex = /Observed:\s*([\s\S]*?)(?=\n\s*(?:AI Interpretation|Skin Health Score|Severity|What is Good|Needs Improvement)|$)/i;
                     const intRegex = /AI Interpretation:\s*([\s\S]*?)(?=\n\s*(?:Skin Health Score|Severity|What is Good|Needs Improvement)|$)/i;
                     const sevRegex = /Severity:\s*([\s\S]*?)(?=\n\s*(?:What is Good|Needs Improvement|$))/i;
@@ -84,9 +89,7 @@ export async function POST(req: Request) {
                 }
             });
 
-            // Fallback: If still empty, try a lighter regex for any "Observed/Interpretation" pairs
             if (Object.keys(analysis).length === 0) {
-                console.log("⚠️ Main parser failed, trying generic fallback...");
                 const genericRegex = /([A-Za-z\s&]+)\nObserved:\s*([\s\S]*?)\nAI Interpretation:\s*([\s\S]*?)\nSeverity:\s*([^\n]*)/gi;
                 let match;
                 while ((match = genericRegex.exec(reportSource)) !== null) {
@@ -100,8 +103,6 @@ export async function POST(req: Request) {
                     }
                 }
             }
-
-            // Merge back into data
             data.deepAnalysis = analysis;
         }
 
@@ -110,11 +111,19 @@ export async function POST(req: Request) {
             console.log("🛠️ Generating Fallback Summary from Scorecard...");
             const scores = data.scorecard || {};
             const focus = Object.entries(scores)
-                .filter(([_, val]: [string, any]) => (typeof val === 'number' ? val : val.value) > 20)
+                .filter(([_, val]: [string, any]) => {
+                    if (!val) return false;
+                    const v = typeof val === 'number' ? val : (val.value ?? 0);
+                    return v > 20;
+                })
                 .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
 
             const strengths = Object.entries(scores)
-                .filter(([_, val]: [string, any]) => (typeof val === 'number' ? val : val.value) <= 20)
+                .filter(([_, val]: [string, any]) => {
+                    if (!val) return true;
+                    const v = typeof val === 'number' ? val : (val.value ?? 0);
+                    return v <= 20;
+                })
                 .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
 
             data.summary = {
@@ -126,11 +135,25 @@ export async function POST(req: Request) {
             };
         }
 
-        console.log("✅ Proxy Success. Returning High-Density JSON.");
         return NextResponse.json(data);
 
-    } catch (error) {
-        console.error("❌ Proxy Error:", error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error("❌ Proxy Error Details:", error.message);
+
+        // Write to file for debugging if terminal is inaccessible
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const logPath = path.join(process.cwd(), '..', 'data', 'proxy_logs.txt');
+            fs.appendFileSync(logPath, `[${new Date().toISOString()}] ERROR: ${error.message}\n${error.stack}\n\n`);
+        } catch (e) {
+            console.error("Could not write to log file", e);
+        }
+
+        return NextResponse.json({
+            error: 'Internal Server Error',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { status: 500 });
     }
 }

@@ -6,7 +6,7 @@ module.exports = {
             script: 'src/server.js',
             cwd: '/root/whatsapp-ghl-integration',
             env: {
-                PORT: 3000,
+                PORT: 30001,
                 NODE_ENV: 'production'
             },
             instances: 1,
