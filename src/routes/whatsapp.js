@@ -308,6 +308,13 @@ router.post('/send-template', async (req, res) => {
         }
 
         let content = template.content;
+
+        // Auto-replace {loyalty_link} with personalized URL
+        if (content.includes('{loyalty_link}') && contactId) {
+            const loyaltyUrl = `https://clinic.synthcore.in/rewards/${locationId}?cid=${contactId}&name=${encodeURIComponent(variables?.name || variables?.first_name || 'Guest')}&phone=${encodeURIComponent(to)}`;
+            content = content.replace(/{loyalty_link}/g, loyaltyUrl);
+        }
+
         if (variables) {
             Object.entries(variables).forEach(([key, value]) => {
                 const regex = new RegExp(`{${key}}`, 'g');

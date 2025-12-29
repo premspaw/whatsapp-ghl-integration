@@ -433,6 +433,7 @@
                             <select id="variableSelector">
                                 <option value="">Quick Insert...</option>
                                 <optgroup label="Contact">
+                                    <option value="{contact.id}">Contact ID</option>
                                     <option value="{first_name}">First Name</option>
                                     <option value="{last_name}">Last Name</option>
                                     <option value="{email}">Email Address</option>
@@ -441,6 +442,9 @@
                                 <optgroup label="Appointment">
                                     <option value="{date}">Date</option>
                                     <option value="{time}">Time</option>
+                                </optgroup>
+                                <optgroup label="Loyalty App">
+                                    <option value="{loyalty_link}">Loyalty Wallet Link</option>
                                 </optgroup>
                             </select>
                             <button class="primary-btn" style="width: auto; padding: 0 1.5rem;"
@@ -451,7 +455,7 @@
                             <span class="var-chip" onclick="insertVariable('{first_name}')">First Name</span>
                             <span class="var-chip" onclick="insertVariable('{email}')">Email</span>
                             <span class="var-chip" onclick="insertVariable('{phone}')">Phone</span>
-                            <span class="var-chip" onclick="insertVariable('{amount}')">Amount</span>
+                            <span class="var-chip" onclick="insertVariable('{loyalty_link}')">🎁 Loyalty Link</span>
                         </div>
                     </div>
 
