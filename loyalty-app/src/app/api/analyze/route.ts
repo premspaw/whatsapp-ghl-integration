@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
     try {
         const formData = await req.formData();
-        const n8nWebhook = process.env.NEXT_PUBLIC_N8N_WEBHOOK;
+        const n8nWebhook = process.env.NEXT_PUBLIC_N8N_WEBHOOK || 'https://synthcoreai.app.n8n.cloud/webhook/skin-analysis';
 
         const image = formData.get('image');
         const locationId = formData.get('locationId');
