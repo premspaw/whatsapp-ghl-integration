@@ -192,6 +192,57 @@ router.post('/ghl/conversation', async (req, res) => {
                 break;
 
             default:
+                // Handle INSTALL event - Auto-onboard Loyalty App
+                if (req.body.type === 'INSTALL' && req.body.locationId) {
+                    const locationId = req.body.locationId;
+                    logger.info(`🎉 GHL App INSTALLED for location: ${locationId}`);
+
+                    const supabase = require('../config/supabase');
+                    if (supabase) {
+                        // Check if loyalty_settings already exists
+                        const { data: existing } = await supabase
+                            .from('loyalty_settings')
+                            .select('*')
+                            .eq('location_id', locationId)
+                            .single();
+
+                        if (!existing) {
+                            // Create default loyalty settings
+                            await supabase
+                                .from('loyalty_settings')
+                                .insert({
+                                    location_id: locationId,
+                                    business_name: 'Your Clinic',
+                                    primary_color: '#14b8a6',
+                                    secondary_color: '#fb7185',
+                                    logo_url: null
+                                });
+                            logger.info(`✅ Created loyalty_settings for ${locationId}`);
+
+                            // Create default milestones (rewards at visits 3, 6, 10)
+                            const defaultMilestones = [
+                                { visit_number: 3, reward_name: '10% Off Next Visit', reward_image: null },
+                                { visit_number: 6, reward_name: 'Free Consultation', reward_image: null },
+                                { visit_number: 10, reward_name: '20% Off Treatment', reward_image: null }
+                            ];
+
+                            for (const milestone of defaultMilestones) {
+                                await supabase
+                                    .from('loyalty_milestones')
+                                    .insert({
+                                        location_id: locationId,
+                                        visit_number: milestone.visit_number,
+                                        reward_name: milestone.reward_name,
+                                        reward_image: milestone.reward_image
+                                    });
+                            }
+                            logger.info(`✅ Created ${defaultMilestones.length} default milestones for ${locationId}`);
+                        } else {
+                            logger.info(`ℹ️ Loyalty settings already exist for ${locationId}, skipping auto-onboarding`);
+                        }
+                    }
+                }
+
                 // Handle UNINSTALL event
                 if (req.body.type === 'UNINSTALL' && req.body.locationId) {
                     const locationId = req.body.locationId;
