@@ -109,13 +109,13 @@ export default function SkinAnalysisReport() {
             formData.append('timestamp', new Date().toISOString());
 
             const response = await fetch('/api/analyze', { method: 'POST', body: formData });
+            const resultData = await response.json();
 
-            let resultData: N8NResponse;
             if (!response.ok) {
-                console.error('AI Analysis Proxy Failed, using mock data');
-                resultData = mockN8NData;
-            } else {
-                resultData = await response.json();
+                console.error('AI Analysis Proxy Failed:', resultData.error, resultData.hint);
+                alert(`Analysis failed: ${resultData.error}\n\n${resultData.hint || 'Using mock data for demonstration.'}`);
+                setStep('capture');
+                return;
             }
 
             // 3. Persist and Redirect

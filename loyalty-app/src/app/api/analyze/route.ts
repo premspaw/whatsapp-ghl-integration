@@ -14,10 +14,14 @@ export async function POST(req: Request) {
         });
 
         if (!n8nWebhook) {
-            return NextResponse.json({ error: 'N8N Webhook URL not configured' }, { status: 500 });
+            console.error("❌ ERROR: NEXT_PUBLIC_N8N_WEBHOOK is not defined in Environment Variables!");
+            return NextResponse.json({
+                error: 'N8N Webhook URL not configured',
+                hint: 'Please add NEXT_PUBLIC_N8N_WEBHOOK to your Vercel Project Settings and Redeploy.'
+            }, { status: 500 });
         }
 
-        console.log("🚀 Proxying binary request to N8N:", n8nWebhook);
+        console.log("🚀 Proxying binary request to N8N:", n8nWebhook.substring(0, 15) + "...");
 
         const response = await fetch(n8nWebhook, {
             method: 'POST',
