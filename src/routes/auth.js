@@ -53,6 +53,7 @@ router.post('/apikey', async (req, res) => {
 
 // GET /api/auth/locations - List all connected locations (Admin)
 router.get('/locations', async (req, res) => {
+    console.log('📍 GET /api/auth/locations hit');
     try {
         let locations = [];
 

@@ -78,7 +78,7 @@
 
                 if (data.locations && data.locations.length > 0) {
                     // Fetch all billing stats once
-                    const billRes = await fetch('/api/billing/all');
+                    const billRes = await fetch('/api/v1/billing/all');
                     const billData = await billRes.json();
                     const allBilling = billData.allBilling || {};
 
@@ -138,7 +138,7 @@
         async function updateRate(locationId) {
             const rate = document.getElementById(`rate-${locationId}`).value;
             try {
-                const res = await fetch('/api/billing/set-rate', {
+                const res = await fetch('/api/v1/billing/set-rate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ locationId, rate })
