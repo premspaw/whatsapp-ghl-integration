@@ -415,7 +415,7 @@
 
         async function fetchAnalytics() {
             try {
-                const res = await fetch(`${API_BASE}/api/whatsapp/analytics?location_id=${locationId}`);
+                const res = await fetch(`${API_BASE}/api/v1/whatsapp/analytics?location_id=${locationId}`);
                 const data = await res.json();
                 if (data.success) {
                     const stats = data.stats;
@@ -425,7 +425,7 @@
                 }
 
                 // Fetch Billing
-                const billRes = await fetch(`${API_BASE}/api/billing/status?location_id=${locationId}`);
+                const billRes = await fetch(`${API_BASE}/api/v1/billing/status?location_id=${locationId}`);
                 const billData = await billRes.json();
                 if (billData.success) {
                     const billing = billData.billing;
@@ -440,7 +440,7 @@
         async function recharge(amount) {
             if (!confirm(`Are you sure you want to recharge ₹${amount}?`)) return;
             try {
-                const res = await fetch(`${API_BASE}/api/billing/recharge`, {
+                const res = await fetch(`${API_BASE}/api/v1/billing/recharge`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ locationId, amount })
@@ -457,7 +457,7 @@
 
         async function checkStatus() {
             try {
-                const res = await fetch(`${API_BASE}/api/whatsapp/status?location_id=${locationId}`);
+                const res = await fetch(`${API_BASE}/api/v1/whatsapp/status?location_id=${locationId}`);
                 const data = await res.json();
 
                 const badge = document.getElementById('statusBadge');
@@ -482,7 +482,7 @@
                     instruction.style.display = 'block';
 
                     if (data.hasQRCode) {
-                        const qrRes = await fetch(`${API_BASE}/api/whatsapp/qr-code?location_id=${locationId}`);
+                        const qrRes = await fetch(`${API_BASE}/api/v1/whatsapp/qr-code?location_id=${locationId}`);
                         const qrData = await qrRes.json();
                         qrImg.src = qrData.qrCode;
                         qrImg.style.display = 'block';
@@ -516,7 +516,7 @@
         async function logoutWhatsApp() {
             if (confirm('Are you sure you want to disconnect? This will stop all automations for this sub-account.')) {
                 try {
-                    await fetch(`${API_BASE}/api/whatsapp/logout?location_id=${locationId}`, { method: 'POST' });
+                    await fetch(`${API_BASE}/api/v1/whatsapp/logout?location_id=${locationId}`, { method: 'POST' });
                     showToast('Disconnected. Refreshing...');
                     setTimeout(() => window.location.reload(), 2000);
                 } catch (e) {
