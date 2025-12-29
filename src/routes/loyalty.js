@@ -87,6 +87,13 @@ router.post('/ghl-stamp', async (req, res) => {
         const finalContactId = contactId || contact_id;
         const finalPhone = phone || contact_phone;
 
+        // DEBUG LOGGING
+        console.log('----------------------------------------');
+        console.log('📥 RECEIVED GHL WEBHOOK:');
+        console.log(JSON.stringify(req.body, null, 2));
+        console.log('parsed IDs:', { finalLocationId, finalContactId, finalPhone });
+        console.log('----------------------------------------');
+
         if (!finalLocationId || (!finalContactId && !finalPhone)) {
             logger.warn('⚠️ GHL Stamp Failed: Missing IDs', { body: req.body });
             return res.status(400).json({ error: 'Missing locationId and (contactId or phone)' });
