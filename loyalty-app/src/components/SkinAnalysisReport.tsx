@@ -192,8 +192,8 @@ export default function SkinAnalysisReport() {
                         </div>
                         <div className="grid gap-4">
                             <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all shadow-xl"><Upload size={20} /> Upload from Gallery</button>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-                            <button className="w-full py-5 rounded-2xl bg-white/5 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-white/10 hover:bg-white/10 transition-all"><Camera size={20} /> Open Camera</button>
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileUpload} />
+                            <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 rounded-2xl bg-white/5 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-white/10 hover:bg-white/10 transition-all"><Camera size={20} /> Open Camera</button>
                         </div>
                     </div>
                 )}
