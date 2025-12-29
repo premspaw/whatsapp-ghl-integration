@@ -73,11 +73,46 @@ export default function SkinAnalysisReport() {
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            // Check file size (max 10MB before compression)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('Image too large. Please select a smaller image (max 10MB)');
+                return;
+            }
+
             setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImage(reader.result as string);
-                setStep('capture');
+                const img = new Image();
+                img.onload = () => {
+                    // Compress if needed (resize to max 1920px width)
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    const maxWidth = 1920;
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+
+                    // Convert to JPEG with 85% quality
+                    const compressedDataURL = canvas.toDataURL('image/jpeg', 0.85);
+                    setImage(compressedDataURL);
+                    setStep('capture');
+                };
+                img.src = reader.result as string;
             };
             reader.readAsDataURL(file);
         }
