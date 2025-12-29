@@ -192,7 +192,31 @@ router.post('/ghl/conversation', async (req, res) => {
                 break;
 
             default:
-                logger.info('Unhandled conversation event', { event, body: req.body });
+                // Handle UNINSTALL event
+                if (req.body.type === 'UNINSTALL' && req.body.locationId) {
+                    const locationId = req.body.locationId;
+                    logger.info(`🗑️ GHL App UNINSTALLED for location: ${locationId}`);
+
+                    // Delete from database
+                    const supabase = require('../config/supabase');
+                    if (supabase) {
+                        await supabase
+                            .from('ghl_integrations')
+                            .delete()
+                            .eq('location_id', locationId);
+                        logger.info(`✅ Deleted location ${locationId} from database`);
+                    }
+
+                    // Delete from memory
+                    const ghlOAuth = require('../services/ghl/oauth');
+                    if (ghlOAuth.tokens[locationId]) {
+                        delete ghlOAuth.tokens[locationId];
+                        ghlOAuth._saveLocalTokens();
+                        logger.info(`✅ Deleted location ${locationId} from memory`);
+                    }
+                } else {
+                    logger.info('Unhandled conversation event', { event, body: req.body });
+                }
         }
 
         res.json({ success: true });
