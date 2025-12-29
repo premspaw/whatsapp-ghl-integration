@@ -68,28 +68,43 @@ export default function SkinAnalysisReport() {
     const [image, setImage] = useState<string | null>(null);
     const [imageFile, setImageFile] = useState<File | null>(null);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                alert('Please select an image file');
+            // Reset input values so the same file can be selected again
+            if (galleryInputRef.current) galleryInputRef.current.value = '';
+            if (cameraInputRef.current) cameraInputRef.current.value = '';
+
+            // Validate file type - allowing more image types just in case
+            if (!file.type.startsWith('image/') && !file.name.match(/\.(heic|heif|webp|jpg|jpeg|png)$/i)) {
+                alert('Please select an image file (JPG, PNG, WebP)');
                 return;
             }
 
-            // Check file size (max 10MB before compression)
-            const maxSize = 10 * 1024 * 1024; // 10MB
+            // Check file size (max 6MB before compression)
+            const maxSize = 6 * 1024 * 1024; // 6MB
             if (file.size > maxSize) {
-                alert('Image too large. Please select a smaller image (max 10MB)');
+                alert('Image too large. Please select a smaller image (max 6MB)');
                 return;
             }
 
             setImageFile(file);
             const reader = new FileReader();
+
+            reader.onerror = () => {
+                alert("Failed to read the image file. Please try again.");
+            };
+
             reader.onloadend = () => {
                 const img = new Image();
+
+                img.onerror = () => {
+                    alert("Could not load image. Please try a different format (JPG or PNG).");
+                };
+
                 img.onload = () => {
                     // Compress if needed (resize to max 1920px width)
                     const canvas = document.createElement('canvas');
@@ -105,12 +120,40 @@ export default function SkinAnalysisReport() {
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
-                    ctx?.drawImage(img, 0, 0, width, height);
+                    if (!ctx) {
+                        alert("Image processing failed. Please try again.");
+                        return;
+                    }
+
+                    ctx.drawImage(img, 0, 0, width, height);
 
                     // Convert to JPEG with 85% quality
-                    const compressedDataURL = canvas.toDataURL('image/jpeg', 0.85);
-                    setImage(compressedDataURL);
-                    setStep('capture');
+                    try {
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                // Create a new file from the blob
+                                const compressedFile = new File([blob], file.name, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now(),
+                                });
+                                setImageFile(compressedFile);
+
+                                // Also update the preview state
+                                const compressedDataURL = canvas.toDataURL('image/jpeg', 0.85);
+                                setImage(compressedDataURL);
+                                setStep('capture');
+                            } else {
+                                throw new Error('Blob generation failed');
+                            }
+                        }, 'image/jpeg', 0.85);
+
+                    } catch (err) {
+                        console.error("Compression error:", err);
+                        // Fallback to original if compression fails
+                        setImageFile(file);
+                        setImage(reader.result as string);
+                        setStep('capture');
+                    }
                 };
                 img.src = reader.result as string;
             };
@@ -119,6 +162,12 @@ export default function SkinAnalysisReport() {
     };
 
     const runAnalysis = async () => {
+        if (!imageFile) {
+            alert("No image selected. Please take a photo or select one from gallery.");
+            setStep('capture');
+            return;
+        }
+
         setStep('analyzing');
 
         try {
@@ -226,9 +275,11 @@ export default function SkinAnalysisReport() {
                             </div>
                         </div>
                         <div className="grid gap-4">
-                            <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all shadow-xl"><Upload size={20} /> Upload from Gallery</button>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileUpload} />
-                            <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 rounded-2xl bg-white/5 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-white/10 hover:bg-white/10 transition-all"><Camera size={20} /> Open Camera</button>
+                            <button onClick={() => galleryInputRef.current?.click()} className="w-full py-5 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all shadow-xl"><Upload size={20} /> Upload from Gallery</button>
+                            <input type="file" ref={galleryInputRef} style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 0, height: 0 }} accept="image/*" onChange={handleFileUpload} />
+
+                            <button onClick={() => cameraInputRef.current?.click()} className="w-full py-5 rounded-2xl bg-white/5 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-white/10 hover:bg-white/10 transition-all"><Camera size={20} /> Open Camera</button>
+                            <input type="file" ref={cameraInputRef} style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 0, height: 0 }} accept="image/*" capture="environment" onChange={handleFileUpload} />
                         </div>
                     </div>
                 )}
