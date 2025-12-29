@@ -7,6 +7,7 @@ import MilestonePath from "@/components/MilestonePath";
 import Navbar from "@/components/Navbar";
 import { getLoyaltyData, getCustomerData } from "@/lib/api";
 import { useSearchParams } from "next/navigation";
+import SkinAnalysisReport from "../../../components/SkinAnalysisReport";
 
 export default function LoyaltyHome({ params }: { params: Promise<{ locationId: string }> }) {
     const { locationId } = use(params);
@@ -37,10 +38,11 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
                 userInfo = JSON.parse(storedUser);
                 setUser(userInfo);
             } else {
-                // No contact info available - show error
-                setShowError(true);
-                setIsLoading(false);
-                return;
+                // [DEV MODE] Auto-login test user if no params
+                console.log("⚠️ DEV MODE: Auto-logging in test user");
+                userInfo = { contactId: 'test_user_123', name: 'Sarah Johnson', phone: '+919999900000' };
+                localStorage.setItem(`loyalty_user_${locationId}`, JSON.stringify(userInfo));
+                setUser(userInfo);
             }
         }
 
@@ -118,6 +120,11 @@ export default function LoyaltyHome({ params }: { params: Promise<{ locationId: 
                     {user?.name.charAt(0).toUpperCase() || 'G'}
                 </div>
             </div>
+
+            {/* AI Skin Analysis Section */}
+            <section className="px-2">
+                <SkinAnalysisReport />
+            </section>
 
             {/* How it Works / Instruction */}
             <div className="px-2">

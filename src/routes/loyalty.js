@@ -102,17 +102,63 @@ router.get('/settings/:locationId', async (req, res) => {
             .eq('is_active', true);
 
         if (settingsError && settingsError.code !== 'PGRST116') {
-            throw settingsError;
+            logger.error('❌ Settings Query Error', { error: settingsError });
+            return res.status(500).json({ error: 'Settings query failed', details: settingsError.message });
+        }
+
+        if (milestonesError) {
+            logger.error('❌ Milestones Query Error', { error: milestonesError });
+        }
+
+        if (actionsError) {
+            logger.error('❌ Actions Query Error', { error: actionsError });
         }
 
         res.json({
             settings: settings || null,
             milestones: milestones || [],
-            actions: actions || []
+            actions: actions || [],
+            debug: { locationId, hasSettings: !!settings }
         });
     } catch (error) {
-        logger.error('❌ Loyalty Settings Error', { error: error.message });
-        res.status(500).json({ error: 'Internal server error' });
+        logger.error('❌ Loyalty Settings System Error', { error: error.message, stack: error.stack });
+        res.status(500).json({
+            error: 'Internal server error',
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+/**
+ * @route GET /api/v1/loyalty/test
+ * @desc Diagnostic endpoint to verify DB schema and connectivity
+ */
+router.get('/test', async (req, res) => {
+    try {
+        if (!supabase) return res.status(503).json({ status: 'error', message: 'Supabase not initialized' });
+
+        const results = {};
+
+        // Check ghl_integrations
+        const { count: ghlCount, error: ghlError } = await supabase.from('ghl_integrations').select('*', { count: 'exact', head: true });
+        results.ghl_integrations = { status: ghlError ? 'error' : 'ok', count: ghlCount, message: ghlError?.message };
+
+        // Check loyalty_settings
+        const { count: settingsCount, error: settingsError } = await supabase.from('loyalty_settings').select('*', { count: 'exact', head: true });
+        results.loyalty_settings = { status: settingsError ? 'error' : 'ok', count: settingsCount, message: settingsError?.message };
+
+        // Check loyalty_milestones
+        const { count: milestonesCount, error: milestonesError } = await supabase.from('loyalty_milestones').select('*', { count: 'exact', head: true });
+        results.loyalty_milestones = { status: milestonesError ? 'error' : 'ok', count: milestonesCount, message: milestonesError?.message };
+
+        res.json({
+            status: 'Diagnostic Report',
+            timestamp: new Date().toISOString(),
+            results
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'crash', message: error.message });
     }
 });
 
