@@ -83,9 +83,9 @@ router.post('/ghl-stamp', async (req, res) => {
             phone, contact_phone
         } = req.body;
 
-        const finalLocationId = locationId || location_id;
-        const finalContactId = contactId || contact_id;
-        const finalPhone = phone || contact_phone;
+        const finalLocationId = locationId || location_id || req.body.customData?.location_id;
+        const finalContactId = contactId || contact_id || req.body.customData?.contact_id;
+        const finalPhone = phone || contact_phone || req.body.customData?.phone;
 
         // DEBUG LOGGING
         console.log('----------------------------------------');
