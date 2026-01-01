@@ -177,14 +177,21 @@ class WhatsAppClient extends EventEmitter {
 
             // If it doesn't already contain @, try to find the correct WhatsApp ID (resolves CID vs LID)
             if (!to.toString().includes('@')) {
-                const numberId = await this.client.getNumberId(to);
-                if (numberId) {
-                    chatId = numberId._serialized;
-                    logger.info(`🔍 [WhatsApp] Resolved ${to} to JID: ${chatId}`);
-                } else {
-                    // Fallback to legacy formatting if lookup fails
+                // Clean input for getNumberId (digits only)
+                const cleanNumber = to.toString().replace(/[^\d]/g, '');
+                try {
+                    const numberId = await this.client.getNumberId(cleanNumber);
+                    if (numberId) {
+                        chatId = numberId._serialized;
+                        logger.info(`🔍 [WhatsApp] Resolved ${to} to JID: ${chatId}`);
+                    } else {
+                        // Fallback to legacy formatting if lookup fails
+                        chatId = this._formatChatId(to);
+                        logger.warn(`⚠️ [WhatsApp] Could not resolve ${to} via WhatsApp, falling back to ${chatId}`);
+                    }
+                } catch (lookupErr) {
+                    logger.error(`❌ [WhatsApp] JID resolution failed for ${cleanNumber}`, { error: lookupErr.message });
                     chatId = this._formatChatId(to);
-                    logger.warn(`⚠️ [WhatsApp] Could not resolve ${to} via WhatsApp, falling back to ${chatId}`);
                 }
             }
 
