@@ -144,6 +144,9 @@ class WhatsAppClient extends EventEmitter {
                         if (Date.now() - lastSent < 15000) return; // 15s window for phone sync safety
                     }
 
+                    // Add to recentSends to prevent GHL echoes from re-sending this message
+                    this.recentSends.set(msgHash, Date.now());
+
                     logger.info(`📤 [Loc: ${this.locationId}] Native phone reply to ${realNumber} (JID: ${chatId}): ${body.substring(0, 50)}...`);
                     await whatsappSync.syncMessageToGHL(this.locationId, {
                         to: realNumber,
