@@ -141,7 +141,9 @@ class WhatsAppClient extends EventEmitter {
             // Case B: OUTBOUND message sent from the physical phone (Manual Reply)
             else {
                 try {
-                    const contact = await message.getContact();
+                    // message.getContact() for outbound (fromMe: true) returns the sender (bot itself)
+                    // We need the recipient's contact info.
+                    const contact = await this.client.getContactById(message.to);
                     const realNumber = contact.number || message.to.split('@')[0];
 
                     const chatId = message.to;
