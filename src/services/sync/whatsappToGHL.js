@@ -17,12 +17,22 @@ class WhatsAppGHLSync {
      */
     async syncMessageToGHL(locationId, whatsappMessage) {
         try {
-            const { from, to, body, type, timestamp, hasMedia, direction = 'inbound' } = whatsappMessage;
+            const { from, to, body, type, timestamp, hasMedia, direction = 'inbound', myNumber } = whatsappMessage;
 
             // Determine which phone number belongs to the contact
             // If inbound, contact is 'from'. If outbound, contact is 'to'.
             const contactPhoneRaw = direction === 'inbound' ? from : to;
             const phone = this.normalizePhone(contactPhoneRaw);
+
+            // Filter out self-conversations (if contact is the bot itself)
+            if (myNumber) {
+                const cleanBot = myNumber.replace(/[^\d]/g, '');
+                const cleanContact = phone.replace(/[^\d]/g, '');
+                if (cleanBot === cleanContact) {
+                    logger.info(`⏭️ [Sync] Skipping self-sync (contact is bot itself: ${phone})`);
+                    return { success: true, message: 'self_sync_ignored' };
+                }
+            }
 
             if (locationId === 'default') {
                 logger.warn(`⚠️ [Sync] Skipping ${direction} sync: locationId is "default".`, { phone });

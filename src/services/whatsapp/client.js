@@ -105,13 +105,13 @@ class WhatsAppClient extends EventEmitter {
 
             // FILTER: Ignore self-messages (Message Yourself)
             const myId = this.client?.info?.wid?._serialized || this.client?.info?.me?._serialized;
-            if (myId && message.to === myId && message.fromMe) {
-                // This is the bot owner messaging themselves on WhatsApp
-                return;
-            }
-            if (myId && message.from === myId && !message.fromMe) {
-                // This is also the bot owner messaging themselves (inbound side)
-                return;
+            const myNumber = this.client?.info?.wid?.user || this.client?.info?.me?.user;
+
+            if (myId && (message.to === myId || message.from === myId)) {
+                // If it's the bot talking to itself (Message Yourself), skip entirely
+                if (message.from === message.to) {
+                    return;
+                }
             }
 
             // Case A: INBOUND message from a contact
@@ -130,7 +130,8 @@ class WhatsAppClient extends EventEmitter {
                         hasMedia: message.hasMedia,
                         downloadMedia: message.downloadMedia ? message.downloadMedia.bind(message) : null,
                         direction: 'inbound',
-                        whatsappMessage: message // Pass the original message for any extra data if needed
+                        whatsappMessage: message, // Pass the original message for any extra data if needed
+                        myNumber: myNumber
                     });
                 } catch (error) {
                     logger.error(`❌ [Loc: ${this.locationId}] Inbound sync failed`, { error: error.message });
@@ -149,7 +150,8 @@ class WhatsAppClient extends EventEmitter {
 
                     // Check if our integration just sent this to avoid double syncing
                     const normalizedBody = body.replace(/\s+/g, ' ').trim();
-                    const msgHash = `${chatId}|${normalizedBody}|${message.hasMedia}`;
+                    const cleanTo = realNumber.replace(/[^\d]/g, ''); // Canonical phone-based hash
+                    const msgHash = `${cleanTo}|${normalizedBody}|${message.hasMedia}`;
                     if (this.recentSends.has(msgHash)) {
                         const lastSent = this.recentSends.get(msgHash);
                         if (Date.now() - lastSent < 15000) return; // 15s window for phone sync safety
@@ -167,7 +169,8 @@ class WhatsAppClient extends EventEmitter {
                         timestamp: message.timestamp,
                         hasMedia: message.hasMedia,
                         downloadMedia: message.downloadMedia ? message.downloadMedia.bind(message) : null,
-                        direction: 'outbound'
+                        direction: 'outbound',
+                        myNumber: myNumber
                     });
                 } catch (error) {
                     logger.error(`❌ [Loc: ${this.locationId}] Case B processing failed`, { error: error.message });
@@ -219,7 +222,8 @@ class WhatsAppClient extends EventEmitter {
 
             // --- Anti-Duplicate Logic ---
             const normalizedMsg = (message || '').replace(/\s+/g, ' ').trim();
-            const msgHash = `${chatId}|${normalizedMsg}|${!!mediaUrl}`;
+            const cleanTo = to.toString().replace(/[^\d]/g, ''); // Canonical phone-based hash
+            const msgHash = `${cleanTo}|${normalizedMsg}|${!!mediaUrl}`;
             const now = Date.now();
             if (this.recentSends.has(msgHash)) {
                 const lastSent = this.recentSends.get(msgHash);
