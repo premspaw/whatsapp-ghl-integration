@@ -100,21 +100,21 @@ class GHLContactsService {
         logger.info('Searching for contact', { locationId, phone });
 
         try {
-            // 1. Try raw search
+            // 1. Try raw search (usually starts with +)
             let data = await this._makeRequest(locationId, 'GET', '/contacts/', null, { query: phone });
             if (data.contacts && data.contacts.length > 0) return data.contacts[0];
 
-            // 2. Try normalized (digits only)
-            const digitsOnly = phone.replace(/\D/g, '');
-            if (digitsOnly && digitsOnly !== phone) {
-                data = await this._makeRequest(locationId, 'GET', '/contacts/', null, { query: digitsOnly });
+            // 2. Try without '+' (GHL sometimes stores numbers without prefix)
+            const withoutPlus = phone.replace('+', '');
+            if (withoutPlus !== phone) {
+                data = await this._makeRequest(locationId, 'GET', '/contacts/', null, { query: withoutPlus });
                 if (data.contacts && data.contacts.length > 0) return data.contacts[0];
             }
 
-            // 3. Try removing leading '0' and searching (common in India/UK payloads)
-            if (phone.startsWith('0')) {
-                const noZero = phone.substring(1);
-                data = await this._makeRequest(locationId, 'GET', '/contacts/', null, { query: noZero });
+            // 3. Try normalized (digits only)
+            const digitsOnly = phone.replace(/\D/g, '');
+            if (digitsOnly && digitsOnly !== phone && digitsOnly !== withoutPlus) {
+                data = await this._makeRequest(locationId, 'GET', '/contacts/', null, { query: digitsOnly });
                 if (data.contacts && data.contacts.length > 0) return data.contacts[0];
             }
 

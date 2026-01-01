@@ -4,6 +4,7 @@ const logger = require('../../utils/logger');
 const whatsappSync = require('../sync/whatsappToGHL');
 const fs = require('fs');
 const path = require('path');
+const phoneNormalizer = require('../../utils/phoneNormalizer');
 
 class WhatsAppClient extends EventEmitter {
     constructor(locationId) {
@@ -239,14 +240,9 @@ class WhatsAppClient extends EventEmitter {
 
     _formatChatId(number) {
         if (!number) return '';
-        let cleaned = number.toString().replace(/[^\d]/g, '');
-        if (cleaned.startsWith('0') && cleaned.length === 11) {
-            cleaned = '91' + cleaned.substring(1);
-        }
-        if (cleaned.length === 10) {
-            cleaned = '91' + cleaned;
-        }
-        return cleaned.includes('@c.us') ? cleaned : `${cleaned}@c.us`;
+        const normalized = phoneNormalizer.normalize(number);
+        const digits = normalized.replace('+', '');
+        return `${digits}@c.us`;
     }
 }
 

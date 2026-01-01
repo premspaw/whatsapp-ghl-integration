@@ -1,21 +1,14 @@
 const ghlContacts = require('../ghl/contacts');
 const ghlConversations = require('../ghl/conversations');
 const logger = require('../../utils/logger');
+const phoneNormalizer = require('../../utils/phoneNormalizer');
 
 class WhatsAppGHLSync {
     /**
      * Normalize phone number to E.164 format
      */
     normalizePhone(phone) {
-        // Remove all non-numeric characters
-        let normalized = phone.replace(/\D/g, '');
-
-        // Add + if not present
-        if (!normalized.startsWith('+')) {
-            normalized = '+' + normalized;
-        }
-
-        return normalized;
+        return phoneNormalizer.normalize(phone);
     }
 
     /**
@@ -36,27 +29,40 @@ class WhatsAppGHLSync {
                 return { success: false, error: 'unassigned_location' };
             }
 
-            logger.info(`📨 Syncing WhatsApp ${direction} message to GHL`, { locationId, contact: phone, type });
+            logger.info(`📨 [Sync] Starting ${direction} sync for ${phone}`, {
+                locationId,
+                rawFrom: from,
+                type,
+                body: body?.substring(0, 20)
+            });
 
             // Step 1: Get or create contact
-            const contact = await ghlContacts.getOrCreateContact(locationId, phone, contactPhoneRaw);
-
-            if (!contact) {
-                logger.error('Failed to get/create contact', { locationId, phone });
-                return false;
+            let contact;
+            try {
+                contact = await ghlContacts.getOrCreateContact(locationId, phone, contactPhoneRaw);
+                if (!contact) {
+                    logger.error('[Sync] Failed to get/create contact', { locationId, phone });
+                    return false;
+                }
+                logger.info('[Sync] Step 1: Contact Synced', { contactId: contact.id, phone });
+            } catch (err) {
+                logger.error('[Sync] Contact step failed', { error: err.message, phone });
+                throw err;
             }
-
-            logger.info('✅ Contact synced', { contactId: contact.id, locationId, phone });
 
             // Step 2: Get or create conversation
-            const conversation = await ghlConversations.getOrCreateConversation(locationId, contact.id);
-
-            if (!conversation) {
-                logger.error('Failed to get/create conversation', { contactId: contact.id, locationId });
-                return false;
+            let conversation;
+            try {
+                conversation = await ghlConversations.getOrCreateConversation(locationId, contact.id);
+                if (!conversation) {
+                    logger.error('[Sync] Failed to get/create conversation', { contactId: contact.id, locationId });
+                    return false;
+                }
+                logger.info('[Sync] Step 2: Conversation Synced', { conversationId: conversation.id });
+            } catch (err) {
+                logger.error('[Sync] Conversation step failed', { error: err.message, contactId: contact.id });
+                throw err;
             }
-
-            logger.info('✅ Conversation synced', { conversationId: conversation.id, locationId });
 
             // Step 3: Send message to conversation
             let messageText = body;
@@ -81,17 +87,15 @@ class WhatsAppGHLSync {
 
                                 if (publicUrl) {
                                     attachments.push(publicUrl);
-                                    logger.info('📸 Media synced via GHL Storage', { url: publicUrl, locationId });
+                                    logger.info('[Sync] Media uploaded to GHL', { url: publicUrl });
                                 }
                             } catch (uploadErr) {
-                                logger.error('❌ GHL Media upload failed, syncing text only', { error: uploadErr.message, locationId });
+                                logger.error('[Sync] GHL Media upload failed, syncing text only', { error: uploadErr.message });
                             }
                         }
-                    } else {
-                        logger.warn('⚠️ downloadMedia not available on message object');
                     }
                 } catch (err) {
-                    logger.error('Error handling media', { error: err.message, locationId });
+                    logger.error('[Sync] Error handling media', { error: err.message });
                 }
             }
 
@@ -99,7 +103,6 @@ class WhatsAppGHLSync {
                 if (attachments.length > 0) {
                     messageText = 'Media Attachment';
                 } else if (hasMedia) {
-                    // Fallback for when media exists but upload failed AND there is no caption
                     const mediaType = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Media';
                     messageText = `[${mediaType} Attachment]`;
                 }
@@ -108,23 +111,28 @@ class WhatsAppGHLSync {
             // Provide the Custom Provider ID
             const providerId = '69306e4ed1e0a0573cdc2207';
 
-            await ghlConversations.sendMessage(
-                locationId,
-                conversation.id,
-                messageText,
-                'SMS',
-                contact.id,
-                direction,
-                timestamp,
-                providerId,
-                attachments
-            );
+            try {
+                await ghlConversations.sendMessage(
+                    locationId,
+                    conversation.id,
+                    messageText,
+                    'SMS',
+                    contact.id,
+                    direction,
+                    timestamp,
+                    providerId,
+                    attachments
+                );
 
-            logger.info(`✅ ${direction.toUpperCase()} message synced to GHL`, {
-                conversationId: conversation.id,
-                contactId: contact.id,
-                locationId
-            });
+                logger.info(`✅ [Sync] ${direction.toUpperCase()} sync SUCCESS`, {
+                    phone,
+                    conversationId: conversation.id,
+                    contactId: contact.id
+                });
+            } catch (err) {
+                logger.error('[Sync] Message send failed', { error: err.message, conversationId: conversation.id });
+                throw err;
+            }
 
             return {
                 success: true,
@@ -133,7 +141,7 @@ class WhatsAppGHLSync {
             };
 
         } catch (error) {
-            logger.error('❌ Failed to sync message to GHL', {
+            logger.error('❌ [Sync] Sync chain failed', {
                 error: error.message,
                 locationId,
                 from: whatsappMessage.from
