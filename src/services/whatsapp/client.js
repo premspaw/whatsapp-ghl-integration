@@ -173,7 +173,20 @@ class WhatsAppClient extends EventEmitter {
         if (!this.isReady) throw new Error(`WhatsApp client not ready for ${this.locationId}`);
 
         try {
-            const chatId = this._formatChatId(to);
+            let chatId = to;
+
+            // If it doesn't already contain @, try to find the correct WhatsApp ID (resolves CID vs LID)
+            if (!to.toString().includes('@')) {
+                const numberId = await this.client.getNumberId(to);
+                if (numberId) {
+                    chatId = numberId._serialized;
+                    logger.info(`🔍 [WhatsApp] Resolved ${to} to JID: ${chatId}`);
+                } else {
+                    // Fallback to legacy formatting if lookup fails
+                    chatId = this._formatChatId(to);
+                    logger.warn(`⚠️ [WhatsApp] Could not resolve ${to} via WhatsApp, falling back to ${chatId}`);
+                }
+            }
 
             // --- Anti-Duplicate Logic ---
             const normalizedMsg = (message || '').replace(/\s+/g, ' ').trim();
@@ -240,6 +253,12 @@ class WhatsAppClient extends EventEmitter {
 
     _formatChatId(number) {
         if (!number) return '';
+
+        // If it already looks like a WhatsApp ID (contains @), use it as is
+        if (number.toString().includes('@')) {
+            return number.toString();
+        }
+
         const normalized = phoneNormalizer.normalize(number);
         const digits = normalized.replace('+', '');
         return `${digits}@c.us`;

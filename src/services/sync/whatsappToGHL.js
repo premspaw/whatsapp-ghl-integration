@@ -39,7 +39,9 @@ class WhatsAppGHLSync {
             // Step 1: Get or create contact
             let contact;
             try {
-                contact = await ghlContacts.getOrCreateContact(locationId, phone, contactPhoneRaw);
+                // Strip suffix (@c.us, @lid) from the fallback name
+                const cleanName = (contactPhoneRaw || '').split('@')[0];
+                contact = await ghlContacts.getOrCreateContact(locationId, phone, cleanName);
                 if (!contact) {
                     logger.error('[Sync] Failed to get/create contact', { locationId, phone });
                     return false;
@@ -155,8 +157,12 @@ class WhatsAppGHLSync {
      */
     async syncContact(locationId, whatsappContact) {
         try {
-            const phone = this.normalizePhone(whatsappContact.id._serialized);
-            const name = whatsappContact.pushname || whatsappContact.name || phone;
+            const rawId = whatsappContact.id._serialized;
+            const phone = this.normalizePhone(rawId);
+
+            // Clean name: Use pushname, or stripped number (no @lid, @c.us)
+            const fallbackName = rawId.split('@')[0];
+            const name = whatsappContact.pushname || whatsappContact.name || fallbackName;
 
             logger.info('📇 Syncing WhatsApp contact to GHL', { locationId, phone, name });
 
@@ -164,12 +170,11 @@ class WhatsAppGHLSync {
 
             logger.info('✅ Contact synced', { contactId: contact.id, locationId });
             return contact;
-
         } catch (error) {
             logger.error('❌ Failed to sync contact', {
                 error: error.message,
                 locationId,
-                contact: whatsappContact.id._serialized
+                contact: whatsappContact.id?._serialized
             });
             return null;
         }
