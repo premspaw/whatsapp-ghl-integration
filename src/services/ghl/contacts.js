@@ -135,12 +135,15 @@ class GHLContactsService {
             firstName: contactData.firstName || contactData.name || 'Unknown',
             lastName: contactData.lastName || '',
             phone: contactData.phone,
-            email: contactData.email || '',
             source: 'WhatsApp Integration',
             tags: contactData.tags || ['whatsapp'],
             customFields: contactData.customFields || [],
             locationId: locationId
         };
+
+        if (contactData.email) {
+            payload.email = contactData.email;
+        }
 
         try {
             const data = await this._makeRequest(locationId, 'POST', '/contacts/', payload);
