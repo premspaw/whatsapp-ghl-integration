@@ -105,16 +105,21 @@ class WhatsAppClient extends EventEmitter {
 
             // Case A: INBOUND message from a contact
             if (!message.fromMe) {
-                logger.info(`📨 [Loc: ${this.locationId}] Incoming from ${message.from}: ${message.body.substring(0, 50)}...`);
                 try {
+                    const contact = await message.getContact();
+                    const realNumber = contact.number || message.from.split('@')[0];
+
+                    logger.info(`📨 [Loc: ${this.locationId}] Incoming from ${realNumber} (JID: ${message.from}): ${message.body.substring(0, 50)}...`);
+
                     await whatsappSync.syncMessageToGHL(this.locationId, {
-                        from: message.from,
+                        from: realNumber,
                         body: message.body,
                         type: message.type,
                         timestamp: message.timestamp,
                         hasMedia: message.hasMedia,
                         downloadMedia: message.downloadMedia ? message.downloadMedia.bind(message) : null,
-                        direction: 'inbound'
+                        direction: 'inbound',
+                        whatsappMessage: message // Pass the original message for any extra data if needed
                     });
                 } catch (error) {
                     logger.error(`❌ [Loc: ${this.locationId}] Inbound sync failed`, { error: error.message });
@@ -123,23 +128,26 @@ class WhatsAppClient extends EventEmitter {
 
             // Case B: OUTBOUND message sent from the physical phone (Manual Reply)
             else {
-                const chatId = message.to;
-                const body = message.body || '';
-                const mediaUrl = ''; // We can't easily get the URL for phone-sent media without a lot of overhead
-
-                // Check if our integration just sent this to avoid double syncing
-                const normalizedBody = body.replace(/\s+/g, ' ').trim();
-                const msgHash = `${chatId}|${normalizedBody}|${message.hasMedia}`;
-                if (this.recentSends.has(msgHash)) {
-                    const lastSent = this.recentSends.get(msgHash);
-                    if (Date.now() - lastSent < 15000) return; // 15s window for phone sync safety
-                }
-
-                logger.info(`📤 [Loc: ${this.locationId}] Native phone reply to ${chatId}: ${body.substring(0, 50)}...`);
                 try {
+                    const contact = await message.getContact();
+                    const realNumber = contact.number || message.to.split('@')[0];
+
+                    const chatId = message.to;
+                    const body = message.body || '';
+                    const mediaUrl = ''; // We can't easily get the URL for phone-sent media without a lot of overhead
+
+                    // Check if our integration just sent this to avoid double syncing
+                    const normalizedBody = body.replace(/\s+/g, ' ').trim();
+                    const msgHash = `${chatId}|${normalizedBody}|${message.hasMedia}`;
+                    if (this.recentSends.has(msgHash)) {
+                        const lastSent = this.recentSends.get(msgHash);
+                        if (Date.now() - lastSent < 15000) return; // 15s window for phone sync safety
+                    }
+
+                    logger.info(`📤 [Loc: ${this.locationId}] Native phone reply to ${realNumber} (JID: ${chatId}): ${body.substring(0, 50)}...`);
                     await whatsappSync.syncMessageToGHL(this.locationId, {
-                        to: chatId,
-                        from: message.from, // Our own number
+                        to: realNumber,
+                        from: message.from,
                         body: body,
                         type: message.type,
                         timestamp: message.timestamp,
@@ -148,7 +156,7 @@ class WhatsAppClient extends EventEmitter {
                         direction: 'outbound'
                     });
                 } catch (error) {
-                    logger.error(`❌ [Loc: ${this.locationId}] Phone reply sync failed`, { error: error.message });
+                    logger.error(`❌ [Loc: ${this.locationId}] Case B processing failed`, { error: error.message });
                 }
             }
 
