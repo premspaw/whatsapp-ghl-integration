@@ -103,6 +103,17 @@ class WhatsAppClient extends EventEmitter {
                 return;
             }
 
+            // FILTER: Ignore self-messages (Message Yourself)
+            const myId = this.client?.info?.wid?._serialized || this.client?.info?.me?._serialized;
+            if (myId && message.to === myId && message.fromMe) {
+                // This is the bot owner messaging themselves on WhatsApp
+                return;
+            }
+            if (myId && message.from === myId && !message.fromMe) {
+                // This is also the bot owner messaging themselves (inbound side)
+                return;
+            }
+
             // Case A: INBOUND message from a contact
             if (!message.fromMe) {
                 try {
